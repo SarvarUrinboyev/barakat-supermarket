@@ -1,0 +1,79 @@
+package uz.barakat.market.auth;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/** REST payloads used by the super-admin account management endpoints. */
+public final class AdminDtos {
+
+    private AdminDtos() {
+    }
+
+    /** Snapshot of one account for the admin list view. */
+    public record AdminAccountResponse(
+            Long id,
+            String name,
+            String contactPhone,
+            String contactNote,
+            LocalDate subscriptionExpires,
+            int daysUntilBlock,
+            boolean blocked,
+            boolean expired,
+            int userCount,
+            LocalDateTime createdAt) {
+    }
+
+    public record AdminUserResponse(
+            Long id,
+            String username,
+            String fullName,
+            String role,
+            LocalDateTime lastLoginAt,
+            LocalDateTime createdAt) {
+    }
+
+    public record AccountDetailResponse(
+            AdminAccountResponse account,
+            List<AdminUserResponse> users) {
+    }
+
+    /** Creates a new account together with its first (owner) user. */
+    public record CreateAccountRequest(
+            @NotBlank(message = "Akkaunt nomi kiritilishi shart") String name,
+            String contactPhone,
+            String contactNote,
+            LocalDate subscriptionExpires,
+            @NotBlank(message = "Login kiritilishi shart")
+            @Size(min = 3, max = 80) String ownerUsername,
+            @NotBlank(message = "Parol kiritilishi shart")
+            @Size(min = 4, max = 80) String ownerPassword,
+            String ownerFullName) {
+    }
+
+    public record UpdateAccountRequest(
+            @NotBlank(message = "Akkaunt nomi kiritilishi shart") String name,
+            String contactPhone,
+            String contactNote,
+            LocalDate subscriptionExpires) {
+    }
+
+    /** Body of {@code PATCH /api/admin/accounts/{id}/block}. */
+    public record BlockRequest(boolean blocked) {
+    }
+
+    /** Body of password reset / new user creation. */
+    public record SetPasswordRequest(
+            @NotBlank(message = "Parol kiritilishi shart")
+            @Size(min = 4, max = 80) String password) {
+    }
+
+    public record CreateUserRequest(
+            @NotBlank @Size(min = 3, max = 80) String username,
+            @NotBlank @Size(min = 4, max = 80) String password,
+            String fullName,
+            String role) {
+    }
+}

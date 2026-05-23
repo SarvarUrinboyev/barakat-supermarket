@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SavdoPRO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(58% 46% at 22% 0%, rgba(16, 185, 129, .22), transparent 70%),
+          radial-gradient(48% 40% at 100% 100%, rgba(34, 211, 238, .12), transparent 70%),
+          linear-gradient(135deg, #03050a 0%, #050a14 60%, #07131e 100%);
+        color: #fff;
+      }
+      .box { text-align: center; padding: 8px 24px; }
+      .logo-wrap {
+        width: 96px; height: 96px; margin: 0 auto 22px;
+        position: relative;
+      }
+      .logo-wrap::after {
+        content: ''; position: absolute; inset: -18px;
+        border-radius: 32px;
+        background: radial-gradient(closest-side, rgba(16, 185, 129, .35), transparent 70%);
+        z-index: 0;
+      }
+      .logo-wrap svg {
+        width: 100%; height: 100%; position: relative; z-index: 1;
+        border-radius: 24px;
+        box-shadow: 0 20px 50px -18px rgba(16, 185, 129, .55);
+      }
+      h1 {
+        margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.02em;
+      }
+      .pos-tag {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 3px 8px;
+        font-size: 11px; font-weight: 800;
+        letter-spacing: .12em;
+        color: #34d399;
+        background: rgba(16, 185, 129, .12);
+        border: 1px solid rgba(16, 185, 129, .35);
+        border-radius: 6px;
+        vertical-align: 6px;
+      }
+      .sub {
+        margin-top: 8px;
+        font-size: 13px; font-weight: 600;
+        color: rgba(226, 232, 240, .68);
+        letter-spacing: .04em;
+      }
+      .status {
+        margin-top: 30px;
+        font-size: 12px; font-weight: 700;
+        color: rgba(226, 232, 240, .82);
+        text-transform: uppercase;
+        letter-spacing: .18em;
+      }
+      .spinner {
+        width: 32px; height: 32px;
+        margin: 16px auto 0;
+        border: 2.5px solid rgba(16, 185, 129, .22);
+        border-top-color: #10b981;
+        border-radius: 50%;
+        animation: spin .8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .error {
+        display: none;
+        margin-top: 24px;
+        max-width: 420px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: rgba(252, 165, 165, .92);
+      }
+      body.failed .spinner,
+      body.failed .status { display: none; }
+      body.failed .error  { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <div class="logo-wrap">
+        <svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#34d399" />
+              <stop offset="55%" stop-color="#10b981" />
+              <stop offset="100%" stop-color="#047857" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="96" height="96" rx="24" fill="url(#g)" />
+          <path d="M28 40 H68 L65.5 73 Q65 79 59 79 H37 Q31 79 30.5 73 Z"
+                fill="rgba(255,255,255,0.95)" />
+          <path d="M38 41 V31 a10 10 0 0 1 20 0 V41"
+                fill="none" stroke="rgba(255,255,255,0.95)"
+                stroke-width="5" stroke-linecap="round" />
+          <path d="M40 65 L48 57 L56 65" fill="none"
+                stroke="#047857" stroke-width="5"
+                stroke-linecap="round" stroke-linejoin="round" />
+          <line x1="48" y1="57" x2="48" y2="74" stroke="#047857"
+                stroke-width="5" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h1>SavdoPRO<span class="pos-tag">POS</span></h1>
+      <div class="sub">Avtomatlashtirilgan boshqaruv tizimi</div>
+      <div class="status">Tizim ishga tushmoqda…</div>
+      <div class="spinner"></div>
+      <div class="error">
+        Tizimni ishga tushirib bo&#39;lmadi.<br />
+        Dasturni yopib, qayta oching. Muammo davom etsa,
+        dasturni qayta o&#39;rnating.
+      </div>
+    </div>
+    <script>
+      if (window.location.hash === '#error') {
+        document.body.classList.add('failed');
+      }
+    </script>
+  </body>
+</html>

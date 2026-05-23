@@ -1,0 +1,68 @@
+{
+  "name": "savdopro",
+  "version": "1.7.0",
+  "description": "SavdoPRO - desktop application",
+  "main": "main.js",
+  "author": "SavdoPRO",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "release": "electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "uz.barakat.supermarket",
+    "productName": "SavdoPRO",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "splash.html",
+      "assets/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/target/barakat-market.jar",
+        "to": "barakat-market.jar"
+      },
+      {
+        "from": "../backend/application-local.properties.example",
+        "to": "application-local.properties.example"
+      },
+      {
+        "from": "jre",
+        "to": "jre"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SavdoPRO"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "SarvarUrinboyev",
+        "repo": "barakat-supermarket",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

@@ -1,0 +1,189 @@
+// Domain-grouped REST calls. Every page talks to the backend through here.
+
+import { api, getToken } from './client.js';
+
+function qs(params) {
+  if (!params) return '';
+  const pairs = Object.entries(params)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`);
+  return pairs.length ? `?${pairs.join('&')}` : '';
+}
+
+export const DashboardApi = {
+  today: () => api.get('/dashboard'),
+};
+
+export const ExchangeRateApi = {
+  get: () => api.get('/exchange-rate'),
+};
+
+export const ExpenseApi = {
+  list: (params) => api.get('/expenses' + qs(params)),
+  create: (body) => api.post('/expenses', body),
+  update: (id, body) => api.put(`/expenses/${id}`, body),
+  remove: (id) => api.del(`/expenses/${id}`),
+  bulkPreview: (body) => api.post('/expenses/bulk-import/preview', body),
+  bulkImport: (body) => api.post('/expenses/bulk-import', body),
+};
+
+export const HomeExpenseApi = {
+  list: (params) => api.get('/home-expenses' + qs(params)),
+  create: (body) => api.post('/home-expenses', body),
+  update: (id, body) => api.put(`/home-expenses/${id}`, body),
+  remove: (id) => api.del(`/home-expenses/${id}`),
+  bulkPreview: (body) => api.post('/home-expenses/bulk-import/preview', body),
+  bulkImport: (body) => api.post('/home-expenses/bulk-import', body),
+};
+
+export const OrderApi = {
+  all: () => api.get('/orders'),
+  grouped: () => api.get('/orders/grouped'),
+  today: () => api.get('/orders/today'),
+  create: (body) => api.post('/orders', body),
+  update: (id, body) => api.put(`/orders/${id}`, body),
+  remove: (id) => api.del(`/orders/${id}`),
+  complete: (id, body) => api.patch(`/orders/${id}/complete`, body),
+};
+
+export const DebtApi = {
+  summary: () => api.get('/debts/summary'),
+  myList: () => api.get('/debtors'),
+  myCreate: (body) => api.post('/debtors', body),
+  myUpdate: (id, body) => api.put(`/debtors/${id}`, body),
+  myRemove: (id) => api.del(`/debtors/${id}`),
+  myPay: (id, body) => api.patch(`/debtors/${id}/partial-pay`, body),
+  myAdd: (id, body) => api.patch(`/debtors/${id}/add-amount`, body),
+  myHistory: (id) => api.get(`/debtors/${id}/history`),
+  custList: () => api.get('/customer-debts'),
+  custCreate: (body) => api.post('/customer-debts', body),
+  custUpdate: (id, body) => api.put(`/customer-debts/${id}`, body),
+  custRemove: (id) => api.del(`/customer-debts/${id}`),
+  custPay: (id, body) => api.patch(`/customer-debts/${id}/partial-pay`, body),
+  custAdd: (id, body) => api.patch(`/customer-debts/${id}/add-amount`, body),
+  custHistory: (id) => api.get(`/customer-debts/${id}/history`),
+};
+
+export const BalanceApi = {
+  today: () => api.get('/balance/today'),
+  set: (body) => api.post('/balance', body),
+};
+
+async function uploadFile(path, file) {
+  const form = new FormData();
+  form.append('file', file);
+  const headers = {};
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  const response = await fetch('/api' + path, { method: 'POST', body: form, headers });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    throw new Error(data?.message || data?.detail || `Xatolik (${response.status})`);
+  }
+  return data;
+}
+
+export const AuthApi = {
+  login: (body) => api.post('/auth/login', body),
+  me: () => api.get('/auth/me'),
+};
+
+export const ShopApi = {
+  list: () => api.get('/shops'),
+  create: (body) => api.post('/shops', body),
+  update: (id, body) => api.put(`/shops/${id}`, body),
+  setMain: (id) => api.patch(`/shops/${id}/main`),
+  remove: (id) => api.del(`/shops/${id}`),
+};
+
+export const AdminApi = {
+  listAccounts: () => api.get('/admin/accounts'),
+  accountDetail: (id) => api.get(`/admin/accounts/${id}`),
+  createAccount: (body) => api.post('/admin/accounts', body),
+  updateAccount: (id, body) => api.put(`/admin/accounts/${id}`, body),
+  setBlocked: (id, blocked) => api.patch(`/admin/accounts/${id}/block`, { blocked }),
+  deleteAccount: (id) => api.del(`/admin/accounts/${id}`),
+  createUser: (accountId, body) => api.post(`/admin/accounts/${accountId}/users`, body),
+  resetPassword: (userId, password) =>
+    api.patch(`/admin/users/${userId}/password`, { password }),
+  deleteUser: (userId) => api.del(`/admin/users/${userId}`),
+};
+
+export const ProductApi = {
+  list: (params) => api.get('/products' + qs(params)),
+  get: (id) => api.get(`/products/${id}`),
+  create: (body) => api.post('/products', body),
+  update: (id, body) => api.put(`/products/${id}`, body),
+  remove: (id) => api.del(`/products/${id}`),
+  adjust: (id, body) => api.patch(`/products/${id}/adjust`, body),
+  movements: (id) => api.get(`/products/${id}/movements`),
+  scan: (body) => api.post('/products/scan', body),
+  importFile: (file) => uploadFile('/products/import', file),
+  templateUrl: '/api/products/import/template',
+};
+
+export const CategoryApi = {
+  list: () => api.get('/categories'),
+  create: (body) => api.post('/categories', body),
+  remove: (id) => api.del(`/categories/${id}`),
+};
+
+export const ShiftApi = {
+  history: () => api.get('/shifts'),
+  current: () => api.get('/shifts/current'),
+  open: (body) => api.post('/shifts/open', body),
+  close: () => api.post('/shifts/close'),
+  clearHistory: () => api.del('/shifts/history'),
+};
+
+export const TerminalApi = {
+  today: () => api.get('/terminal/today'),
+  history: () => api.get('/terminal/history'),
+  save: (body) => api.post('/terminal', body),
+};
+
+export const ReportApi = {
+  endOfDay: (date) => api.get('/report/end-of-day' + qs({ date })),
+  sendTelegram: (date) => api.post('/report/send-telegram' + qs({ date })),
+};
+
+export const CustomerApi = {
+  list: () => api.get('/customers'),
+  detail: (id) => api.get(`/customers/${id}`),
+  create: (body) => api.post('/customers', body),
+  update: (id, body) => api.put(`/customers/${id}`, body),
+  remove: (id) => api.del(`/customers/${id}`),
+  addTransaction: (id, body) => api.post(`/customers/${id}/transactions`, body),
+  addTransactions: (id, list) => api.post(`/customers/${id}/transactions/batch`, list),
+  updateTransaction: (id, txId, body) =>
+    api.put(`/customers/${id}/transactions/${txId}`, body),
+  removeTransaction: (id, txId) => api.del(`/customers/${id}/transactions/${txId}`),
+};
+
+export const ManagementApi = {
+  summary: (params) => api.get('/management/summary' + qs(params)),
+  soldGoods: (params) => api.get('/management/sold-goods' + qs(params)),
+  soldGoodsExportUrl: (params) => '/api/management/sold-goods/export' + qs(params),
+  createCost: (body) => api.post('/management/costs', body),
+  updateCost: (id, body) => api.put(`/management/costs/${id}`, body),
+  removeCost: (id) => api.del(`/management/costs/${id}`),
+};
+
+export const PaymentApi = {
+  list: (params) => api.get('/payments' + qs(params)),
+  create: (body) => api.post('/payments', body),
+  update: (id, body) => api.put(`/payments/${id}`, body),
+  remove: (id) => api.del(`/payments/${id}`),
+  parties: (category) => api.get(`/payments/parties?category=${category}`),
+};
+
+export const SupplierApi = {
+  list: () => api.get('/suppliers'),
+  detail: (id) => api.get(`/suppliers/${id}`),
+  create: (body) => api.post('/suppliers', body),
+  update: (id, body) => api.put(`/suppliers/${id}`, body),
+  remove: (id) => api.del(`/suppliers/${id}`),
+};

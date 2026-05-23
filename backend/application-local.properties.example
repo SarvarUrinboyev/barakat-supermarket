@@ -1,0 +1,26 @@
+# ====================================================================
+#  LOCAL configuration template
+#  --------------------------------------------------------------------
+#  1. Copy this file to:  application-local.properties  (same folder)
+#  2. Fill in the real values and switch enabled=true.
+#
+#  application-local.properties is GITIGNORED - it never reaches git.
+#  This .example file is safe to commit (placeholders only).
+#
+#  The database (embedded H2) needs NO configuration - it is created
+#  automatically. Only the optional Telegram bots are configured here.
+# ====================================================================
+
+# --- Owner report bot (end-of-day Telegram reports) ---
+# Create a bot and get the token from @BotFather on Telegram.
+# Keep the token SECRET - anyone with it controls the bot.
+telegram.enabled=false
+telegram.bot-token=PUT-YOUR-BOT-TOKEN-HERE
+# Comma-separated Telegram chat IDs that should receive the reports:
+telegram.chat-ids=PUT-CHAT-ID-1,PUT-CHAT-ID-2
+
+# --- Customer self-service bot ---
+# Create a SECOND bot with @BotFather (separate from the owner bot above).
+# Customers message this bot to check their own debt and goods history.
+telegram.customer-bot.enabled=false
+telegram.customer-bot.token=PUT-CUSTOMER-BOT-TOKEN-HERE
