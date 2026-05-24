@@ -12,8 +12,16 @@ public final class AuthDtos {
 
     public record LoginRequest(
             @NotBlank(message = "Login kiritilishi shart") String username,
-            @NotBlank(message = "Parol kiritilishi shart") String password) {
+            @NotBlank(message = "Parol kiritilishi shart") String password,
+            /** 6-digit TOTP code — required only when the user has 2FA on. */
+            String totpCode) {
     }
+
+    /** One-time payload returned by the TOTP setup endpoint. */
+    public record TotpSetupResponse(String secret, String otpauthUri) { }
+
+    public record TotpVerifyRequest(
+            @NotBlank(message = "Kod kiritilishi shart") String code) { }
 
     /**
      * Refresh-token rotation payload. The plaintext refresh token never

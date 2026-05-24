@@ -15,6 +15,8 @@ import uz.barakat.license.auth.AuthDtos.LoginRequest;
 import uz.barakat.license.auth.AuthDtos.LoginResponse;
 import uz.barakat.license.auth.AuthDtos.MeResponse;
 import uz.barakat.license.auth.AuthDtos.RefreshRequest;
+import uz.barakat.license.auth.AuthDtos.TotpSetupResponse;
+import uz.barakat.license.auth.AuthDtos.TotpVerifyRequest;
 import uz.barakat.license.exception.BadRequestException;
 
 /**
@@ -90,6 +92,37 @@ public class AuthController {
             throw new BadRequestException("Sessiya yo'q");
         }
         return service.me((Long) uid);
+    }
+
+    // ============================================================ TOTP
+
+    /**
+     * Generate a fresh TOTP secret + otpauth URI for the current user.
+     * Calling this resets any previous unconfirmed setup — useful when
+     * the user lost their authenticator app mid-flow.
+     */
+    @PostMapping("/totp/setup")
+    public TotpSetupResponse totpSetup(HttpServletRequest request) {
+        return service.setupTotp(requireUserId(request));
+    }
+
+    /** Confirm the first authenticator code and flip 2FA on. */
+    @PostMapping("/totp/confirm")
+    public void totpConfirm(HttpServletRequest request,
+                            @Valid @RequestBody TotpVerifyRequest body) {
+        service.confirmTotp(requireUserId(request), body.code());
+    }
+
+    /** Turn 2FA off and wipe the secret. */
+    @PostMapping("/totp/disable")
+    public void totpDisable(HttpServletRequest request) {
+        service.disableTotp(requireUserId(request));
+    }
+
+    private static Long requireUserId(HttpServletRequest request) {
+        Object uid = request.getAttribute(JwtAuthFilter.ATTR_USER_ID);
+        if (uid == null) throw new BadRequestException("Sessiya yo'q");
+        return (Long) uid;
     }
 
     /**

@@ -39,4 +39,17 @@ public class AppUser extends BaseEntity {
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
+
+    /**
+     * Base32-encoded TOTP shared secret (Phase 4.5). Null = 2FA never
+     * set up. The secret is written on the first setup() call but
+     * {@link #totpEnabled} flips only after the user confirms the
+     * first code from their authenticator app — that prevents an
+     * interrupted setup from locking anyone out.
+     */
+    @Column(name = "totp_secret", length = 64)
+    private String totpSecret;
+
+    @Column(name = "totp_enabled", nullable = false)
+    private boolean totpEnabled = false;
 }

@@ -30,14 +30,17 @@ public class AuthService {
     private final AccountRepository accounts;
     private final JwtService jwt;
     private final RefreshTokenService refreshTokens;
+    private final TotpService totp;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public AuthService(AppUserRepository users, AccountRepository accounts,
-                       JwtService jwt, RefreshTokenService refreshTokens) {
+                       JwtService jwt, RefreshTokenService refreshTokens,
+                       TotpService totp) {
         this.users = users;
         this.accounts = accounts;
         this.jwt = jwt;
         this.refreshTokens = refreshTokens;
+        this.totp = totp;
     }
 
     public LoginResponse login(LoginRequest request, String clientIp) {
@@ -45,6 +48,20 @@ public class AuthService {
                 .orElseThrow(() -> new BadRequestException("Login yoki parol noto'g'ri"));
         if (!encoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadRequestException("Login yoki parol noto'g'ri");
+        }
+        // Phase 4.5: enforce TOTP if the user enabled it. The error
+        // message stays generic so a brute-forcer can't tell whether
+        // the password or the code was wrong.
+        if (user.isTotpEnabled()) {
+            String code = request.totpCode();
+            if (code == null || code.isBlank()) {
+                // Special tag-only exception so the client knows to show
+                // the 2FA code field rather than retry with the password.
+                throw new BadRequestException("2FA kodi kerak");
+            }
+            if (!totp.verify(user.getTotpSecret(), code)) {
+                throw new BadRequestException("2FA kodi noto'g'ri");
+            }
         }
         Account account = requireUsableAccount(user.getAccountId());
         user.setLastLoginAt(LocalDateTime.now());
@@ -57,6 +74,48 @@ public class AuthService {
                 jwt.accessTtlSeconds(),
                 refresh.expiresAt(),
                 toMe(user, account));
+    }
+
+    // ============================================================ TOTP
+
+    /**
+     * Begin TOTP enrolment: generates a secret, writes it on the user
+     * row (but does not enable 2FA yet — see {@link #confirmTotp(Long, String)}).
+     * Returns the secret + the otpauth:// URI for the QR code.
+     */
+    public uz.barakat.license.auth.AuthDtos.TotpSetupResponse setupTotp(Long userId) {
+        AppUser user = users.findById(userId)
+                .orElseThrow(() -> new BadRequestException("Sessiya yaroqsiz"));
+        String secret = totp.generateSecret();
+        user.setTotpSecret(secret);
+        user.setTotpEnabled(false);   // requires confirmation step
+        users.save(user);
+        return new uz.barakat.license.auth.AuthDtos.TotpSetupResponse(
+                secret,
+                totp.otpauthUri(user.getUsername(), secret, "SavdoPRO"));
+    }
+
+    /** Verify the first code from the authenticator and enable 2FA. */
+    public void confirmTotp(Long userId, String code) {
+        AppUser user = users.findById(userId)
+                .orElseThrow(() -> new BadRequestException("Sessiya yaroqsiz"));
+        if (user.getTotpSecret() == null) {
+            throw new BadRequestException("Avval TOTP sozlamasini boshlang");
+        }
+        if (!totp.verify(user.getTotpSecret(), code)) {
+            throw new BadRequestException("Kod noto'g'ri — qaytadan urinib ko'ring");
+        }
+        user.setTotpEnabled(true);
+        users.save(user);
+    }
+
+    /** Turn 2FA off (clears the secret too so re-enabling creates a fresh one). */
+    public void disableTotp(Long userId) {
+        AppUser user = users.findById(userId)
+                .orElseThrow(() -> new BadRequestException("Sessiya yaroqsiz"));
+        user.setTotpEnabled(false);
+        user.setTotpSecret(null);
+        users.save(user);
     }
 
     /**
