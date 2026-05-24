@@ -10,6 +10,7 @@ import lombok.Setter;
 
 /** A warehouse / inventory item (phone, accessory, electronics). */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "products")
 @Getter

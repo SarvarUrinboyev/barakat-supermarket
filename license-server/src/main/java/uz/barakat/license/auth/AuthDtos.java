@@ -1,4 +1,4 @@
-package uz.barakat.market.auth;
+package uz.barakat.license.auth;
 
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDate;

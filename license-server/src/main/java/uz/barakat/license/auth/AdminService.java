@@ -1,24 +1,25 @@
-package uz.barakat.market.auth;
+package uz.barakat.license.auth;
 
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.barakat.market.auth.AdminDtos.AccountDetailResponse;
-import uz.barakat.market.auth.AdminDtos.AdminAccountResponse;
-import uz.barakat.market.auth.AdminDtos.AdminUserResponse;
-import uz.barakat.market.auth.AdminDtos.CreateAccountRequest;
-import uz.barakat.market.auth.AdminDtos.CreateUserRequest;
-import uz.barakat.market.auth.AdminDtos.UpdateAccountRequest;
-import uz.barakat.market.domain.Account;
-import uz.barakat.market.domain.AppUser;
-import uz.barakat.market.domain.UserRole;
-import uz.barakat.market.exception.BadRequestException;
-import uz.barakat.market.exception.NotFoundException;
-import uz.barakat.market.repository.AccountRepository;
-import uz.barakat.market.repository.AppUserRepository;
+import uz.barakat.license.auth.AdminDtos.AccountDetailResponse;
+import uz.barakat.license.auth.AdminDtos.AdminAccountResponse;
+import uz.barakat.license.auth.AdminDtos.AdminUserResponse;
+import uz.barakat.license.auth.AdminDtos.CreateAccountRequest;
+import uz.barakat.license.auth.AdminDtos.CreateUserRequest;
+import uz.barakat.license.auth.AdminDtos.UpdateAccountRequest;
+import uz.barakat.license.domain.Account;
+import uz.barakat.license.domain.AppUser;
+import uz.barakat.license.domain.UserRole;
+import uz.barakat.license.exception.BadRequestException;
+import uz.barakat.license.exception.NotFoundException;
+import uz.barakat.license.repository.AccountRepository;
+import uz.barakat.license.repository.AppUserRepository;
 
 /**
  * Super-admin operations: create / edit / block accounts, set or reset
@@ -41,9 +42,14 @@ public class AdminService {
 
     @Transactional(readOnly = true)
     public List<AdminAccountResponse> listAccounts() {
+        // Pre-compute user counts in a single grouped query so we don't
+        // fan out to one COUNT(*) per account in the row mapper. The
+        // map lookup below is O(1).
+        java.util.Map<Long, Long> counts = users.countsByAccountId();
         return accounts.findAll().stream()
                 .sorted(Comparator.comparing(Account::getCreatedAt).reversed())
-                .map(this::toAccountResponse)
+                .map(a -> toAccountResponseWithCount(a,
+                        counts.getOrDefault(a.getId(), 0L).intValue()))
                 .toList();
     }
 
@@ -60,6 +66,9 @@ public class AdminService {
 
     public AdminAccountResponse createAccount(CreateAccountRequest request) {
         String username = request.ownerUsername().trim().toLowerCase();
+        // Cheap up-front check for the common case. The DB unique
+        // constraint below is the *real* gate against a race between two
+        // concurrent createAccount calls landing on the same username.
         if (users.existsByUsernameIgnoreCase(username)) {
             throw new BadRequestException("Bu login band: " + username);
         }
@@ -77,7 +86,13 @@ public class AdminService {
         owner.setFullName(blankToNull(request.ownerFullName()));
         owner.setRole(UserRole.ACCOUNT_OWNER);
         owner.setAccountId(saved.getId());
-        users.save(owner);
+        try {
+            users.save(owner);
+        } catch (DataIntegrityViolationException ex) {
+            // Race winner already grabbed this username — surface as a
+            // friendly 400 instead of a 500 stack trace in the UI.
+            throw new BadRequestException("Bu login band: " + username);
+        }
 
         return toAccountResponse(saved);
     }
@@ -125,7 +140,12 @@ public class AdminService {
         u.setFullName(blankToNull(request.fullName()));
         u.setRole(parseRole(request.role(), UserRole.SHOP_USER));
         u.setAccountId(accountId);
-        return toUserResponse(users.save(u));
+        try {
+            return toUserResponse(users.save(u));
+        } catch (DataIntegrityViolationException ex) {
+            // Race winner already grabbed this username.
+            throw new BadRequestException("Bu login band: " + username);
+        }
     }
 
     public void resetPassword(Long userId, String newPassword) {
@@ -146,8 +166,17 @@ public class AdminService {
 
     // ------------------------------------------------------------ helpers
 
+    /**
+     * Single-account variant — still does one COUNT(*) lookup. Used by
+     * create / update / setBlocked which only ever touch one account and
+     * benefit from a fresh count.
+     */
     private AdminAccountResponse toAccountResponse(Account a) {
-        int userCount = users.findByAccountIdOrderByUsernameAsc(a.getId()).size();
+        return toAccountResponseWithCount(a,
+                users.findByAccountIdOrderByUsernameAsc(a.getId()).size());
+    }
+
+    private static AdminAccountResponse toAccountResponseWithCount(Account a, int userCount) {
         int days = a.getSubscriptionExpires() == null
                 ? Integer.MAX_VALUE
                 : (int) (a.getSubscriptionExpires().toEpochDay() - LocalDate.now().toEpochDay());

@@ -39,19 +39,23 @@ public class TenantFilterAspect {
 
     @Around("within(uz.barakat.market.service..*) || within(uz.barakat.market.auth..*Service)")
     public Object enableFilter(ProceedingJoinPoint pjp) throws Throwable {
+        // Single-shop mode: WHERE shop_id = :shopId
         Long shopId = TenantContext.currentShopId();
-        if (shopId != null) {
+        // Consolidated mode (main-shop "Hamma do'konlar"): WHERE shop_id IN (:shopIds)
+        java.util.List<Long> shopIds = TenantContext.currentShopIds();
+        if (shopId != null || (shopIds != null && !shopIds.isEmpty())) {
             try {
                 Session session = entityManager.unwrap(Session.class);
-                session.enableFilter("tenantFilter").setParameter("shopId", shopId);
-                log.info("tenantFilter enabled shopId={} on {}",
-                        shopId, pjp.getSignature().toShortString());
+                if (shopIds != null && !shopIds.isEmpty()) {
+                    session.enableFilter("accountFilter")
+                            .setParameterList("shopIds", shopIds);
+                } else {
+                    session.enableFilter("tenantFilter")
+                            .setParameter("shopId", shopId);
+                }
             } catch (Exception ex) {
-                log.warn("tenantFilter NOT enabled: {}", ex.toString());
+                log.warn("tenant filter NOT enabled: {}", ex.toString());
             }
-        } else {
-            log.debug("tenantFilter skipped (no shop id) on {}",
-                    pjp.getSignature().toShortString());
         }
         return pjp.proceed();
     }

@@ -1,0 +1,31 @@
+# Keep the build context small — these files would otherwise be sent to the
+# Docker daemon on every `docker build` even though the Dockerfile ignores them.
+
+# Maven / Java build output
+target/
+*.class
+
+# H2 dev database (would otherwise leak local dev data into the image)
+license-data.mv.db
+license-data.trace.db
+*.mv.db
+*.trace.db
+
+# IDE / editor scratch
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Git internals (Docker doesn't need them, and they can be huge)
+.git/
+.gitignore
+.gitattributes
+
+# Local Docker artifacts
+docker-compose.override.yml
+.env
+.env.local
+
+# Documentation that doesn't belong inside the image
+*.md

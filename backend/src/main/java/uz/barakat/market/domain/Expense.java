@@ -20,6 +20,7 @@ import lombok.Setter;
  * and for {@link PaymentType#QARZGA} all three are zero.
  */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "expenses")
 @Getter

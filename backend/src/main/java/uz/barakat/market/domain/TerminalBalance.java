@@ -11,6 +11,7 @@ import lombok.Setter;
 
 /** Daily card-terminal totals for the Humo and UzCard payment systems. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "terminal_balances")
 @Getter

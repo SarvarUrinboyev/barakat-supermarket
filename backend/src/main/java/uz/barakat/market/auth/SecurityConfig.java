@@ -2,7 +2,6 @@ package uz.barakat.market.auth;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -11,10 +10,15 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security wiring. JWT bearer auth on every /api/* call except
- * /api/auth/login and /api/health. CSRF is disabled (stateless REST),
- * form login is disabled (we run our own login page). Method security
- * is on so {@code @PreAuthorize} on admin endpoints is enforced.
+ * Spring Security wiring for the desktop's local backend.
+ *
+ * <p>Phase 2: login is no longer served here — it lives on the central
+ * License Server. The local backend only validates JWTs issued upstream
+ * (shared HMAC secret) and serves tenant-scoped data endpoints. As a
+ * result the only public paths are health probes and the SPA shell.
+ *
+ * <p>CSRF is disabled (stateless REST) and form login is disabled (the
+ * React SPA owns the login UI and posts to the License Server directly).
  */
 @Configuration
 @EnableMethodSecurity
@@ -27,15 +31,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(reg -> reg
-                        // Public endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // Public endpoints — only the health probe stays open.
                         .requestMatchers("/api/health/**").permitAll()
-                        // Static frontend
+                        // Static frontend bundle.
                         .requestMatchers("/", "/index.html", "/assets/**",
                                 "/favicon.ico", "/icon.svg").permitAll()
-                        // Everything under /api requires a valid JWT
+                        // Everything else under /api requires a valid JWT.
                         .requestMatchers("/api/**").authenticated()
-                        // Anything else (the React SPA) is served as-is
+                        // Anything else (SPA deep-links) is served as-is.
                         .anyRequest().permitAll())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)

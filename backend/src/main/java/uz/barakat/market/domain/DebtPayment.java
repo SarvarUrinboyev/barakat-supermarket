@@ -17,6 +17,7 @@ import lombok.Setter;
  * is set (enforced by a database CHECK constraint).
  */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "debt_payments")
 @Getter

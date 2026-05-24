@@ -279,7 +279,9 @@ function OrderCompleteModal({ order, onSubmit, onClose }) {
       body.cashAmount = Number(cash) || 0;
       body.naqdAmount = Number(naqd) || 0;
       body.cardAmount = Number(card) || 0;
-      if (body.cashAmount + body.naqdAmount + body.cardAmount !== total) {
+      // 1-tiyin tolerance: 0.1 + 0.2 !== 0.3 in IEEE-754, so strict
+      // equality wrongly rejects valid splits the user typed by hand.
+      if (Math.abs(body.cashAmount + body.naqdAmount + body.cardAmount - total) > 0.01) {
         setError(t("Aralash bo'laklar yig'indisi summaga teng emas"));
         return;
       }

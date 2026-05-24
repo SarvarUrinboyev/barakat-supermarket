@@ -16,6 +16,7 @@ import lombok.Setter;
  * payment received. The running balance is sum(GOODS) - sum(PAYMENT).
  */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "customer_transactions")
 @Getter

@@ -12,6 +12,7 @@ import lombok.Setter;
 
 /** One open/close working session. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "shifts")
 @Getter

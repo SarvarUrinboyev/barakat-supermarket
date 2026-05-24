@@ -11,6 +11,7 @@ import lombok.Setter;
 
 /** "Debt owed to us": an amount a customer owes the owner. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "customer_debts")
 @Getter

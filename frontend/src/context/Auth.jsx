@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { AuthApi } from '../api/endpoints.js';
 import { getToken, setToken, setUnauthorizedHandler } from '../api/client.js';
+import { setLicenseUnauthorizedHandler } from '../api/licenseClient.js';
 
 const AuthCtx = createContext(null);
 
@@ -22,15 +23,22 @@ export function AuthProvider({ children }) {
       const me = await AuthApi.me();
       setUser(me);
     } catch (err) {
-      // Always drop session state on a failed /me — a bad token, an
-      // expired one or a blocked account should all land on /login.
-      setToken(null);
-      setUser(null);
-      // Surface the error only if it isn't a plain "no session" 401/403,
-      // which the user expects (they need to log in).
-      const benign = /\b(401|403)\b/.test(String(err.message))
+      // Only wipe the session for a genuine auth rejection (401 / 403 /
+      // explicit "session invalid" message). For transient network or
+      // server errors (status 0, 5xx, License Server temporarily down)
+      // keep the token in localStorage so the user is auto-logged-in
+      // again on the next attempt instead of being forced through Login.
+      const status = err?.status;
+      const isAuthReject = status === 401 || status === 403
         || /sessiya|akkaunt/i.test(String(err.message));
-      if (!benign) setError(err.message);
+      if (isAuthReject) {
+        setToken(null);
+        setUser(null);
+      } else {
+        // Surface transient failures so the UI can show a retry banner;
+        // we leave `user` as-is (null on first boot, populated otherwise).
+        setError(err.message || 'Serverga ulanib bo\'lmadi');
+      }
     } finally {
       setLoading(false);
     }
@@ -39,6 +47,7 @@ export function AuthProvider({ children }) {
   // On startup: bounce-handler clears token, refresh me when token exists.
   useEffect(() => {
     setUnauthorizedHandler(() => setUser(null));
+    setLicenseUnauthorizedHandler(() => setUser(null));
     if (getToken()) {
       loadMe();
     } else {

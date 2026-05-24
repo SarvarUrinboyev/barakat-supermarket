@@ -11,6 +11,7 @@ import lombok.Setter;
 
 /** One stock-quantity change for a product (the "Ombor harakatlari"). */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "stock_movements")
 @Getter

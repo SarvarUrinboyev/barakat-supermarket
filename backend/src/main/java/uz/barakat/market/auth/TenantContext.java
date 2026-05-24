@@ -1,27 +1,51 @@
 package uz.barakat.market.auth;
 
+import java.util.List;
+
 /**
- * Thread-local holder for the currently-active shop id. Populated by
- * {@link TenantFilter} from the {@code X-Shop-Id} header on every API
- * request and read by services + Hibernate filters to scope queries.
+ * Thread-local holder for the request's tenant scope.
  *
- * <p>If a request arrives without a shop id (e.g. login endpoint,
- * shop list endpoint), the value stays {@code null} and tenant-scoped
- * services should refuse to write data.
+ * <ul>
+ *   <li>{@link #currentShopId()} returns the single active shop when
+ *       the user is operating on one specific shop (the common case).</li>
+ *   <li>{@link #currentShopIds()} returns the full set of shop ids the
+ *       request can see — used in the consolidated "Hamma do'konlar"
+ *       view where the main-shop owner aggregates every sub-shop.</li>
+ * </ul>
+ *
+ * <p>Exactly one of the two is set per request. {@code TenantFilter}
+ * populates these from the {@code X-Shop-Id} header on every API call
+ * (a numeric id for single-shop mode, {@code ALL} for consolidated).
  */
 public final class TenantContext {
 
     private static final ThreadLocal<Long> CURRENT_SHOP = new ThreadLocal<>();
+    private static final ThreadLocal<List<Long>> CURRENT_SHOP_IDS = new ThreadLocal<>();
 
     private TenantContext() {
     }
 
     public static void setShopId(Long shopId) {
         CURRENT_SHOP.set(shopId);
+        CURRENT_SHOP_IDS.remove();
+    }
+
+    public static void setShopIds(List<Long> shopIds) {
+        CURRENT_SHOP_IDS.set(shopIds);
+        CURRENT_SHOP.remove();
     }
 
     public static Long currentShopId() {
         return CURRENT_SHOP.get();
+    }
+
+    public static List<Long> currentShopIds() {
+        return CURRENT_SHOP_IDS.get();
+    }
+
+    /** {@code true} when the request is in consolidated "Hamma do'konlar" mode. */
+    public static boolean isConsolidated() {
+        return CURRENT_SHOP_IDS.get() != null;
     }
 
     public static long requireShopId() {
@@ -35,5 +59,6 @@ public final class TenantContext {
 
     public static void clear() {
         CURRENT_SHOP.remove();
+        CURRENT_SHOP_IDS.remove();
     }
 }

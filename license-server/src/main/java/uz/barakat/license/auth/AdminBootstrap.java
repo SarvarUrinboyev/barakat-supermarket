@@ -1,4 +1,4 @@
-package uz.barakat.market.auth;
+package uz.barakat.license.auth;
 
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -7,9 +7,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import uz.barakat.market.domain.AppUser;
-import uz.barakat.market.domain.UserRole;
-import uz.barakat.market.repository.AppUserRepository;
+import uz.barakat.license.domain.AppUser;
+import uz.barakat.license.domain.UserRole;
+import uz.barakat.license.repository.AppUserRepository;
 
 /**
  * Bootstraps the super-admin user on first launch so the desktop login

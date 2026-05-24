@@ -348,6 +348,10 @@ const RU = {
   'metr': 'метр',
   'quti': 'коробка',
   "to'plam": 'комплект',
+  "Yashirish": 'Скрыть',
+  "Ko'rsatish": 'Показать',
+  'Server sozlamalari': 'Настройки сервера',
+  'License Server URL': 'License Server URL',
 
   // payments
   "To'lovlar jurnali — barcha pul harakatlari":
@@ -681,6 +685,14 @@ const RU = {
   "Hozir do'kon switcher faollashtirildi va har bir do'kon alohida sub-tenant sifatida saqlanmoqda. Keyingi versiyada har do'kon o'z mahsuloti, mijozi, kassasi bilan to'liq ajratiladi.":
     'Сейчас активирован переключатель магазинов; каждый магазин хранится как отдельный суб-тенант. В следующей версии каждый магазин будет полностью изолирован: товары, клиенты, касса.',
   'Manzil': 'Адрес',
+
+  // consolidated view (Phase 1C-3)
+  "Hamma do'konlar": 'Все магазины',
+  'Jami balans va sotuvlarni jamlaydi': 'Суммирует общий баланс и продажи',
+  "Hamma do'konlar rejimi faol": 'Режим "Все магазины" активен',
+  "Bu yerda barcha": 'Здесь собраны данные всех',
+  "ta do'konning ma'lumotlari jamlangan. Yangi mahsulot/mijoz/to'lov qo'shish uchun aniq do'konni tanlang.":
+    " магазинов. Чтобы добавить товар/клиента/платёж — выберите конкретный магазин.",
 };
 
 /** Translates an Uzbek-Latin string into the given language. */

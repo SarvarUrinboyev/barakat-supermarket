@@ -1,6 +1,11 @@
-// Domain-grouped REST calls. Every page talks to the backend through here.
+// Domain-grouped REST calls.
+//
+// Auth + Admin endpoints go to the *License Server* (central, port 9090
+// in dev / VPS in prod). Everything else goes to the customer's local
+// backend on http://127.0.0.1:8086 via the regular `api` client.
 
 import { api, getToken } from './client.js';
+import { licenseApi } from './licenseClient.js';
 
 function qs(params) {
   if (!params) return '';
@@ -87,8 +92,8 @@ async function uploadFile(path, file) {
 }
 
 export const AuthApi = {
-  login: (body) => api.post('/auth/login', body),
-  me: () => api.get('/auth/me'),
+  login: (body) => licenseApi.post('/api/auth/login', body),
+  me: () => licenseApi.get('/api/auth/me'),
 };
 
 export const ShopApi = {
@@ -100,16 +105,18 @@ export const ShopApi = {
 };
 
 export const AdminApi = {
-  listAccounts: () => api.get('/admin/accounts'),
-  accountDetail: (id) => api.get(`/admin/accounts/${id}`),
-  createAccount: (body) => api.post('/admin/accounts', body),
-  updateAccount: (id, body) => api.put(`/admin/accounts/${id}`, body),
-  setBlocked: (id, blocked) => api.patch(`/admin/accounts/${id}/block`, { blocked }),
-  deleteAccount: (id) => api.del(`/admin/accounts/${id}`),
-  createUser: (accountId, body) => api.post(`/admin/accounts/${accountId}/users`, body),
+  listAccounts: () => licenseApi.get('/api/admin/accounts'),
+  accountDetail: (id) => licenseApi.get(`/api/admin/accounts/${id}`),
+  createAccount: (body) => licenseApi.post('/api/admin/accounts', body),
+  updateAccount: (id, body) => licenseApi.put(`/api/admin/accounts/${id}`, body),
+  setBlocked: (id, blocked) =>
+    licenseApi.patch(`/api/admin/accounts/${id}/block`, { blocked }),
+  deleteAccount: (id) => licenseApi.del(`/api/admin/accounts/${id}`),
+  createUser: (accountId, body) =>
+    licenseApi.post(`/api/admin/accounts/${accountId}/users`, body),
   resetPassword: (userId, password) =>
-    api.patch(`/admin/users/${userId}/password`, { password }),
-  deleteUser: (userId) => api.del(`/admin/users/${userId}`),
+    licenseApi.patch(`/api/admin/users/${userId}/password`, { password }),
+  deleteUser: (userId) => licenseApi.del(`/api/admin/users/${userId}`),
 };
 
 export const ProductApi = {
@@ -177,7 +184,7 @@ export const PaymentApi = {
   create: (body) => api.post('/payments', body),
   update: (id, body) => api.put(`/payments/${id}`, body),
   remove: (id) => api.del(`/payments/${id}`),
-  parties: (category) => api.get(`/payments/parties?category=${category}`),
+  parties: (category) => api.get('/payments/parties' + qs({ category })),
 };
 
 export const SupplierApi = {

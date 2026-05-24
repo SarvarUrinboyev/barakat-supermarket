@@ -1,4 +1,4 @@
-package uz.barakat.market.auth;
+package uz.barakat.license.auth;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -13,14 +13,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uz.barakat.market.auth.AdminDtos.AccountDetailResponse;
-import uz.barakat.market.auth.AdminDtos.AdminAccountResponse;
-import uz.barakat.market.auth.AdminDtos.AdminUserResponse;
-import uz.barakat.market.auth.AdminDtos.BlockRequest;
-import uz.barakat.market.auth.AdminDtos.CreateAccountRequest;
-import uz.barakat.market.auth.AdminDtos.CreateUserRequest;
-import uz.barakat.market.auth.AdminDtos.SetPasswordRequest;
-import uz.barakat.market.auth.AdminDtos.UpdateAccountRequest;
+import uz.barakat.license.auth.AdminDtos.AccountDetailResponse;
+import uz.barakat.license.auth.AdminDtos.AdminAccountResponse;
+import uz.barakat.license.auth.AdminDtos.AdminUserResponse;
+import uz.barakat.license.auth.AdminDtos.BlockRequest;
+import uz.barakat.license.auth.AdminDtos.CreateAccountRequest;
+import uz.barakat.license.auth.AdminDtos.CreateUserRequest;
+import uz.barakat.license.auth.AdminDtos.SetPasswordRequest;
+import uz.barakat.license.auth.AdminDtos.UpdateAccountRequest;
 
 /**
  * Super-admin REST API. All endpoints require the caller to hold the

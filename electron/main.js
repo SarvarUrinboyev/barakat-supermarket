@@ -212,6 +212,16 @@ function createWindow() {
     mainWindow.show();
   });
 
+  // Ctrl+Shift+I (or F12) opens DevTools so we can diagnose network /
+  // auth issues at the customer site without rebuilding.
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    const isDevtools = (input.control && input.shift && input.key.toLowerCase() === 'i')
+      || input.key === 'F12';
+    if (isDevtools) {
+      mainWindow.webContents.toggleDevTools();
+    }
+  });
+
   // Open external links (e.g. Telegram) in the system browser.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(APP_URL)) {

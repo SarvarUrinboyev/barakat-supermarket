@@ -9,6 +9,7 @@ import lombok.Setter;
 
 /** A product category ("toifa"), e.g. Smartfonlar, Aksessuarlar. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "categories")
 @Getter

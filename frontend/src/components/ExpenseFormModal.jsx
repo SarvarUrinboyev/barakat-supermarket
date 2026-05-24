@@ -51,7 +51,8 @@ export function ExpenseFormModal({ title, initial, allowCredit, onSubmit, onClos
       body.naqdAmount = Number(naqd) || 0;
       body.cardAmount = Number(card) || 0;
       const sum = body.cashAmount + body.naqdAmount + body.cardAmount;
-      if (sum !== total) {
+      // 1-tiyin float tolerance — see Orders.jsx for rationale.
+      if (Math.abs(sum - total) > 0.01) {
         setError(`${t("Aralash bo'laklar yig'indisi")} (${money(sum)}) ${t('summaga')} (${money(total)}) ${t('teng emas')}`);
         return;
       }

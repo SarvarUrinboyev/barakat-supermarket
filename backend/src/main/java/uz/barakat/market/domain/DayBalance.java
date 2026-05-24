@@ -11,6 +11,7 @@ import lombok.Setter;
 
 /** The morning cash the owner brought in for a given date. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "day_balance")
 @Getter

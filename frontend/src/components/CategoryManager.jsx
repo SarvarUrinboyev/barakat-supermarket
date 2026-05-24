@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CategoryApi } from '../api/endpoints.js';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { Modal } from './Modal.jsx';
+import { ConfirmDialog, Modal } from './Modal.jsx';
 import { useToast } from './Toast.jsx';
 import { EmptyState, Loader } from './ui.jsx';
 
@@ -12,6 +12,7 @@ export function CategoryManager({ onClose }) {
   const { data, loading, error, reload } = useApi(() => CategoryApi.list(), []);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(null);
   const toast = useToast();
 
   const categories = data || [];
@@ -32,13 +33,15 @@ export function CategoryManager({ onClose }) {
     setBusy(false);
   };
 
-  const remove = async (category) => {
+  const doRemove = async (category) => {
     try {
       await CategoryApi.remove(category.id);
       toast.success(t("Toifa o'chirildi"));
       reload();
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setConfirmRemove(null);
     }
   };
 
@@ -79,7 +82,11 @@ export function CategoryManager({ onClose }) {
                   <b>{c.name}</b>{' '}
                   <span className="faint">&middot; {c.productCount} {t('mahsulot')}</span>
                 </span>
-                <button className="icon-btn danger" title={t("O'chirish")} onClick={() => remove(c)}>
+                <button
+                  className="icon-btn danger"
+                  title={t("O'chirish")}
+                  onClick={() => setConfirmRemove(c)}
+                >
                   🗑
                 </button>
               </div>
@@ -87,6 +94,15 @@ export function CategoryManager({ onClose }) {
           </div>
         )}
       </Loader>
+      {confirmRemove && (
+        <ConfirmDialog
+          title={t("Toifani o'chirish")}
+          message={`"${confirmRemove.name}" ${t("toifasini o'chirishni tasdiqlaysizmi")}?`}
+          confirmLabel={t("O'chirish")}
+          onConfirm={() => doRemove(confirmRemove)}
+          onCancel={() => setConfirmRemove(null)}
+        />
+      )}
     </Modal>
   );
 }

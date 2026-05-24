@@ -12,6 +12,7 @@ import lombok.Setter;
 
 /** An incoming goods order expected from a supplier. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "orders")
 @Getter

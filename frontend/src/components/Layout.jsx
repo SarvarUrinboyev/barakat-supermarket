@@ -4,6 +4,7 @@ import { ShopSwitcher } from './ShopSwitcher.jsx';
 import { ErrorBoundary } from './ErrorBoundary.jsx';
 import { useAuth } from '../context/Auth.jsx';
 import { useSettings } from '../context/Settings.jsx';
+import { useShop } from '../context/Shop.jsx';
 import { LANGUAGES } from '../i18n/i18n.js';
 import { formatDate, formatTime, todayIso } from '../lib/format.js';
 
@@ -46,6 +47,7 @@ export function Layout({ shift }) {
   const { pathname } = useLocation();
   const { theme, toggleTheme, lang, setLang, t } = useSettings();
   const { user } = useAuth();
+  const { isConsolidated, shops } = useShop();
   const title = resolveTitle(pathname);
   const showSubWarning = user
     && user.subscriptionExpires
@@ -106,6 +108,16 @@ export function Layout({ shift }) {
                 {t('kun qoldi')}.</b>{' '}
               {t('To\'lov muddati')}: {user.subscriptionExpires}.{' '}
               {t('To\'lamasangiz akkaunt avtomatik bloklanadi.')}
+            </span>
+          </div>
+        )}
+        {isConsolidated && (
+          <div className="consolidated-banner">
+            <span className="cb-ico">🌐</span>
+            <span>
+              <b>{t("Hamma do'konlar rejimi faol")}.</b>{' '}
+              {t("Bu yerda barcha")} {shops.length}{' '}
+              {t("ta do'konning ma'lumotlari jamlangan. Yangi mahsulot/mijoz/to'lov qo'shish uchun aniq do'konni tanlang.")}
             </span>
           </div>
         )}

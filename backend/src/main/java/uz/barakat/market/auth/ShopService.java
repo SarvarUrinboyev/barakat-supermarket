@@ -38,8 +38,20 @@ public class ShopService {
             String address, String contactPhone) {
     }
 
-    @Transactional(readOnly = true)
     public List<ShopResponse> list(Long accountId) {
+        // Phase 2 lazy-bootstrap: an account managed centrally by the
+        // License Server may be brand-new to this install — the V13
+        // migration only seeded "Asosiy do'kon" for accounts that
+        // existed at migration time. Auto-create one on first list so
+        // the ShopSwitcher always has a default option and the user
+        // doesn't see an empty workspace they can't act on.
+        if (accountId != null && shops.countByAccountId(accountId) == 0) {
+            Shop bootstrap = new Shop();
+            bootstrap.setAccountId(accountId);
+            bootstrap.setName("Asosiy do'kon");
+            bootstrap.setMain(true);
+            shops.save(bootstrap);
+        }
         return shops.findByAccountIdOrderByMainDescNameAsc(accountId).stream()
                 .map(ShopService::toResponse)
                 .toList();

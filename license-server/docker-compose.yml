@@ -1,0 +1,77 @@
+# =====================================================================
+#  SavdoPRO License Server — production compose stack
+#
+#  Two services:
+#    1. db          — PostgreSQL 16, data persisted to a named volume.
+#    2. license     — the Spring Boot app, depends on db's healthcheck.
+#
+#  Usage on the VPS:
+#    cp .env.example .env       # then edit it (set strong secrets!)
+#    docker compose up -d       # pulls Postgres, builds + runs license
+#    docker compose logs -f     # watch startup
+#
+#  The license server listens on the VPS's port 9090 by default. Put a
+#  reverse proxy (Caddy / nginx) in front of it if you want HTTPS — see
+#  DEPLOY.md for a 10-line Caddyfile example.
+# =====================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-license}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-license}
+    volumes:
+      # Named volume = survives `docker compose down`. Use a bind mount
+      # only if you have a snapshot/backup story for the host path.
+      - license_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-license} -d ${POSTGRES_DB:-license}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No `ports:` block — Postgres is only reachable from inside the
+    # compose network, never from the public internet.
+
+  license:
+    build: .
+    image: savdopro/license-server:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Spring Boot picks these up from application.properties via ${VAR:default}.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-license}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-license}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
+      HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+
+      # Auth — these MUST be overridden in .env for production.
+      SAVDOPRO_JWT_SECRET: ${SAVDOPRO_JWT_SECRET:?JWT secret required (64+ random chars)}
+      SAVDOPRO_ADMIN_USER: ${SAVDOPRO_ADMIN_USER:-admin}
+      SAVDOPRO_ADMIN_PASSWORD: ${SAVDOPRO_ADMIN_PASSWORD:?Admin password required}
+      SAVDOPRO_ADMIN_NAME: ${SAVDOPRO_ADMIN_NAME:-Super Admin}
+    ports:
+      # Bind only to the VPS's public interface. If you put a reverse
+      # proxy in front, change this to "127.0.0.1:9090:9090" so the app
+      # is reachable only via the proxy.
+      - "${LICENSE_BIND:-0.0.0.0}:9090:9090"
+    healthcheck:
+      # Spring exposes /api/health (see HealthController). We hit it
+      # with the JVM rather than wget so we don't need extra packages.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9090/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  license_pgdata:
+    # The volume name is "license-server_license_pgdata" on disk
+    # (compose project prefix). Back it up with `docker run --rm
+    # -v license-server_license_pgdata:/data -v $PWD:/backup
+    # alpine tar czf /backup/license-pgdata.tar.gz /data`.

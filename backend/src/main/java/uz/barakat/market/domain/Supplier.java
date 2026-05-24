@@ -13,6 +13,7 @@ import lombok.Setter;
  * journal where {@code category = SUPPLIER} and {@code party = name}.
  */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "suppliers")
 @Getter

@@ -435,17 +435,19 @@ function UsersModal({ account, onClose }) {
     useApi(() => AdminApi.accountDetail(account.id), [account.id]);
   const [adding, setAdding] = useState(false);
   const [resetting, setResetting] = useState(null);
+  const [confirmRemoveUser, setConfirmRemoveUser] = useState(null);
 
   const detail = data || { users: [] };
 
   const removeUser = async (u) => {
-    if (!confirm(t("Foydalanuvchini o'chirishni tasdiqlaysizmi?"))) return;
     try {
       await AdminApi.deleteUser(u.id);
       toast.success(t("Foydalanuvchi o'chirildi"));
       reload();
     } catch (err) {
       toast.error(err.message);
+    } finally {
+      setConfirmRemoveUser(null);
     }
   };
 
@@ -497,7 +499,7 @@ function UsersModal({ account, onClose }) {
                       <button className="icon-btn danger"
                               title={t("O'chirish")}
                               disabled={u.role === 'SUPER_ADMIN'}
-                              onClick={() => removeUser(u)}>
+                              onClick={() => setConfirmRemoveUser(u)}>
                         🗑
                       </button>
                     </div>
@@ -522,6 +524,16 @@ function UsersModal({ account, onClose }) {
           user={resetting}
           onClose={() => setResetting(null)}
           onDone={() => { setResetting(null); reload(); }}
+        />
+      )}
+
+      {confirmRemoveUser && (
+        <ConfirmDialog
+          title={t("Foydalanuvchini o'chirish")}
+          message={`"${confirmRemoveUser.username}" ${t("foydalanuvchisini o'chirishni tasdiqlaysizmi")}?`}
+          confirmLabel={t("O'chirish")}
+          onConfirm={() => removeUser(confirmRemoveUser)}
+          onCancel={() => setConfirmRemoveUser(null)}
         />
       )}
     </Modal>

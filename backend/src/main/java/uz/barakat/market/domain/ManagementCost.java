@@ -16,6 +16,7 @@ import lombok.Setter;
  * profit on the Management page to give the net profit.
  */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "management_costs")
 @Getter

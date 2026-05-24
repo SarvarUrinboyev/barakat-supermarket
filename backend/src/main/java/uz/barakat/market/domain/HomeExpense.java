@@ -13,6 +13,7 @@ import lombok.Setter;
 
 /** A home / personal expense, tracked separately from the market. */
 @Filter(name = "tenantFilter", condition = "shop_id = :shopId")
+@Filter(name = "accountFilter", condition = "shop_id IN (:shopIds)")
 @Entity
 @Table(name = "home_expenses")
 @Getter

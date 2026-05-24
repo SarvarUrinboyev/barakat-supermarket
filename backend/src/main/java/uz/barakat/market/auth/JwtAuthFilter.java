@@ -7,11 +7,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import uz.barakat.market.repository.AccountRepository;
 
 /**
  * Parses the {@code Authorization: Bearer ...} header, validates the
@@ -25,16 +28,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
+
     public static final String ATTR_USER_ID = "savdopro.userId";
     public static final String ATTR_ACCOUNT_ID = "savdopro.accountId";
     public static final String ATTR_ROLE = "savdopro.role";
 
     private final JwtService jwt;
     private final AuthService auth;
+    private final AccountRepository accounts;
 
-    public JwtAuthFilter(JwtService jwt, AuthService auth) {
+    public JwtAuthFilter(JwtService jwt, AuthService auth, AccountRepository accounts) {
         this.jwt = jwt;
         this.auth = auth;
+        this.accounts = accounts;
     }
 
     @Override
@@ -47,9 +54,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = header.substring(7);
             try {
                 Claims claims = jwt.parse(token);
-                Long userId = Long.parseLong(claims.getSubject());
+                String subject = claims.getSubject();
+                if (subject == null || subject.isBlank()) {
+                    log.warn("JWT missing subject on path={} remote={}",
+                            request.getRequestURI(), request.getRemoteAddr());
+                    SecurityContextHolder.clearContext();
+                    chain.doFilter(request, response);
+                    return;
+                }
+                Long userId = Long.parseLong(subject);
                 Long accountId = claims.get("accountId", Long.class);
                 String role = claims.get("role", String.class);
+                // Phase 2 mirror: the local accounts table only had id 1
+                // (the bundled super-admin). When a JWT arrives for an
+                // accountId minted on the License Server, ensure a local
+                // stub exists so the shops.account_id FK and downstream
+                // joins succeed. INSERT IF NOT EXISTS via native SQL —
+                // safe to call on every request, costs one row check.
+                if (accountId != null) {
+                    String stubName = claims.get("username", String.class);
+                    if (stubName == null || stubName.isBlank()) {
+                        stubName = "Account #" + accountId;
+                    }
+                    accounts.insertStubIfAbsent(accountId, stubName);
+                }
                 // Block expired / banned accounts mid-session.
                 if (accountId != null && !auth.isAccountUsable(accountId)) {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -61,13 +89,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 request.setAttribute(ATTR_USER_ID, userId);
                 request.setAttribute(ATTR_ACCOUNT_ID, accountId);
                 request.setAttribute(ATTR_ROLE, role);
+                // ROLE_null breaks Spring Security's hasRole check; fall back to a
+                // generic USER authority if the claim is missing for any reason.
+                String authority = "ROLE_" + (role == null || role.isBlank() ? "USER" : role);
                 var authToken = new UsernamePasswordAuthenticationToken(
                         userId, null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                        List.of(new SimpleGrantedAuthority(authority)));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             } catch (Exception ex) {
-                // Invalid / expired token — fall through unauthenticated;
-                // Spring Security will reject if the endpoint requires auth.
+                // Invalid / expired token — clear the security context and let
+                // Spring Security reject downstream. We log at DEBUG so the
+                // common "expired token" case doesn't spam WARN, but always
+                // emit at least an audit trail.
+                log.debug("JWT rejected on path={} remote={}: {}",
+                        request.getRequestURI(), request.getRemoteAddr(), ex.toString());
                 SecurityContextHolder.clearContext();
             }
         }
