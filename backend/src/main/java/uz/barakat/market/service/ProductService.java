@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,26 +24,31 @@ import uz.barakat.market.exception.NotFoundException;
 import uz.barakat.market.repository.CategoryRepository;
 import uz.barakat.market.repository.ProductRepository;
 import uz.barakat.market.repository.StockMovementRepository;
+import uz.barakat.market.telegram.TelegramService;
 
 /** Warehouse / inventory: products, stock movements and bulk import. */
 @Service
 @Transactional
 public class ProductService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
+
     private final ProductRepository products;
     private final CategoryRepository categories;
     private final StockMovementRepository movements;
     private final CategoryService categoryService;
     private final ProductImporter importer;
+    private final TelegramService telegram;
 
     public ProductService(ProductRepository products, CategoryRepository categories,
                           StockMovementRepository movements, CategoryService categoryService,
-                          ProductImporter importer) {
+                          ProductImporter importer, TelegramService telegram) {
         this.products = products;
         this.categories = categories;
         this.movements = movements;
         this.categoryService = categoryService;
         this.importer = importer;
+        this.telegram = telegram;
     }
 
     /** Filtered list: free-text search (name/SKU), category and stock status. */
@@ -98,15 +105,48 @@ public class ProductService {
         if (request.delta() == 0) {
             throw new BadRequestException("Miqdor noldan farqli bo'lishi kerak");
         }
-        int updated = product.getQuantity() + request.delta();
+        int before = product.getQuantity();
+        int updated = before + request.delta();
         if (updated < 0) {
             throw new BadRequestException(
-                    "Qoldiq manfiy bo'la olmaydi (hozir: " + product.getQuantity() + " dona)");
+                    "Qoldiq manfiy bo'la olmaydi (hozir: " + before + " dona)");
         }
         product.setQuantity(updated);
         products.save(product);
         logMovement(product, request.delta(), updated, request.reason(), request.note());
+        // Telegram alert when the stock dips below the configured
+        // threshold AND it wasn't already low before this adjustment.
+        // Without the "before" guard every subsequent sale of an
+        // already-low product would re-spam the owner.
+        maybeAlertLowStock(product, before);
         return Mappers.product(product, categoryName(product.getCategoryId()));
+    }
+
+    /** Fires only on a fresh in→below-threshold transition. */
+    private void maybeAlertLowStock(Product product, int qtyBefore) {
+        int threshold = product.getLowStockThreshold();
+        if (threshold <= 0) return;
+        int qtyNow = product.getQuantity();
+        if (qtyNow >= threshold) return;
+        if (qtyBefore < threshold) return;   // was already low — don't spam
+        try {
+            String emoji = qtyNow == 0 ? "🚨" : "⚠️";
+            telegram.sendMessage(emoji + " Tovar zaxirasi kam qoldi"
+                    + "\n\n" + product.getName()
+                    + "\nMavjud: " + qtyNow + " " + safeUnit(product.getUnit())
+                    + "\nMinimum: " + threshold
+                    + (product.getBarcode() == null ? ""
+                            : "\nBarcode: " + product.getBarcode())
+                    + "\n\nTo'ldirishni unutmang.");
+        } catch (RuntimeException ex) {
+            // Never let an alert failure block the underlying stock change.
+            log.warn("Low-stock alert failed for product {}: {}",
+                    product.getId(), ex.toString());
+        }
+    }
+
+    private static String safeUnit(String u) {
+        return u == null || u.isBlank() ? "dona" : u;
     }
 
     @Transactional(readOnly = true)

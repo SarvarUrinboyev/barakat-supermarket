@@ -86,11 +86,20 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Excel (XLSX) parsing for warehouse bulk import -->
+        <!-- Excel (XLSX) parsing for warehouse bulk import + report export -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>5.3.0</version>
+        </dependency>
+
+        <!-- PDF generation (LibrePDF / OpenPDF — LGPL fork of iText 4,
+             actively maintained, no AGPL commercial-license trap). Used by
+             ReportPdfRenderer for sales / inventory / customer-ledger PDFs. -->
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>2.0.3</version>
         </dependency>
 
         <!-- Testing -->

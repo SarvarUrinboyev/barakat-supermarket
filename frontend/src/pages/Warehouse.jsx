@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CategoryApi, ProductApi } from '../api/endpoints.js';
+import { CategoryApi, ProductApi, ReportApi } from '../api/endpoints.js';
+import { downloadAuthed } from '../lib/download.js';
 import { CategoryManager } from '../components/CategoryManager.jsx';
 import { ImportModal } from '../components/ImportModal.jsx';
 import { ScanModal } from '../components/ScanModal.jsx';
@@ -75,6 +76,20 @@ export function Warehouse() {
           </button>
           <button className="btn btn-ghost" onClick={() => setModal('import')}>
             ⬇ {t('Import')}
+          </button>
+          <button
+            className="btn btn-ghost"
+            title={t('Joriy ombor qoldiqlarini PDF qilib yuklab olish')}
+            onClick={async () => {
+              try {
+                await downloadAuthed(
+                  ReportApi.inventoryPdfUrl(null),
+                  `ombor-${new Date().toISOString().slice(0, 10)}.pdf`,
+                );
+              } catch (err) { window.alert(err.message); }
+            }}
+          >
+            📄 {t('PDF eksport')}
           </button>
           <button className="btn btn-accent" onClick={() => setModal('scan')}>
             📷 {t('Skaner')}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ManagementApi } from '../api/endpoints.js';
+import { ManagementApi, ReportApi } from '../api/endpoints.js';
+import { downloadAuthed } from '../lib/download.js';
 import { DateRangeFilter, rangeForPreset } from '../components/DateRangeFilter.jsx';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -60,6 +61,20 @@ export function Management() {
         desc={t('Savdo hajmi ombordan avtomatik, xarajatlar va sof foyda')}
       >
         <CurrencyToggle value={displayCurrency} onChange={setDisplayCurrency} />
+        <button
+          className="btn btn-ghost"
+          title={t('Tanlangan davr uchun savdo hisobotini PDF qilib yuklab olish')}
+          onClick={async () => {
+            try {
+              await downloadAuthed(
+                ReportApi.salesPdfUrl({ from: range.from, to: range.to }),
+                `savdo-${range.from}-${range.to}.pdf`,
+              );
+            } catch (err) { toast.error(err.message); }
+          }}
+        >
+          📄 {t('PDF eksport')}
+        </button>
         <button className="btn btn-primary" onClick={() => setModal({ type: 'add' })}>
           + {t("Xarajat qo'shish")}
         </button>

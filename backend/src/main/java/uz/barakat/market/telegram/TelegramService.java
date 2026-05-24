@@ -50,6 +50,80 @@ public class TelegramService {
         }
     }
 
+    /**
+     * Send a binary attachment (typically a PDF report) with an optional
+     * caption to every configured chat. Telegram caps documents at 50 MB
+     * for bots; our generated reports are under 50 KB so we never get
+     * close. Failures log + return — callers don't need to handle them.
+     */
+    public void sendDocument(byte[] bytes, String fileName, String caption) {
+        if (!properties.isUsable()) {
+            log.info("Telegram is not configured - document {} skipped", fileName);
+            return;
+        }
+        for (String chatId : properties.chatIds()) {
+            sendDocumentToChat(chatId.trim(), bytes, fileName, caption);
+        }
+    }
+
+    private void sendDocumentToChat(String chatId, byte[] bytes,
+                                    String fileName, String caption) {
+        // multipart/form-data, hand-rolled to avoid pulling in a heavy
+        // HTTP-client dependency just for this single call site.
+        String boundary = "----savdopro-" + System.nanoTime();
+        try {
+            var baos = new java.io.ByteArrayOutputStream();
+            writePart(baos, boundary, "chat_id", chatId);
+            if (caption != null && !caption.isBlank()) {
+                writePart(baos, boundary, "caption", caption);
+            }
+            writeFilePart(baos, boundary, "document", fileName,
+                    "application/pdf", bytes);
+            baos.write(("--" + boundary + "--\r\n")
+                    .getBytes(StandardCharsets.UTF_8));
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(API + properties.botToken() + "/sendDocument"))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(baos.toByteArray()))
+                    .build();
+            HttpResponse<String> resp = httpClient.send(req,
+                    HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() / 100 == 2) {
+                log.info("Telegram document {} delivered to chat {}", fileName, chatId);
+            } else {
+                log.warn("Telegram document delivery to chat {} failed: HTTP {} - {}",
+                        chatId, resp.statusCode(), resp.body());
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        } catch (Exception ex) {
+            log.warn("Telegram document delivery to chat {} failed: {}",
+                    chatId, ex.toString());
+        }
+    }
+
+    private static void writePart(java.io.ByteArrayOutputStream out,
+                                  String boundary, String name, String value)
+            throws java.io.IOException {
+        out.write(("--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"" + name + "\"\r\n\r\n"
+                + value + "\r\n").getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static void writeFilePart(java.io.ByteArrayOutputStream out,
+                                      String boundary, String name,
+                                      String fileName, String contentType,
+                                      byte[] bytes) throws java.io.IOException {
+        out.write(("--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"" + name + "\"; "
+                + "filename=\"" + fileName + "\"\r\n"
+                + "Content-Type: " + contentType + "\r\n\r\n")
+                .getBytes(StandardCharsets.UTF_8));
+        out.write(bytes);
+        out.write("\r\n".getBytes(StandardCharsets.UTF_8));
+    }
+
     private void sendToChat(String chatId, String text) {
         try {
             String payload = objectMapper.writeValueAsString(

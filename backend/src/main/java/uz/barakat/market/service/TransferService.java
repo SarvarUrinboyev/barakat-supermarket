@@ -143,12 +143,12 @@ public class TransferService {
 
     /**
      * Native lookup of the source product. Returns id, shop_id, name,
-     * barcode, sale_price, stock_qty so the caller has everything it
+     * barcode, sale_price, quantity so the caller has everything it
      * needs to clone to the destination.
      */
     private Object[] loadProduct(Long id) {
         Query q = em.createNativeQuery(
-                "SELECT id, shop_id, name, barcode, sale_price, stock_qty "
+                "SELECT id, shop_id, name, barcode, sale_price, quantity "
                 + "FROM products WHERE id = ?");
         q.setParameter(1, id);
         List<?> rows = q.getResultList();
@@ -183,7 +183,7 @@ public class TransferService {
 
         Query ins = em.createNativeQuery(
                 "INSERT INTO products (shop_id, name, barcode, sale_price, purchase_price, "
-                + "  category_id, unit, ikpu_code, vat_rate, stock_qty, created_at) "
+                + "  category_id, unit, ikpu_code, vat_rate, quantity, created_at) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP)");
         ins.setParameter(1, toShopId);
         for (int i = 0; i < s.length; i++) {
@@ -201,7 +201,7 @@ public class TransferService {
 
     private void adjustStock(Long productId, BigDecimal delta) {
         Query q = em.createNativeQuery(
-                "UPDATE products SET stock_qty = stock_qty + ? WHERE id = ?");
+                "UPDATE products SET quantity = quantity + ? WHERE id = ?");
         q.setParameter(1, delta);
         q.setParameter(2, productId);
         q.executeUpdate();

@@ -11,23 +11,33 @@ import uz.barakat.market.dto.BalanceRequest;
 import uz.barakat.market.dto.EndOfDayReport;
 import uz.barakat.market.dto.ShiftOpenRequest;
 import uz.barakat.market.dto.ShiftResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uz.barakat.market.exception.BadRequestException;
 import uz.barakat.market.repository.ShiftRepository;
+import uz.barakat.market.telegram.TelegramService;
 
 /** Opening, closing and the history of working shifts. */
 @Service
 @Transactional
 public class ShiftService {
 
+    private static final Logger log = LoggerFactory.getLogger(ShiftService.class);
+
     private final ShiftRepository shifts;
     private final BalanceService balanceService;
     private final ReportService reportService;
+    private final ReportPdfService pdfService;
+    private final TelegramService telegram;
 
     public ShiftService(ShiftRepository shifts, BalanceService balanceService,
-                        ReportService reportService) {
+                        ReportService reportService, ReportPdfService pdfService,
+                        TelegramService telegram) {
         this.shifts = shifts;
         this.balanceService = balanceService;
         this.reportService = reportService;
+        this.pdfService = pdfService;
+        this.telegram = telegram;
     }
 
     /** The currently open shift, or {@code null} when none is open. */
@@ -54,8 +64,10 @@ public class ShiftService {
     }
 
     /**
-     * Closes the open shift (if any), then builds today's end-of-day
-     * report and pushes it to Telegram.
+     * Closes the open shift (if any), pushes today's end-of-day report
+     * to Telegram, and (Phase 4.2) attaches the branded sales-report
+     * PDF for the day so the owner has a printable receipt sitting in
+     * their chat — no need to switch back to the desktop.
      */
     public EndOfDayReport close() {
         shifts.findFirstByStatusOrderByOpenedAtDesc(ShiftStatus.OPEN).ifPresent(shift -> {
@@ -63,7 +75,19 @@ public class ShiftService {
             shift.setStatus(ShiftStatus.CLOSED);
             shifts.save(shift);
         });
-        return reportService.sendToTelegram(LocalDate.now());
+        LocalDate today = LocalDate.now();
+        EndOfDayReport text = reportService.sendToTelegram(today);
+        // Attach the PDF separately so the text summary still posts even
+        // if PDF rendering or upload trips on a corner case.
+        try {
+            byte[] pdf = pdfService.salesReport(today, today);
+            telegram.sendDocument(pdf,
+                    "savdo-" + today + ".pdf",
+                    "📊 Kunlik savdo hisoboti — " + today);
+        } catch (RuntimeException ex) {
+            log.warn("End-of-shift PDF delivery failed for {}: {}", today, ex.toString());
+        }
+        return text;
     }
 
     @Transactional(readOnly = true)

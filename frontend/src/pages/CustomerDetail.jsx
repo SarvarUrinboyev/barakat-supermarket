@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CustomerApi, ProductApi } from '../api/endpoints.js';
+import { CustomerApi, ProductApi, ReportApi } from '../api/endpoints.js';
+import { downloadAuthed } from '../lib/download.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { NakladnoyPreview } from '../components/NakladnoyPreview.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -73,6 +74,20 @@ function Detail({ data, reload }) {
         <div className="actions">
           <button className="btn btn-ghost" onClick={() => navigate('/customers')}>
             {tr('Orqaga')}
+          </button>
+          <button
+            className="btn btn-ghost"
+            title={tr("Mijoz tarixini PDF qilib yuklab olish")}
+            onClick={async () => {
+              try {
+                await downloadAuthed(
+                  ReportApi.customerLedgerPdfUrl(customer.id),
+                  `${customer.name.replace(/\s+/g, '_')}-tarix.pdf`,
+                );
+              } catch (err) { window.alert(err.message); }
+            }}
+          >
+            📄 {tr('PDF eksport')}
           </button>
           <button className="btn btn-ghost" onClick={() => setModal({ type: 'edit' })}>
             ✏️ {tr('Tahrirlash')}

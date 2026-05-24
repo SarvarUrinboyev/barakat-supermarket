@@ -162,6 +162,13 @@ export const TerminalApi = {
 export const ReportApi = {
   endOfDay: (date) => api.get('/report/end-of-day' + qs({ date })),
   sendTelegram: (date) => api.post('/report/send-telegram' + qs({ date })),
+  // Branded PDF downloads (Phase 4.1). These return raw URLs because
+  // the desktop's print pipeline opens them directly — see lib/download.js.
+  salesPdfUrl: (params) => '/api/report/pdf/sales' + qs(params),
+  inventoryPdfUrl: (shopLabel) =>
+    '/api/report/pdf/inventory' + qs({ shopLabel }),
+  customerLedgerPdfUrl: (customerId) =>
+    `/api/report/pdf/customer/${customerId}/ledger`,
 };
 
 export const CustomerApi = {
