@@ -11,6 +11,26 @@ import {
 const AuthCtx = createContext(null);
 
 /**
+ * Apply per-account brand colours / name to the running document
+ * (Phase 4.6 white-label). Null wipes any previously-set overrides so
+ * the next user lands on the SavdoPRO defaults. We write the changes
+ * to CSS variables on :root and to the document title; pages that
+ * read --brand-primary / --brand-secondary inherit instantly.
+ */
+function applyBrand(brand) {
+  const root = document.documentElement;
+  const primary  = brand?.colorPrimary;
+  const secondary = brand?.colorSecondary;
+  const name     = brand?.name;
+  if (primary)  root.style.setProperty('--brand-primary', primary);
+  else          root.style.removeProperty('--brand-primary');
+  if (secondary) root.style.setProperty('--brand-secondary', secondary);
+  else           root.style.removeProperty('--brand-secondary');
+  if (name) document.title = name + ' · SavdoPRO';
+  else      document.title = 'SavdoPRO';
+}
+
+/**
  * Session state for the desktop app. Loads /api/auth/me on mount if a
  * token is present; otherwise renders the login screen. Provides
  * {@code login}, {@code logout} and {@code refresh} so any page can
@@ -27,6 +47,7 @@ export function AuthProvider({ children }) {
     try {
       const me = await AuthApi.me();
       setUser(me);
+      applyBrand(me?.brand);
     } catch (err) {
       // Only wipe the session for a genuine auth rejection (401 / 403 /
       // explicit "session invalid" message). For transient network or
@@ -67,10 +88,11 @@ export function AuthProvider({ children }) {
     }
   }, [loadMe]);
 
-  const login = useCallback(async (username, password) => {
-    const response = await AuthApi.login({ username, password });
+  const login = useCallback(async (username, password, totpCode) => {
+    const response = await AuthApi.login({ username, password, totpCode });
     persistAuthPair(response);
     setUser(response.user);
+    applyBrand(response.user?.brand);
     setError(null);
     return response.user;
   }, []);
@@ -85,6 +107,7 @@ export function AuthProvider({ children }) {
     }
     clearAuthPair();
     setUser(null);
+    applyBrand(null);   // restore defaults
   }, []);
 
   const value = {

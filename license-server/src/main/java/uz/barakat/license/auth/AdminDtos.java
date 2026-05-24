@@ -57,7 +57,14 @@ public final class AdminDtos {
             @NotBlank(message = "Akkaunt nomi kiritilishi shart") String name,
             String contactPhone,
             String contactNote,
-            LocalDate subscriptionExpires) {
+            LocalDate subscriptionExpires,
+            // Phase 4.6 white-label brand. All optional; missing fields
+            // leave the previous value untouched.
+            String brandName,
+            String brandColorPrimary,
+            String brandColorSecondary,
+            String brandLogoUrl,
+            String brandFooterNote) {
     }
 
     /** Body of {@code PATCH /api/admin/accounts/{id}/block}. */

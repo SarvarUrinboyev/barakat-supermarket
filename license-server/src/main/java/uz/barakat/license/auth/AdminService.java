@@ -111,6 +111,23 @@ public class AdminService {
         a.setContactPhone(blankToNull(request.contactPhone()));
         a.setContactNote(blankToNull(request.contactNote()));
         a.setSubscriptionExpires(request.subscriptionExpires());
+        // Phase 4.6 white-label — null-safe so old API clients that don't
+        // send the brand block don't accidentally wipe a stored value.
+        if (request.brandName() != null) {
+            a.setBrandName(blankToNull(request.brandName()));
+        }
+        if (request.brandColorPrimary() != null) {
+            a.setBrandColorPrimary(blankToNull(request.brandColorPrimary()));
+        }
+        if (request.brandColorSecondary() != null) {
+            a.setBrandColorSecondary(blankToNull(request.brandColorSecondary()));
+        }
+        if (request.brandLogoUrl() != null) {
+            a.setBrandLogoUrl(blankToNull(request.brandLogoUrl()));
+        }
+        if (request.brandFooterNote() != null) {
+            a.setBrandFooterNote(blankToNull(request.brandFooterNote()));
+        }
         Account saved = accounts.save(a);
         audit.record("ACCOUNT_UPDATE", "ACCOUNT", saved.getId(), saved.getName(),
                 "subExpires=" + saved.getSubscriptionExpires());

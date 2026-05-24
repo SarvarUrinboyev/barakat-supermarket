@@ -46,7 +46,11 @@ public final class AuthDtos {
             MeResponse user) {
     }
 
-    /** Snapshot of the current session: who and which account. */
+    /**
+     * Snapshot of the current session: who and which account.
+     * Phase 4.6 adds an embedded {@link Brand} the desktop applies as
+     * CSS variables for white-labelling.
+     */
     public record MeResponse(
             Long userId,
             String username,
@@ -56,6 +60,18 @@ public final class AuthDtos {
             String accountName,
             LocalDate subscriptionExpires,
             int daysUntilBlock,
-            boolean blocked) {
+            boolean blocked,
+            Brand brand) {
     }
+
+    /**
+     * White-label brand. All fields nullable — when the account hasn't
+     * customised anything the desktop renders the default SavdoPRO look.
+     */
+    public record Brand(
+            String name,
+            String colorPrimary,
+            String colorSecondary,
+            String logoUrl,
+            String footerNote) { }
 }

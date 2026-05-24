@@ -39,4 +39,33 @@ public class Account extends BaseEntity {
     /** Manual lock by the super-admin. Overrides the expiry check. */
     @Column(nullable = false)
     private boolean blocked = false;
+
+    /**
+     * White-label brand fields (Phase 4.6 / v2.0). All optional — when
+     * set, the desktop applies them as CSS variables on login so the
+     * customer sees their own brand in the title bar, sidebar and
+     * receipts. When null we fall back to the SavdoPRO defaults.
+     *
+     * <ul>
+     *   <li>{@code brandName} — what shows on the title bar and printed receipt header</li>
+     *   <li>{@code brandColorPrimary} — hex (e.g. {@code #1e3a8a}) used for buttons, links, sidebar accent</li>
+     *   <li>{@code brandColorSecondary} — hex used for badges + the green totals accent</li>
+     *   <li>{@code brandLogoUrl} — fully-qualified URL to a PNG / SVG; loaded by the splash + login</li>
+     *   <li>{@code brandFooterNote} — bottom-of-receipt one-liner</li>
+     * </ul>
+     */
+    @Column(name = "brand_name", length = 120)
+    private String brandName;
+
+    @Column(name = "brand_color_primary", length = 20)
+    private String brandColorPrimary;
+
+    @Column(name = "brand_color_secondary", length = 20)
+    private String brandColorSecondary;
+
+    @Column(name = "brand_logo_url", length = 500)
+    private String brandLogoUrl;
+
+    @Column(name = "brand_footer_note", length = 300)
+    private String brandFooterNote;
 }

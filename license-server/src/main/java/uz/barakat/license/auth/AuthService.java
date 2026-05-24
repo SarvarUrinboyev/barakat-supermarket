@@ -184,7 +184,28 @@ public class AuthService {
         return new MeResponse(
                 user.getId(), user.getUsername(), user.getFullName(), user.getRole().name(),
                 account.getId(), account.getName(),
-                account.getSubscriptionExpires(), days, account.isBlocked());
+                account.getSubscriptionExpires(), days, account.isBlocked(),
+                brandFor(account));
+    }
+
+    /**
+     * Project the per-account brand columns into the DTO shape the
+     * desktop applies as CSS variables. Returns {@code null} when the
+     * account hasn't set any white-label values so the client can
+     * short-circuit straight to the SavdoPRO default look.
+     */
+    private static uz.barakat.license.auth.AuthDtos.Brand brandFor(Account a) {
+        if (a.getBrandName() == null
+                && a.getBrandColorPrimary() == null
+                && a.getBrandColorSecondary() == null
+                && a.getBrandLogoUrl() == null
+                && a.getBrandFooterNote() == null) {
+            return null;
+        }
+        return new uz.barakat.license.auth.AuthDtos.Brand(
+                a.getBrandName(), a.getBrandColorPrimary(),
+                a.getBrandColorSecondary(), a.getBrandLogoUrl(),
+                a.getBrandFooterNote());
     }
 
     private static int daysUntilBlock(Account account) {

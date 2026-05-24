@@ -114,6 +114,23 @@ export function Login() {
           </div>
         </div>
 
+        {twofaRequired && (
+          <div className="field">
+            <label>{t('2FA kodi (6 raqam)')}</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              autoComplete="one-time-code"
+              autoFocus
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+            />
+          </div>
+        )}
+
         {error && (
           <div className="login-error">⚠️ {error}</div>
         )}
