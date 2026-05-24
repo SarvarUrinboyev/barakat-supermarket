@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShopApi } from '../api/endpoints.js';
+import { PrintApi, ShopApi } from '../api/endpoints.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import {
@@ -159,6 +159,7 @@ export function Shops() {
 
 function ShopFormModal({ title, initial, onSubmit, onClose }) {
   const t = useT();
+  const toast = useToast();
   const [name, setName] = useState(initial?.name || '');
   const [address, setAddress] = useState(initial?.address || '');
   const [phone, setPhone] = useState(initial?.contactPhone || '');
@@ -168,8 +169,36 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
   const [printerName, setPrinterName] = useState(initial?.printerName || '');
   const [cashRegisterNo, setCashRegisterNo] = useState(initial?.cashRegisterNo || '');
   const [receiptFooter, setReceiptFooter] = useState(initial?.receiptFooter || '');
+  const [printers, setPrinters] = useState(null);   // null = not loaded yet
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
+
+  // Lazy-load installed printers when the user opens the printer
+  // section the first time — avoids hitting javax.print on every
+  // single-shop install that doesn't even own a thermal printer.
+  const ensurePrintersLoaded = async () => {
+    if (printers !== null) return;
+    try {
+      const list = await PrintApi.listPrinters();
+      setPrinters(list || []);
+    } catch (err) {
+      setPrinters([]);
+      toast.error(err.message);
+    }
+  };
+
+  const runTest = async () => {
+    setTesting(true);
+    try {
+      const res = await PrintApi.test();
+      toast.success(`${t('Sinov chop etildi')}: ${res.printer}`);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const submit = async () => {
     if (!name.trim()) {
@@ -228,16 +257,42 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
           single-shop users don't see noise; multi-shop owners can
           configure each location's printer and cash register. */}
       <details style={{ marginTop: 12, paddingTop: 8,
-                        borderTop: '1px solid var(--border)' }}>
+                        borderTop: '1px solid var(--border)' }}
+               onToggle={(e) => { if (e.target.open) ensurePrintersLoaded(); }}>
         <summary style={{ cursor: 'pointer', fontWeight: 600,
                           fontSize: 13, color: 'var(--muted)' }}>
           🖨 {t("Kassa va printer sozlamalari")}
         </summary>
         <div className="field" style={{ marginTop: 12 }}>
-          <label>{t('Printer nomi (Windowsda)')}</label>
-          <input className="input" value={printerName}
-                 onChange={(e) => setPrinterName(e.target.value)}
-                 placeholder="Xprinter XP-58" />
+          <label>{t('Printer (Windowsda o\'rnatilgan)')}</label>
+          {/* Dropdown lists what the OS sees; the free-text field below
+              stays available for when the printer was just plugged in
+              and the list hasn't refreshed yet, or for shared printers. */}
+          {printers === null ? (
+            <input className="input" value={printerName}
+                   onChange={(e) => setPrinterName(e.target.value)}
+                   placeholder={t('Yuklanmoqda...')} disabled />
+          ) : (
+            <>
+              <select className="input" value={printerName}
+                      onChange={(e) => setPrinterName(e.target.value)}>
+                <option value="">— {t('OS standart printeri')} —</option>
+                {printers.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+                {/* Show the saved name even if it's not in the current
+                    OS list (e.g. printer is offline). */}
+                {printerName && !printers.includes(printerName) && (
+                  <option value={printerName}>{printerName} ({t('topilmadi')})</option>
+                )}
+              </select>
+              <button type="button" className="btn btn-ghost btn-sm"
+                      style={{ marginTop: 6 }}
+                      disabled={testing} onClick={runTest}>
+                {testing ? t('Chop etilmoqda...') : `🧾 ${t("Sinov sahifasini chop etish")}`}
+              </button>
+            </>
+          )}
         </div>
         <div className="field">
           <label>{t('Kassa raqami')}</label>

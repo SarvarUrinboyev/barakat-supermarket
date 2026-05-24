@@ -213,3 +213,15 @@ export const TransferApi = {
   list: () => api.get('/transfers'),
   create: (body) => api.post('/transfers', body),
 };
+
+// Phase 4.3 hardware integration: thermal printer + cash drawer.
+// All four endpoints respect the active shop's `printer_name`; if it's
+// null the request falls back to the OS-default printer.
+export const PrintApi = {
+  // Names of every printer the OS knows about — fills the Shops-edit
+  // modal's printer dropdown.
+  listPrinters: () => api.get('/print/printers'),
+  test: () => api.post('/print/test'),
+  drawer: () => api.post('/print/drawer'),
+  receipt: (body) => api.post('/print/receipt', body),
+};
