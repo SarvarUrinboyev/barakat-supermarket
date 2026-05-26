@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { getLicenseUrl, setLicenseUrl } from '../api/licenseClient.js';
 import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
 
@@ -7,6 +6,10 @@ import { useT } from '../context/Settings.jsx';
  * Centered login form rendered when no session token is present.
  * Posts to {@code /api/auth/login}; on success the AuthProvider stores
  * the JWT and re-renders the app shell.
+ *
+ * Server URL is baked in (licenseClient.js DEFAULT_URL → nip.io VPS).
+ * The "Server sozlamalari" toggle is intentionally removed so ordinary
+ * users never see — or accidentally break — the server address.
  */
 export function Login() {
   const { login } = useAuth();
@@ -14,10 +17,10 @@ export function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
+  const [twofaRequired, setTwofaRequired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [serverUrl, setServerUrl] = useState(() => getLicenseUrl());
-  const [showServerCfg, setShowServerCfg] = useState(false);
 
   const submit = async (e) => {
     e?.preventDefault?.();
@@ -28,14 +31,16 @@ export function Login() {
     setBusy(true);
     setError('');
     try {
-      await login(username.trim(), password);
+      await login(username.trim(), password, twofaRequired ? totpCode.trim() : undefined);
     } catch (err) {
-      setError(err.message || t('Login muvaffaqiyatsiz'));
+      const msg = err.message || t('Login muvaffaqiyatsiz');
+      // If the server signals 2FA is required, show the TOTP field.
+      if (/totp|2fa|ikki|kod/i.test(msg)) {
+        setTwofaRequired(true);
+      }
+      setError(msg);
     } finally {
-      // Always release the spinner — even on the rare success-without-
-      // navigate path (e.g. login succeeds upstream but the subsequent
-      // /me 401s before the App re-renders) we'd otherwise leave the
-      // Kirish button stuck in the disabled "Tekshirilmoqda…" state.
+      // Always release the spinner so the button is never stuck.
       setBusy(false);
     }
   };
@@ -146,45 +151,6 @@ export function Login() {
         <p className="login-foot muted">
           {t('Parol unutilgan bo\'lsa super-admin bilan bog\'laning')}
         </p>
-
-        <button
-          type="button"
-          className="login-server-toggle"
-          onClick={() => setShowServerCfg(!showServerCfg)}
-        >
-          ⚙️ {t('Server sozlamalari')}
-        </button>
-        {showServerCfg && (
-          <div className="login-server-cfg">
-            <label>{t('License Server URL')}</label>
-            <input
-              className="input"
-              type="text"
-              value={serverUrl}
-              onChange={(e) => setServerUrl(e.target.value)}
-              placeholder="http://localhost:9090"
-            />
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => {
-                let url = serverUrl.trim();
-                // Saving "localhost:9090" without a scheme produces a
-                // relative-path fetch ("/localhost:9090/api/...") that
-                // silently 404s — coerce to a real URL up front.
-                if (url && !/^https?:\/\//i.test(url)) {
-                  url = 'http://' + url;
-                }
-                setLicenseUrl(url || null);
-                setServerUrl(url);
-                setError('');
-                setShowServerCfg(false);
-              }}
-            >
-              {t('Saqlash')}
-            </button>
-          </div>
-        )}
       </form>
     </div>
   );

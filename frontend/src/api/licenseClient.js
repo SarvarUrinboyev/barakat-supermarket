@@ -23,7 +23,9 @@ import { getToken, setToken } from './client.js';
 
 const LICENSE_URL_KEY = 'savdopro.licenseUrl';
 const REFRESH_KEY = 'savdopro.refreshToken';
-const DEFAULT_URL = 'http://localhost:9090';
+// Production VPS — HTTPS via Let's Encrypt (nip.io cert, valid 90 d).
+// No localhost fallback; every machine points to the same server.
+const DEFAULT_URL = 'https://167-172-164-214.nip.io';
 
 function urlFromQuery() {
   try {
@@ -38,9 +40,17 @@ function urlFromQuery() {
 }
 
 export function getLicenseUrl() {
-  return urlFromQuery()
-    || localStorage.getItem(LICENSE_URL_KEY)
-    || DEFAULT_URL;
+  const fromQuery = urlFromQuery();
+  if (fromQuery) return fromQuery;
+
+  const stored = localStorage.getItem(LICENSE_URL_KEY);
+  // Migrate: wipe any plain-HTTP / localhost URL saved by an old build
+  // so the new default takes effect immediately on next launch.
+  if (stored && (stored.startsWith('http://') || stored.includes('localhost'))) {
+    localStorage.removeItem(LICENSE_URL_KEY);
+    return DEFAULT_URL;
+  }
+  return stored || DEFAULT_URL;
 }
 
 export function setLicenseUrl(url) {
