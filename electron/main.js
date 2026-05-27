@@ -120,6 +120,10 @@ function startBackend() {
     cwd: workdir,
     stdio: ['ignore', outFd, outFd],
     windowsHide: true,
+    // Opt in to the dev JWT fallback so the fail-closed gate in JwtService
+    // does not block boot when the operator has not supplied a
+    // SAVDOPRO_JWT_SECRET. Stop-gap until the asymmetric refactor lands.
+    env: { ...process.env, SAVDOPRO_ALLOW_DEV_SECRET: 'true' },
   });
   backendProcess.on('error', (err) => {
     dialog.showErrorBox(

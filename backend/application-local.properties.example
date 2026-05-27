@@ -24,3 +24,11 @@ telegram.chat-ids=PUT-CHAT-ID-1,PUT-CHAT-ID-2
 # Customers message this bot to check their own debt and goods history.
 telegram.customer-bot.enabled=false
 telegram.customer-bot.token=PUT-CUSTOMER-BOT-TOKEN-HERE
+
+# --- JWT dev fallback (local development only) ---
+# Backend fail-closed gate refuses to boot without a strong JWT secret.
+# For local dev this flag opts in to the shared dev fallback (logs a loud
+# WARN). For production, REMOVE this line and instead supply a 32+ char
+# random string via the SAVDOPRO_JWT_SECRET environment variable
+# (`openssl rand -base64 48`).
+SAVDOPRO_ALLOW_DEV_SECRET=true
