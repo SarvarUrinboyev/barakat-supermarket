@@ -69,6 +69,22 @@ to'liq ishlaydi, faqat xabarlar yuborilmaydi.
 > Desktop ilovada bu fayl `C:\Users\<foydalanuvchi>\.barakat\` papkasida
 > joylashadi va birinchi ishga tushishda namunadan avtomatik yaratiladi.
 
+### 3.3. JWT signing key
+
+Backend (va license-server) sukut bo'yicha kuchsiz secret bilan ishga
+tushmaydi — quyidagidan birini tanlang:
+
+- **Lokal dasturchilik (oson yo'l):** environment'ga
+  `SAVDOPRO_ALLOW_DEV_SECRET=true` qo'shing. Server umumiy dev fallback
+  bilan ishga tushadi va balandovozli WARN yozadi. **Hech qachon real
+  ma'lumotli serverda yoqmang.**
+- **Production yoki sinov stendi:** 32+ belgili tasodifiy kalit yarating
+  (`openssl rand -base64 48`) va `SAVDOPRO_JWT_SECRET` ga environment yoki
+  `application-local.properties` orqali bering.
+
+Hech qaysisi o'rnatilmasa server `IllegalStateException` bilan to'xtaydi —
+bu ataylab, kuchsiz secret bilan productionga chiqib ketmaslik uchun.
+
 ## 4. Ishga tushirish
 
 ### Foydalanuvchi uchun (tayyor ilova)
