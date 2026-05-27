@@ -12,7 +12,6 @@ import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import uz.barakat.license.domain.AppUser;
 
@@ -32,12 +31,14 @@ import uz.barakat.license.domain.AppUser;
  *
  * <h2>Secret</h2>
  * <ul>
- *   <li>Dev: if {@code savdopro.jwt.secret} is unset, falls back to a
- *       known string and logs a startup WARN.</li>
- *   <li>Prod: if the active Spring profile contains {@code prod} or the
- *       {@code SAVDOPRO_REQUIRE_STRONG_SECRET} env var is true, the
- *       app refuses to start with the dev default — protects against
- *       accidental deployments where the env var wasn't set.</li>
+ *   <li>Default (safe): if {@code savdopro.jwt.secret} is unset, shorter
+ *       than 32 chars, or equal to the well-known dev fallback string,
+ *       the app refuses to start. The operator must supply a 64+ char
+ *       random string via the {@code SAVDOPRO_JWT_SECRET} env var.</li>
+ *   <li>Opt-in for development: setting
+ *       {@code SAVDOPRO_ALLOW_DEV_SECRET=true} lets the app boot on the
+ *       dev fallback with a loud WARN. Never set this on a server that
+ *       holds real data.</li>
  * </ul>
  */
 @Service
@@ -59,33 +60,38 @@ public class JwtService {
     private static final long TOKEN_TTL_HOURS = 1;
 
     private final String configuredSecret;
-    private final Environment environment;
+    private final boolean allowDevSecret;
     private SecretKey signingKey;
 
     public JwtService(@Value("${savdopro.jwt.secret:}") String configuredSecret,
-                      Environment environment) {
+                      @Value("${SAVDOPRO_ALLOW_DEV_SECRET:false}") boolean allowDevSecret) {
         this.configuredSecret = configuredSecret;
-        this.environment = environment;
+        this.allowDevSecret = allowDevSecret;
     }
 
     @PostConstruct
     void init() {
-        // HS256/HS512 needs at least 32 bytes of key material.
+        // HS256/HS512 needs at least 32 bytes of key material. We fail closed:
+        // if the operator hasn't supplied a strong secret, refuse to start
+        // unless SAVDOPRO_ALLOW_DEV_SECRET=true explicitly opts in to the
+        // dev fallback (intended for local development only).
         String key = configuredSecret;
-        boolean usingDevFallback = key == null || key.length() < 32;
-        if (usingDevFallback) {
-            key = DEV_FALLBACK_SECRET;
-        }
+        boolean weak = key == null || key.length() < 32 || DEV_FALLBACK_SECRET.equals(key);
 
-        if (usingDevFallback || DEV_FALLBACK_SECRET.equals(key)) {
-            if (isProductionProfile()) {
+        if (weak) {
+            if (!allowDevSecret) {
                 throw new IllegalStateException(
-                        "REFUSING TO START: savdopro.jwt.secret is unset or set to the dev "
-                                + "fallback. Generate a 64+ char random string and pass it via "
-                                + "the SAVDOPRO_JWT_SECRET env var.");
+                        "REFUSING TO START: savdopro.jwt.secret is unset, shorter than 32 "
+                                + "chars, or set to the dev fallback. Generate a 64+ char "
+                                + "random string (e.g. `openssl rand -base64 48`) and pass "
+                                + "it via the SAVDOPRO_JWT_SECRET env var. To explicitly "
+                                + "allow the dev fallback for local development, set "
+                                + "SAVDOPRO_ALLOW_DEV_SECRET=true.");
             }
+            key = DEV_FALLBACK_SECRET;
             log.warn("=================================================================");
             log.warn("  JWT secret is the DEV FALLBACK — DO NOT USE IN PRODUCTION.");
+            log.warn("  SAVDOPRO_ALLOW_DEV_SECRET=true is set; booting anyway.");
             log.warn("  Set SAVDOPRO_JWT_SECRET to a 64+ char random string before deploy.");
             log.warn("=================================================================");
         }
@@ -129,16 +135,5 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    private boolean isProductionProfile() {
-        // Either Spring's active profile contains "prod" / "production",
-        // or the operator explicitly opts in via an env var.
-        for (String p : environment.getActiveProfiles()) {
-            String low = p.toLowerCase();
-            if (low.contains("prod")) return true;
-        }
-        return "true".equalsIgnoreCase(
-                environment.getProperty("SAVDOPRO_REQUIRE_STRONG_SECRET", "false"));
     }
 }

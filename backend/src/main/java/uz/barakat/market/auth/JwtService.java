@@ -20,29 +20,67 @@ import uz.barakat.market.domain.AppUser;
  * localStorage; every API call sends it back as {@code Authorization:
  * Bearer ...}. The token carries the user id, account id and role so the
  * filter doesn't need a DB round-trip on the hot path.
+ *
+ * <h2>Secret</h2>
+ * <ul>
+ *   <li>Default (safe): if {@code savdopro.jwt.secret} is unset, shorter
+ *       than 32 chars, or equal to the well-known dev fallback string,
+ *       the app refuses to start. The operator must supply a 64+ char
+ *       random string via the {@code SAVDOPRO_JWT_SECRET} env var.</li>
+ *   <li>Opt-in for development: setting
+ *       {@code SAVDOPRO_ALLOW_DEV_SECRET=true} lets the app boot on the
+ *       dev fallback with a loud WARN. Never set this on a server that
+ *       holds real data.</li>
+ * </ul>
  */
 @Service
 public class JwtService {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtService.class);
+
+    /** Match the dev default so we can detect it at startup. */
+    static final String DEV_FALLBACK_SECRET =
+            "savdopro-dev-secret-please-override-in-production-XXXXXXXXXXXXXXXX";
+
     private static final long TOKEN_TTL_DAYS = 30;
 
     private final String configuredSecret;
+    private final boolean allowDevSecret;
     private SecretKey signingKey;
 
-    public JwtService(@Value("${savdopro.jwt.secret:}") String configuredSecret) {
+    public JwtService(@Value("${savdopro.jwt.secret:}") String configuredSecret,
+                      @Value("${SAVDOPRO_ALLOW_DEV_SECRET:false}") boolean allowDevSecret) {
         this.configuredSecret = configuredSecret;
+        this.allowDevSecret = allowDevSecret;
     }
 
     @PostConstruct
     void init() {
-        // HS256 requires at least 32 bytes of key material. If the property
-        // isn't set we synthesize a stable-but-app-private key so dev runs
-        // don't need extra config; for production deploy the operator sets
-        // savdopro.jwt.secret to a 64+ char random string.
+        // HS256 requires at least 32 bytes of key material. We fail closed:
+        // if the operator hasn't supplied a strong secret, refuse to start
+        // unless SAVDOPRO_ALLOW_DEV_SECRET=true explicitly opts in to the
+        // dev fallback (intended for local development only).
         String key = configuredSecret;
-        if (key == null || key.length() < 32) {
-            key = "savdopro-dev-secret-please-override-in-production-XXXXXXXXXXXXXXXX";
+        boolean weak = key == null || key.length() < 32 || DEV_FALLBACK_SECRET.equals(key);
+
+        if (weak) {
+            if (!allowDevSecret) {
+                throw new IllegalStateException(
+                        "REFUSING TO START: savdopro.jwt.secret is unset, shorter than 32 "
+                                + "chars, or set to the dev fallback. Generate a 64+ char "
+                                + "random string (e.g. `openssl rand -base64 48`) and pass "
+                                + "it via the SAVDOPRO_JWT_SECRET env var. To explicitly "
+                                + "allow the dev fallback for local development, set "
+                                + "SAVDOPRO_ALLOW_DEV_SECRET=true.");
+            }
+            key = DEV_FALLBACK_SECRET;
+            log.warn("=================================================================");
+            log.warn("  JWT secret is the DEV FALLBACK — DO NOT USE IN PRODUCTION.");
+            log.warn("  SAVDOPRO_ALLOW_DEV_SECRET=true is set; booting anyway.");
+            log.warn("  Set SAVDOPRO_JWT_SECRET to a 64+ char random string before deploy.");
+            log.warn("=================================================================");
         }
+
         this.signingKey = Keys.hmacShaKeyFor(key.getBytes(StandardCharsets.UTF_8));
     }
 
