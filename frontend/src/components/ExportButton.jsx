@@ -30,7 +30,7 @@ export function ExportButton({ filename, rows, sheets, getRows, getSheets, label
         toast.error(t("Eksport uchun ma'lumot yo'q"));
         return;
       }
-      exportXlsx(filename, payload);
+      await exportXlsx(filename, payload);
       toast.success(t('Eksport tayyor'));
     } catch (err) {
       toast.error(err.message || t("Eksport qilib bo'lmadi"));

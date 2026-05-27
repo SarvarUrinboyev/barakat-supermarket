@@ -1,14 +1,12 @@
-// Excel export helper — wraps the SheetJS ("xlsx") library so the rest
-// of the app calls a single `exportXlsx(filename, sheets)` and we keep
-// the SheetJS surface area in one file (easy to swap if we ever change
-// libraries).
+// Excel export helper — wraps the ExcelJS library so the rest of the app
+// calls a single `exportXlsx(filename, sheets)` and we keep the workbook
+// surface area in one file (easy to swap if we ever change libraries).
 //
-// SheetJS supports comma/colon dates, formulas and styling, but for the
-// SavdoPRO use-case (accountant reports) we stay with plain strings +
-// numbers — no formatting needed, opens cleanly in Excel and Google
-// Sheets alike.
+// We only need plain strings + numbers for accountant reports — no
+// formulas or styling — so the simple `ws.columns + addRows` path is
+// enough. Opens cleanly in Excel and Google Sheets alike.
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 /**
  * Write one or more sheets to an .xlsx file and trigger a browser download.
@@ -18,37 +16,56 @@ import * as XLSX from 'xlsx';
  *   Each sheet is a name + an array of plain objects. The keys of the
  *   first row become the column headers; subsequent rows that are
  *   missing a key get an empty cell.
+ * @returns {Promise<void>}  ExcelJS writes the buffer asynchronously.
  */
-export function exportXlsx(filename, sheets) {
-  const wb = XLSX.utils.book_new();
+export async function exportXlsx(filename, sheets) {
+  const wb = new ExcelJS.Workbook();
   sheets.forEach(({ name, rows }) => {
-    const ws = XLSX.utils.json_to_sheet(rows || []);
-    // Auto-fit column widths to the longest cell value (capped at 60).
+    const ws = wb.addWorksheet(safeSheetName(name));
     if (rows && rows.length) {
-      const cols = Object.keys(rows[0]).map((key) => {
+      const keys = Object.keys(rows[0]);
+      // Auto-fit column widths to the longest cell value (capped at 60).
+      ws.columns = keys.map((key) => {
         const maxLen = rows.reduce((acc, row) => {
           const v = row[key] == null ? '' : String(row[key]);
           return Math.max(acc, v.length);
         }, key.length);
-        return { wch: Math.min(60, Math.max(8, maxLen + 2)) };
+        return { header: key, key, width: Math.min(60, Math.max(8, maxLen + 2)) };
       });
-      ws['!cols'] = cols;
+      ws.addRows(rows);
     }
-    XLSX.utils.book_append_sheet(wb, ws, safeSheetName(name));
   });
+  const buffer = await wb.xlsx.writeBuffer();
   const fname = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;
-  XLSX.writeFile(wb, fname);
+  triggerDownload(buffer, fname);
 }
 
 /**
  * Convenience overload — one sheet, one file. Same as calling
  * exportXlsx(filename, [{ name: 'Sheet1', rows }]).
+ *
+ * @returns {Promise<void>}
  */
-export function exportSheet(filename, rows, sheetName = 'Sheet1') {
-  exportXlsx(filename, [{ name: sheetName, rows }]);
+export async function exportSheet(filename, rows, sheetName = 'Sheet1') {
+  await exportXlsx(filename, [{ name: sheetName, rows }]);
 }
 
-// Excel forbids these chars in sheet names; SheetJS would throw.
+const XLSX_MIME =
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function triggerDownload(buffer, filename) {
+  const blob = new Blob([buffer], { type: XLSX_MIME });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Excel forbids these chars in sheet names; ExcelJS would throw.
 function safeSheetName(name) {
   return String(name).replace(/[\\/?*:[\]]/g, '_').slice(0, 31);
 }
