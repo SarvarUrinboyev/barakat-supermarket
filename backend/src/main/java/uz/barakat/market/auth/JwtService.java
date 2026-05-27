@@ -24,9 +24,11 @@ import uz.barakat.market.domain.AppUser;
  * <h2>Secret</h2>
  * <ul>
  *   <li>Default (safe): if {@code savdopro.jwt.secret} is unset, shorter
- *       than 32 chars, or equal to the well-known dev fallback string,
- *       the app refuses to start. The operator must supply a 64+ char
- *       random string via the {@code SAVDOPRO_JWT_SECRET} env var.</li>
+ *       than 32 chars, equal to the well-known dev fallback string, or
+ *       still starts with the {@code CHANGE_ME} placeholder from
+ *       {@code .env.example}, the app refuses to start. The operator
+ *       must supply a 64+ char random string via the
+ *       {@code SAVDOPRO_JWT_SECRET} env var.</li>
  *   <li>Opt-in for development: setting
  *       {@code SAVDOPRO_ALLOW_DEV_SECRET=true} lets the app boot on the
  *       dev fallback with a loud WARN. Never set this on a server that
@@ -41,6 +43,13 @@ public class JwtService {
     /** Match the dev default so we can detect it at startup. */
     static final String DEV_FALLBACK_SECRET =
             "savdopro-dev-secret-please-override-in-production-XXXXXXXXXXXXXXXX";
+
+    /**
+     * Secrets that still begin with this token look like an un-edited
+     * copy of {@code .env.example} — the operator forgot to swap the
+     * placeholder for a real value. Compared case-insensitively.
+     */
+    private static final String PLACEHOLDER_PREFIX = "CHANGE_ME";
 
     private static final long TOKEN_TTL_DAYS = 30;
 
@@ -61,15 +70,19 @@ public class JwtService {
         // unless SAVDOPRO_ALLOW_DEV_SECRET=true explicitly opts in to the
         // dev fallback (intended for local development only).
         String key = configuredSecret;
-        boolean weak = key == null || key.length() < 32 || DEV_FALLBACK_SECRET.equals(key);
+        boolean weak = key == null
+                || key.length() < 32
+                || DEV_FALLBACK_SECRET.equals(key)
+                || key.regionMatches(true, 0, PLACEHOLDER_PREFIX, 0, PLACEHOLDER_PREFIX.length());
 
         if (weak) {
             if (!allowDevSecret) {
                 throw new IllegalStateException(
                         "REFUSING TO START: savdopro.jwt.secret is unset, shorter than 32 "
-                                + "chars, or set to the dev fallback. Generate a 64+ char "
-                                + "random string (e.g. `openssl rand -base64 48`) and pass "
-                                + "it via the SAVDOPRO_JWT_SECRET env var. To explicitly "
+                                + "chars, equal to the dev fallback, or still contains the "
+                                + "CHANGE_ME placeholder from .env.example. Generate a 64+ "
+                                + "char random string (e.g. `openssl rand -base64 48`) and "
+                                + "pass it via the SAVDOPRO_JWT_SECRET env var. To explicitly "
                                 + "allow the dev fallback for local development, set "
                                 + "SAVDOPRO_ALLOW_DEV_SECRET=true.");
             }
