@@ -1,0 +1,268 @@
+import { useState } from 'react';
+import { PosApi } from '../api/endpoints.js';
+import { ExportButton } from '../components/ExportButton.jsx';
+import { Modal } from '../components/Modal.jsx';
+import { useToast } from '../components/Toast.jsx';
+import { EmptyState, Loader, PageHeader, Spinner } from '../components/ui.jsx';
+import { useT } from '../context/Settings.jsx';
+import { useApi } from '../hooks/useApi.js';
+import { money } from '../lib/format.js';
+
+/**
+ * POS sales history + refund flow.
+ *
+ * Table of the last 100 sales with status badges (FAOL / QISMAN QAYTARILGAN
+ * / TO'LIQ QAYTARILGAN). Clicking a row opens the receipt detail with
+ * per-line refund controls.
+ */
+export function PosHistory() {
+  const t = useT();
+  const { data, loading, error, reload } = useApi(() => PosApi.recent(), []);
+  const [open, setOpen] = useState(null); // {sale}
+  const rows = data || [];
+
+  return (
+    <>
+      <PageHeader title={t('Sotuvlar tarixi')} desc={t('Oxirgi 100 ta sotuv')}>
+        <ExportButton
+          filename={`sotuvlar-${new Date().toISOString().slice(0, 10)}`}
+          rows={rows.map((s) => ({
+            [t('Sotuv')]: `#${s.id}`,
+            [t('Vaqt')]: s.createdAt,
+            [t('Mijoz')]: s.customerName || '',
+            [t('Tovar dona')]: s.items.length,
+            [t('Subtotal')]: Number(s.subtotalUzs),
+            [t('Chegirma')]: Number(s.subtotalUzs) - Number(s.totalUzs),
+            [t("To'lov turi")]: s.paymentMethod,
+            [t('Jami UZS')]: Number(s.totalUzs),
+            [t('Qaytarilgan')]: Number(s.refundedTotalUzs),
+            [t('Holat')]: s.fullyRefunded ? 'TO_LIQ QAYTARILGAN'
+              : (s.refundedTotalUzs > 0 ? 'QISMAN' : 'FAOL'),
+          }))}
+        />
+      </PageHeader>
+
+      <div className="card section">
+        <Loader loading={loading} error={error} onRetry={reload}>
+          {rows.length === 0 ? (
+            <EmptyState icon="🛒" text={t("Hali sotuv yo'q")} />
+          ) : (
+            <div className="table-wrap">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>{t('Vaqt')}</th>
+                    <th>{t('Mijoz')}</th>
+                    <th className="num">{t('Tovar')}</th>
+                    <th>{t("To'lov turi")}</th>
+                    <th className="num">{t('Jami')}</th>
+                    <th className="num">{t('Qaytarilgan')}</th>
+                    <th>{t('Holat')}</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((s) => (
+                    <tr key={s.id} className="hover-row">
+                      <td className="mono"><strong>#{s.id}</strong></td>
+                      <td className="faint mono" style={{ whiteSpace: 'nowrap' }}>
+                        {formatTs(s.createdAt)}
+                      </td>
+                      <td>{s.customerName || <span className="faint">—</span>}</td>
+                      <td className="num mono">{s.items.length}</td>
+                      <td><span className="badge">{s.paymentMethod}</span></td>
+                      <td className="num mono"><strong>{money(s.totalUzs)}</strong></td>
+                      <td className="num mono faint">
+                        {Number(s.refundedTotalUzs) > 0 ? money(s.refundedTotalUzs) : '—'}
+                      </td>
+                      <td>
+                        {s.fullyRefunded
+                          ? <span className="badge badge-qarzga">{t('Qaytarilgan')}</span>
+                          : Number(s.refundedTotalUzs) > 0
+                            ? <span className="badge badge-aralash">{t('Qisman')}</span>
+                            : <span className="badge badge-naqd">{t('Faol')}</span>}
+                      </td>
+                      <td>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setOpen({ sale: s })}>
+                          {t('Batafsil')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Loader>
+      </div>
+
+      {open && (
+        <SaleDetailModal
+          sale={open.sale}
+          onClose={() => setOpen(null)}
+          onChanged={() => { setOpen(null); reload(); }}
+        />
+      )}
+    </>
+  );
+}
+
+function SaleDetailModal({ sale, onClose, onChanged }) {
+  const t = useT();
+  const toast = useToast();
+  // refund qty per saleItemId
+  const [refundQty, setRefundQty] = useState(() => {
+    const init = {};
+    sale.items.forEach((it) => { init[it.id] = 0; });
+    return init;
+  });
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const refundTotal = sale.items.reduce((s, it) => {
+    const qty = refundQty[it.id] || 0;
+    const unitNet = it.quantity === 0 ? 0 : Number(it.lineTotalUzs) / it.quantity;
+    return s + unitNet * qty;
+  }, 0);
+
+  const doRefund = async (allRemaining) => {
+    setBusy(true);
+    try {
+      const items = allRemaining
+        ? []
+        : sale.items
+            .filter((it) => (refundQty[it.id] || 0) > 0)
+            .map((it) => ({ saleItemId: it.id, quantity: refundQty[it.id] }));
+      if (!allRemaining && items.length === 0) {
+        toast.error(t('Hech narsa tanlanmagan'));
+        setBusy(false);
+        return;
+      }
+      await PosApi.refund(sale.id, { items, reason: reason || null });
+      toast.success(t('Qaytarish bajarildi'));
+      onChanged();
+    } catch (err) {
+      toast.error(err.message || t("Qaytarib bo'lmadi"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const hasRemaining = sale.items.some((it) => it.quantity - it.refundedQty > 0);
+
+  return (
+    <Modal title={`${t('Sotuv')} #${sale.id}`} onClose={onClose} size="lg">
+      <div className="faint" style={{ fontSize: 13, marginBottom: 12 }}>
+        {formatTs(sale.createdAt)} · {sale.paymentMethod}
+        {sale.customerName && <> · {sale.customerName}</>}
+      </div>
+
+      <div className="table-wrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>{t('Mahsulot')}</th>
+              <th className="num">{t('Dona')}</th>
+              <th className="num">{t('Narx')}</th>
+              <th className="num">{t('Jami')}</th>
+              <th className="num">{t('Qaytarilgan')}</th>
+              {hasRemaining && !sale.fullyRefunded && (
+                <th className="num">{t('Qaytarish')}</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {sale.items.map((it) => {
+              const remaining = it.quantity - it.refundedQty;
+              return (
+                <tr key={it.id}>
+                  <td><strong>{it.productName}</strong>
+                    {it.productSku && <div className="faint mono" style={{ fontSize: 11 }}>{it.productSku}</div>}
+                  </td>
+                  <td className="num mono">{it.quantity}</td>
+                  <td className="num mono">{money(it.unitPriceUzs)}</td>
+                  <td className="num mono">{money(it.lineTotalUzs)}</td>
+                  <td className="num mono faint">{it.refundedQty || '—'}</td>
+                  {hasRemaining && !sale.fullyRefunded && (
+                    <td className="num">
+                      {remaining > 0 ? (
+                        <input
+                          type="number" className="input" min="0" max={remaining}
+                          value={refundQty[it.id] || 0}
+                          onChange={(e) => setRefundQty((p) => ({
+                            ...p, [it.id]: Math.max(0, Math.min(remaining, Number(e.target.value) || 0)),
+                          }))}
+                          style={{ width: 70 }}
+                        />
+                      ) : <span className="faint">—</span>}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ marginTop: 16, padding: 12, background: '#f9fafb', borderRadius: 8 }}>
+        <Row label={t('Subtotal')} value={money(sale.subtotalUzs)} />
+        {(Number(sale.discountAmount) > 0 || Number(sale.discountPercent) > 0) && (
+          <Row label={t('Chegirma')} value={`%${sale.discountPercent} + ${money(sale.discountAmount)}`} muted />
+        )}
+        <Row label={t('JAMI')} value={`${money(sale.totalUzs)} so'm`} big />
+        {Number(sale.refundedTotalUzs) > 0 && (
+          <Row label={t('Allaqachon qaytarilgan')} value={`- ${money(sale.refundedTotalUzs)}`} muted />
+        )}
+      </div>
+
+      {hasRemaining && !sale.fullyRefunded && (
+        <>
+          <div className="field" style={{ marginTop: 12 }}>
+            <label>{t('Qaytarish sababi')} ({t('ixtiyoriy')})</label>
+            <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+            <div className="faint" style={{ fontSize: 13 }}>
+              {t('Tanlangan summa')}: <strong>{money(refundTotal)} so'm</strong>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-ghost" onClick={() => doRefund(true)} disabled={busy}>
+                {busy ? <Spinner /> : `↩️ ${t("Qolganini to'liq qaytarish")}`}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => doRefund(false)}
+                disabled={busy || refundTotal === 0}
+              >
+                {busy ? <Spinner /> : `↩️ ${t('Qaytarish')}`}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
+function Row({ label, value, big, muted }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between',
+      fontSize: big ? 16 : 13, fontWeight: big ? 700 : 500,
+      color: muted ? '#9ca3af' : '#111827',
+      marginTop: big ? 6 : 2,
+      borderTop: big ? '1px solid #e5e7eb' : 'none',
+      paddingTop: big ? 6 : 0,
+    }}>
+      <span>{label}</span><span className="mono">{value}</span>
+    </div>
+  );
+}
+
+function formatTs(iso) {
+  if (!iso) return '—';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+  return m ? `${m[3]}.${m[2]} ${m[4]}:${m[5]}` : iso;
+}

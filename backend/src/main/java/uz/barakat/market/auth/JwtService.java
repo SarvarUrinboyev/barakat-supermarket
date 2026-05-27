@@ -62,8 +62,12 @@ public class JwtService {
 
     /** Returns the JWT claims if the token is valid, else throws. */
     public Claims parse(String token) {
+        // Allow up to 3 hours of clock skew so that tokens issued by the
+        // central License Server (VPS) are accepted even when the VPS system
+        // clock drifts relative to the local machine. 10 800 s = 3 hours.
         return Jwts.parser()
                 .verifyWith(signingKey)
+                .clockSkewSeconds(10_800)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

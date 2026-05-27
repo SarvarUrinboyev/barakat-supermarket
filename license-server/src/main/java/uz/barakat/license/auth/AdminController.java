@@ -20,6 +20,7 @@ import uz.barakat.license.auth.AdminDtos.AdminUserResponse;
 import uz.barakat.license.auth.AdminDtos.BlockRequest;
 import uz.barakat.license.auth.AdminDtos.CreateAccountRequest;
 import uz.barakat.license.auth.AdminDtos.CreateUserRequest;
+import uz.barakat.license.auth.AdminDtos.ModulesRequest;
 import uz.barakat.license.auth.AdminDtos.SetPasswordRequest;
 import uz.barakat.license.auth.AdminDtos.UpdateAccountRequest;
 import uz.barakat.license.domain.AdminAuditEntry;
@@ -80,6 +81,17 @@ public class AdminController {
     public AdminAccountResponse setBlocked(@PathVariable Long id,
                                            @RequestBody BlockRequest request) {
         return service.setBlocked(id, request.blocked());
+    }
+
+    /**
+     * Replace the per-account sidebar-module allow-list. Send the full
+     * CSV of allowed keys (or an empty / null value to mean "all
+     * modules visible"). The frontend owns the canonical set of keys.
+     */
+    @PatchMapping("/accounts/{id}/modules")
+    public AdminAccountResponse setModules(@PathVariable Long id,
+                                           @RequestBody ModulesRequest request) {
+        return service.setModules(id, request == null ? null : request.enabledModules());
     }
 
     @DeleteMapping("/accounts/{id}")

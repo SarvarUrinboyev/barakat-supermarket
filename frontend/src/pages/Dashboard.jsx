@@ -2,6 +2,10 @@ import { useState } from 'react';
 import {
   BalanceApi, DashboardApi, ExchangeRateApi, ManagementApi, PaymentApi,
 } from '../api/endpoints.js';
+import { AnomalyBanner } from '../components/AnomalyBanner.jsx';
+import { CashboxForecastCard } from '../components/CashboxForecastCard.jsx';
+import { LiveSalesFeed } from '../components/LiveSalesFeed.jsx';
+import { LowStockWidget } from '../components/LowStockWidget.jsx';
 import { Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import {
@@ -70,6 +74,10 @@ function Content({ data, rate, onEditBalance }) {
   return (
     <>
       <RateBanner rate={rate} />
+      <AnomalyBanner />
+      <LiveSalesFeed />
+      <LowStockWidget />
+      <CashboxForecastCard />
       <div className="balance-hero section">
         <div>
           <div className="bh-label">{t('ERTALABGI BALANS')}</div>

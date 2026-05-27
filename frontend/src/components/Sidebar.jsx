@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
+import { isModuleEnabled } from '../lib/modules.js';
 
 /**
  * Line icons (24x24 stroke), keyed by route. They use currentColor, so
@@ -118,21 +119,47 @@ const ICON = {
       <path d="M17 17H7M7 17l3 3M7 17l3-3" />
     </svg>
   ),
+  '/reports': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 20V10M12 20V4M6 20v-6"/>
+    </svg>
+  ),
+  '/pos': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
+         strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18M7 14h2M11 14h2" />
+    </svg>
+  ),
+  '/pos/history': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12a9 9 0 109-9M3 12l3-3M3 12l3 3M12 7v5l3 2" />
+    </svg>
+  ),
 };
 
+// Each item carries the module `key` used in accounts.enabled_modules.
+// The Sidebar filters out items whose key is not in the current user's
+// allow-list (server-issued via /me; null = "all visible").
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Boshqaruv' },
-  { to: '/management', label: 'Menejment' },
-  { to: '/home-expenses', label: "Do'kon xarajatlari" },
-  { to: '/payments', label: "To'lov" },
-  { to: '/orders', label: 'Buyurtmalar' },
-  { to: '/warehouse', label: 'Ombor' },
-  { to: '/customers', label: 'Mijozlar' },
-  { to: '/suppliers', label: 'Yetkazib beruvchilar' },
-  { to: '/debt', label: 'Qarz' },
-  { to: '/calculator', label: 'Kalkulyator' },
-  { to: '/shift-history', label: 'Smena tarixi' },
-  { to: '/shift-close', label: 'Smena yopish' },
+  { key: 'dashboard',     to: '/dashboard',     label: 'Boshqaruv' },
+  { key: 'pos',           to: '/pos',           label: 'Kassa (POS)' },
+  { key: 'pos-history',   to: '/pos/history',   label: 'Sotuvlar tarixi' },
+  { key: 'promos',        to: '/promos',        label: 'Aksiyalar' },
+  { key: 'management',    to: '/management',    label: 'Menejment' },
+  { key: 'home-expenses', to: '/home-expenses', label: "Do'kon xarajatlari" },
+  { key: 'payments',      to: '/payments',      label: "To'lov" },
+  { key: 'orders',        to: '/orders',        label: 'Buyurtmalar' },
+  { key: 'warehouse',     to: '/warehouse',     label: 'Ombor' },
+  { key: 'customers',     to: '/customers',     label: 'Mijozlar' },
+  { key: 'suppliers',     to: '/suppliers',     label: 'Yetkazib beruvchilar' },
+  { key: 'debt',          to: '/debt',          label: 'Qarz' },
+  { key: 'calculator',    to: '/calculator',    label: 'Kalkulyator' },
+  { key: 'shift-history', to: '/shift-history', label: 'Smena tarixi' },
+  { key: 'shift-close',   to: '/shift-close',   label: 'Smena yopish' },
+  { key: 'reports',       to: '/reports',       label: 'Hisobotlar' },
 ];
 
 export function Sidebar({ shift }) {
@@ -142,6 +169,10 @@ export function Sidebar({ shift }) {
   const initials = (user?.fullName || user?.username || '?')
     .split(/\s+/).filter(Boolean).slice(0, 2)
     .map((s) => s[0].toUpperCase()).join('') || '?';
+  // SUPER_ADMIN always sees everything (modules == null from server).
+  // For any other role, the server passes the account's CSV allow-list.
+  const moduleCsv = user?.enabledModules ?? null;
+  const isOn = (key) => isModuleEnabled(moduleCsv, key);
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -186,7 +217,7 @@ export function Sidebar({ shift }) {
             <span>{t('Super-admin')}</span>
           </NavLink>
         )}
-        {(user?.role === 'ACCOUNT_OWNER' || user?.role === 'SUPER_ADMIN') && (
+        {(user?.role === 'ACCOUNT_OWNER' || user?.role === 'SUPER_ADMIN') && isOn('shops') && (
           <NavLink
             to="/shops"
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -195,7 +226,7 @@ export function Sidebar({ shift }) {
             <span>{t("Do'konlar")}</span>
           </NavLink>
         )}
-        {(user?.role === 'ACCOUNT_OWNER' || user?.role === 'SUPER_ADMIN') && (
+        {(user?.role === 'ACCOUNT_OWNER' || user?.role === 'SUPER_ADMIN') && isOn('transfers') && (
           <NavLink
             to="/transfers"
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
@@ -204,7 +235,7 @@ export function Sidebar({ shift }) {
             <span>{t("Tovar transferi")}</span>
           </NavLink>
         )}
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter((item) => isOn(item.key)).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

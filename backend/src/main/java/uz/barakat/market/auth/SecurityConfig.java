@@ -1,5 +1,6 @@
 package uz.barakat.market.auth;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -31,8 +32,20 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(reg -> reg
-                        // Public endpoints — only the health probe stays open.
+                        // FORWARD/INCLUDE dispatches (e.g. from SpaController) are
+                        // always permitted — prevents StackOverflowError in Spring
+                        // Security 6 when the filter chain re-processes a forward.
+                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
+                        // Public endpoints — health probe and static shell.
                         .requestMatchers("/api/health/**").permitAll()
+                        // WebSocket handshake — STOMP CONNECT frame can carry
+                        // the JWT in its native auth header; we don't gate it
+                        // at the HTTP layer.
+                        .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
+                        // OpenAPI / Swagger UI — public REST docs.
+                        .requestMatchers(
+                                "/v3/api-docs/**", "/v3/api-docs.yaml",
+                                "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Static frontend bundle.
                         .requestMatchers("/", "/index.html", "/assets/**",
                                 "/favicon.ico", "/icon.svg").permitAll()
@@ -42,6 +55,9 @@ public class SecurityConfig {
                         .anyRequest().permitAll())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint((req, res, ex) ->
+                                res.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

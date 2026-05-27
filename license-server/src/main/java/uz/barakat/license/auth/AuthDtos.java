@@ -61,7 +61,13 @@ public final class AuthDtos {
             LocalDate subscriptionExpires,
             int daysUntilBlock,
             boolean blocked,
-            Brand brand) {
+            Brand brand,
+            /**
+             * Comma-separated module keys this user's account is allowed
+             * to see. NULL = all modules visible (legacy/default).
+             * The desktop sidebar filters its nav-items against this list.
+             */
+            String enabledModules) {
     }
 
     /**

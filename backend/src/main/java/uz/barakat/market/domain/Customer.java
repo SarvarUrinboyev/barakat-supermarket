@@ -48,4 +48,13 @@ public class Customer extends TenantScopedEntity {
      */
     @Column(name = "points_total_earned", nullable = false)
     private long pointsTotalEarned = 0L;
+
+    /**
+     * QR-able loyalty card identifier. Printed on a plastic card so the
+     * cashier can scan it at the POS instead of typing a phone. Null
+     * until {@link uz.barakat.market.service.LoyaltyService#ensureCardCode}
+     * issues one. Unique across all customers.
+     */
+    @Column(name = "card_code", length = 36, unique = true)
+    private String cardCode;
 }

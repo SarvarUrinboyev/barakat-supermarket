@@ -53,6 +53,18 @@ public class ProductController {
         return service.get(id);
     }
 
+    /**
+     * Products whose current quantity has dropped to or below their
+     * configured low-stock threshold. Products with {@code threshold = 0}
+     * (no threshold set) are excluded. Used by the dashboard widget
+     * and by the Telegram alerter; returns the same shape as {@code list}
+     * so the frontend can re-use existing renderers.
+     */
+    @GetMapping("/low-stock")
+    public List<ProductResponse> lowStock() {
+        return service.lowStock();
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProductResponse create(@Valid @RequestBody ProductRequest request) {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminApi } from '../api/endpoints.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -52,6 +53,9 @@ export function Admin() {
         title={t('Super-admin panel')}
         desc={t('Mijoz akkauntlari, obunalar, parollar boshqaruvi')}
       >
+        <Link to="/admin/audit" className="btn btn-ghost">
+          📜 {t('Audit log')}
+        </Link>
         <button className="btn btn-primary" onClick={() => setModal({ type: 'create' })}>
           + {t('Yangi akkaunt')}
         </button>
@@ -101,7 +105,13 @@ export function Admin() {
                   {accounts.map((a) => (
                     <tr key={a.id}>
                       <td className="name-cell">
-                        <strong>{a.name}</strong>
+                        <Link
+                          to={`/admin/accounts/${a.id}`}
+                          className="admin-account-link"
+                          title={t('Akkaunt sozlamalari')}
+                        >
+                          <strong>{a.name}</strong>
+                        </Link>
                         {a.contactNote && (
                           <div className="faint" style={{ fontSize: 11 }}>
                             {a.contactNote}

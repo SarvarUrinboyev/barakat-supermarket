@@ -1,0 +1,244 @@
+package uz.barakat.market.service;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import uz.barakat.market.repository.ProductRepository;
+import uz.barakat.market.repository.SaleRepository;
+import uz.barakat.market.service.ai.AiProvider;
+import uz.barakat.market.service.ai.GeminiProvider;
+import uz.barakat.market.service.ai.OpenAiCompatProvider;
+
+/**
+ * Conversational analytics over the shop's data, backed by a configurable
+ * provider chain (failover-on-error).
+ *
+ * <p>Default chain (configured in application-local.properties):
+ *   <ol>
+ *     <li><b>Gemini Flash</b> — Google, free tier, fast.</li>
+ *     <li><b>NVIDIA DeepSeek V4 Flash</b> — free, OpenAI-compatible.</li>
+ *     <li><b>NVIDIA Kimi K2.6</b> — free, larger MoE.</li>
+ *     <li><b>OpenRouter (Claude Haiku)</b> — paid fallback.</li>
+ *   </ol>
+ *
+ * <p>The router walks the chain in order. A provider is tried only if
+ * its API key is configured; on any failure (timeout, 429 rate-limit,
+ * 5xx) we silently fall through to the next. Every failure is logged at
+ * {@code WARN} so an operator can spot a misconfigured key.
+ *
+ * <p>When every provider fails (or none are configured) we return the
+ * raw KPI snapshot — useful as a degraded fallback so the UI never has
+ * a fully blank screen.
+ */
+@Service
+public class AiChatService {
+
+    private static final Logger log = LoggerFactory.getLogger(AiChatService.class);
+
+    private static final String SYSTEM_PROMPT =
+            "Sen — SavdoPRO POS tizimining yordamchisisan. Foydalanuvchi savoliga "
+            + "qisqa, aniq, raqamli javob ber. Faqat berilgan ma'lumotga asoslan, "
+            + "yetishmasa to'g'ridan-to'g'ri ayt. Javob faqat o'zbek tilida bo'lsin.";
+
+    private final ReportService reports;
+    private final AnalyticsService analytics;
+    private final SaleRepository sales;
+    private final ProductRepository products;
+    private final List<AiProvider> chain;
+
+    public AiChatService(
+            ReportService reports,
+            AnalyticsService analytics,
+            SaleRepository sales,
+            ProductRepository products,
+            // chain order — change to reorder failover priority
+            @Value("${ai.providers:gemini,nvidia-deepseek,nvidia-kimi,openrouter}") String chainOrder,
+            // Per-provider keys + models. All optional; unset = skipped.
+            @Value("${ai.gemini.key:${GEMINI_API_KEY:}}") String geminiKey,
+            @Value("${ai.gemini.model:gemini-2.0-flash-exp}") String geminiModel,
+            @Value("${ai.nvidia.deepseek.key:${NVIDIA_DEEPSEEK_KEY:}}") String nvDeepseekKey,
+            @Value("${ai.nvidia.deepseek.model:deepseek-ai/deepseek-v4-flash}") String nvDeepseekModel,
+            @Value("${ai.nvidia.kimi.key:${NVIDIA_KIMI_KEY:}}") String nvKimiKey,
+            @Value("${ai.nvidia.kimi.model:moonshotai/kimi-k2.6}") String nvKimiModel,
+            @Value("${ai.openrouter.key:${openrouter.api-key:${OPENROUTER_API_KEY:}}}") String openrouterKey,
+            @Value("${ai.openrouter.model:${openrouter.model:anthropic/claude-3.5-haiku}}") String openrouterModel) {
+        this.reports = reports;
+        this.analytics = analytics;
+        this.sales = sales;
+        this.products = products;
+        this.chain = buildChain(
+                chainOrder,
+                geminiKey, geminiModel,
+                nvDeepseekKey, nvDeepseekModel,
+                nvKimiKey, nvKimiModel,
+                openrouterKey, openrouterModel);
+        log.info("AI chain ({} ready of {} configured): {}",
+                chain.stream().filter(AiProvider::isConfigured).count(),
+                chain.size(),
+                chain.stream().map(p -> p.name() + (p.isConfigured() ? "" : "[off]"))
+                        .toList());
+    }
+
+    private static List<AiProvider> buildChain(
+            String order,
+            String geminiKey, String geminiModel,
+            String nvDeepseekKey, String nvDeepseekModel,
+            String nvKimiKey, String nvKimiModel,
+            String openrouterKey, String openrouterModel) {
+
+        String nvBase = "https://integrate.api.nvidia.com/v1";
+        String openrouterBase = "https://openrouter.ai/api/v1";
+        Map<String, java.util.function.Supplier<AiProvider>> registry = Map.of(
+                "gemini", () -> new GeminiProvider(geminiKey, geminiModel),
+                "nvidia-deepseek", () -> new OpenAiCompatProvider(
+                        "nvidia-deepseek", nvBase, nvDeepseekKey, nvDeepseekModel),
+                "nvidia-kimi", () -> new OpenAiCompatProvider(
+                        "nvidia-kimi", nvBase, nvKimiKey, nvKimiModel),
+                "openrouter", () -> new OpenAiCompatProvider(
+                        "openrouter", openrouterBase, openrouterKey, openrouterModel,
+                        0.2, 800,
+                        Map.of("HTTP-Referer", "https://savdopro.uz",
+                                "X-Title", "SavdoPRO AI Assistant"))
+        );
+        List<AiProvider> out = new ArrayList<>();
+        for (String name : order.split(",")) {
+            String key = name.trim().toLowerCase();
+            var supplier = registry.get(key);
+            if (supplier == null) {
+                log.warn("AI chain: noma'lum provider nomi '{}', tashlandi", key);
+                continue;
+            }
+            out.add(supplier.get());
+        }
+        return List.copyOf(out);
+    }
+
+    public record ChatRequest(String question) { }
+    public record ChatResponse(String answer, String snapshot, String provider) { }
+
+    public ChatResponse ask(String question) {
+        String snapshot = buildSnapshot();
+        String contextual = (snapshot.isEmpty() ? "" : "KONTEKST:\n" + snapshot + "\n\n")
+                + "SAVOL: " + question;
+
+        StringBuilder errs = new StringBuilder();
+        for (AiProvider p : chain) {
+            if (!p.isConfigured()) continue;
+            try {
+                String answer = p.complete(SYSTEM_PROMPT, contextual);
+                return new ChatResponse(answer, snapshot, p.name());
+            } catch (Exception ex) {
+                log.warn("AI provider {} failed: {}", p.name(), ex.getMessage());
+                errs.append(p.name()).append("=").append(ex.getMessage()).append("; ");
+            }
+        }
+
+        // Every provider failed (or none configured). Hand back the raw
+        // snapshot so the UI still shows the numbers.
+        String diag = errs.length() == 0
+                ? "AI providerlar sozlanmagan."
+                : "Barcha AI providerlar javob bermadi: " + errs;
+        return new ChatResponse(
+                diag + (snapshot.isEmpty() ? "" : "\n\nKalit ma'lumot:\n" + snapshot),
+                snapshot, "none");
+    }
+
+    // --------------------------------------------------------------- snapshot
+
+    private String buildSnapshot() {
+        StringBuilder sb = new StringBuilder();
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
+        sb.append("HOZIRGI VAQT: ").append(LocalDateTime.now()).append("\n\n");
+
+        // -------- POS sotuv jami (kun-by-kun + hafta + oy) --------
+        // Sale jadvalidan, fakat haqiqiy POS sotuvlari (Payment jurnaliga
+        // tegmaydi). AI eng ko'p so'raydigan savollar shu ma'lumotni
+        // talab qiladi — "kecha qancha sotdik?" / "shu hafta qancha?"
+        sb.append("POS SOTUVLAR:\n");
+        appendSalesLine(sb, "  Bugun     ", today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+        appendSalesLine(sb, "  Kecha     ", yesterday.atStartOfDay(), today.atStartOfDay());
+        appendSalesLine(sb, "  Bu hafta  ", today.minusDays(7).atStartOfDay(), today.plusDays(1).atStartOfDay());
+        appendSalesLine(sb, "  Bu oy     ", today.minusDays(30).atStartOfDay(), today.plusDays(1).atStartOfDay());
+        sb.append('\n');
+
+        // -------- Today's full financial snapshot --------
+        try {
+            var rep = reports.forDate(today);
+            sb.append("BUGUNGI MOLIYA:\n");
+            sb.append("  Do'kon xarajati: ").append(money(rep.marketTotal())).append(" UZS\n");
+            sb.append("  Uy xarajati:     ").append(money(rep.homeTotal())).append(" UZS\n");
+            sb.append("  Kassa qoldiq:    ").append(money(rep.estimatedCash())).append(" UZS\n");
+            sb.append("  Bizning qarz:    ").append(money(rep.myDebtTotal())).append(" UZS\n");
+            sb.append("  Mijozdan qarz:   ").append(money(rep.customerDebtTotal())).append(" UZS\n\n");
+        } catch (Exception ignore) { /* report not available */ }
+
+        // -------- Top profitable products (30 days) --------
+        try {
+            var topProducts = analytics.profitByProduct(today.minusDays(30), today);
+            if (!topProducts.isEmpty()) {
+                sb.append("OXIRGI 30 KUNDA ENG FOYDALI MAHSULOTLAR:\n");
+                topProducts.stream().limit(5).forEach(p ->
+                        sb.append("  - ").append(p.name())
+                                .append(": ").append(p.soldQty()).append(" dona, foyda ")
+                                .append(money(p.profitUsd())).append(" USD\n"));
+                sb.append('\n');
+            }
+        } catch (Exception ignore) { /* */ }
+
+        // -------- Low stock items --------
+        try {
+            var low = products.findLowStockProducts();
+            if (!low.isEmpty()) {
+                long zero = low.stream().filter(p -> p.getQuantity() == 0).count();
+                sb.append("PAST STOK: ").append(low.size())
+                  .append(" ta mahsulot tugayapti (shu jumladan ").append(zero).append(" ta tugagan)\n");
+                low.stream().limit(5).forEach(p ->
+                        sb.append("  - ").append(p.getName())
+                                .append(": qoldiq ").append(p.getQuantity()).append("\n"));
+                sb.append('\n');
+            }
+        } catch (Exception ignore) { /* */ }
+
+        return sb.toString();
+    }
+
+    /** Helper — appends "label: N ta savdo, X UZS jami" line. */
+    private void appendSalesLine(StringBuilder sb, String label,
+                                 LocalDateTime from, LocalDateTime to) {
+        try {
+            Object[] row = sales.summaryBetween(from, to);
+            // Hibernate sometimes nests the result inside an extra array.
+            if (row != null && row.length == 1 && row[0] instanceof Object[] inner) {
+                row = inner;
+            }
+            long count = row != null && row.length > 0 ? ((Number) row[0]).longValue() : 0L;
+            Object totalObj = row != null && row.length > 1 ? row[1] : BigDecimal.ZERO;
+            Object refundObj = row != null && row.length > 2 ? row[2] : BigDecimal.ZERO;
+            BigDecimal total = (totalObj instanceof BigDecimal bd) ? bd : new BigDecimal(String.valueOf(totalObj));
+            BigDecimal refunded = (refundObj instanceof BigDecimal br) ? br : new BigDecimal(String.valueOf(refundObj));
+            BigDecimal net = total.subtract(refunded);
+            sb.append(label).append(": ")
+              .append(count).append(" ta savdo, ")
+              .append(money(net)).append(" UZS");
+            if (refunded.signum() > 0) {
+                sb.append(" (qaytarilgan ").append(money(refunded)).append(")");
+            }
+            sb.append('\n');
+        } catch (Exception ex) {
+            sb.append(label).append(": (ma'lumot yo'q)\n");
+        }
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0";
+        return v.setScale(0, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+}

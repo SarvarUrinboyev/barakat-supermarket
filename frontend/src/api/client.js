@@ -1,6 +1,13 @@
 // Thin fetch wrapper around the backend REST API.
 // In dev, Vite proxies /api to :8086; in production the JAR serves both.
 
+import {
+  getLicenseUrl,
+  getRefreshToken,
+  setRefreshToken,
+  clearAuthPair,
+} from './licenseClient.js';
+
 const BASE = '/api';
 const TOKEN_KEY = 'savdopro.token';
 const ACTIVE_SHOP_KEY = 'savdopro.activeShopId';
@@ -22,6 +29,36 @@ export function setToken(token) {
   } else {
     localStorage.removeItem(TOKEN_KEY);
   }
+}
+
+// In-flight refresh promise; null when idle. Concurrent 401s coalesce here
+// so only one /api/auth/refresh round-trip is ever in flight at a time.
+let refreshInFlight = null;
+
+async function refreshLocalToken() {
+  if (refreshInFlight) return refreshInFlight;
+  const stored = getRefreshToken();
+  if (!stored) return null;
+  const base = getLicenseUrl().replace(/\/+$/, '');
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${base}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: stored }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.token) setToken(data.token);
+      if (data.refreshToken) setRefreshToken(data.refreshToken);
+      return data.token || null;
+    } catch (_) {
+      return null;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+  return refreshInFlight;
 }
 
 async function request(method, path, body) {
@@ -53,12 +90,33 @@ async function request(method, path, body) {
     throw new ApiError("Serverga ulanib bo'lmadi. Backend ishlayaptimi?", 0);
   }
 
-  if (response.status === 401 || response.status === 403) {
-    // Token rejected — clear all session state and notify the app so it
-    // can drop the user back on the login screen. We clear shopId too so
-    // a stale X-Shop-Id from a deleted shop doesn't keep tripping the
-    // backend on the next request.
-    setToken(null);
+  if (response.status === 401) {
+    // Access token expired — attempt a silent refresh and replay once.
+    const fresh = await refreshLocalToken();
+    if (fresh) {
+      // Rebuild options with the new token and retry.
+      options.headers.Authorization = `Bearer ${fresh}`;
+      try {
+        response = await fetch(BASE + path, options);
+      } catch {
+        throw new ApiError("Serverga ulanib bo'lmadi. Backend ishlayaptimi?", 0);
+      }
+      // If the retry is also rejected, fall through to the clearAuthPair path below.
+    }
+
+    if (response.status === 401) {
+      // Refresh failed or server still rejects — clear state and surface error.
+      clearAuthPair();
+      localStorage.removeItem(ACTIVE_SHOP_KEY);
+      if (onUnauthorized) onUnauthorized(response.status);
+    }
+  }
+
+  if (response.status === 403) {
+    // Hard permission denial (not an expired token) — do not attempt refresh.
+    // Clear session state and bounce to login so the user can re-authenticate
+    // with an account that has the correct role.
+    clearAuthPair();
     localStorage.removeItem(ACTIVE_SHOP_KEY);
     if (onUnauthorized) onUnauthorized(response.status);
   }

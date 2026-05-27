@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CategoryApi, ProductApi, ReportApi } from '../api/endpoints.js';
 import { downloadAuthed } from '../lib/download.js';
 import { CategoryManager } from '../components/CategoryManager.jsx';
+import { ExportButton } from '../components/ExportButton.jsx';
 import { ImportModal } from '../components/ImportModal.jsx';
 import { ScanModal } from '../components/ScanModal.jsx';
 import { EmptyState, Loader, MetricCard } from '../components/ui.jsx';
@@ -91,6 +92,19 @@ export function Warehouse() {
           >
             📄 {t('PDF eksport')}
           </button>
+          <ExportButton
+            filename={`ombor-${new Date().toISOString().slice(0, 10)}`}
+            getRows={() => filtered.map((p) => ({
+              [t('Nomi')]: p.name,
+              [t('Shtrix-kod')]: p.barcode || '',
+              [t('Toifa')]: p.categoryName || '',
+              [t('Qoldiq')]: p.quantity,
+              [t('Kelish narxi (USD)')]: p.purchasePriceUsd ?? '',
+              [t('Sotilish narxi (USD)')]: p.sellingPriceUsd ?? '',
+              [t('Past stok pol')]: p.lowStockThreshold ?? '',
+              [t('Holat')]: t(STATUS_LABEL[p.stockStatus] || p.stockStatus),
+            }))}
+          />
           <button className="btn btn-accent" onClick={() => setModal('scan')}>
             📷 {t('Skaner')}
           </button>

@@ -6,7 +6,7 @@
 
 const { app, BrowserWindow, dialog, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -21,6 +21,7 @@ const STARTUP_TIMEOUT_SECONDS = 90;
 
 let mainWindow = null;
 let backendProcess = null;
+let backendStopIntentional = false;
 
 /** Absolute path to the backend JAR (packaged vs. development layout). */
 function jarPath() {
@@ -75,7 +76,24 @@ function resolveJava() {
   return exeName;
 }
 
+/**
+ * On Windows: kill any process that is already listening on BACKEND_PORT.
+ * This clears orphan Java processes from a previous unclean shutdown so
+ * the new JAR can bind successfully.
+ */
+function freeBackendPort() {
+  if (process.platform !== 'win32') return;
+  try {
+    // netstat finds the PID; for /f extracts it; taskkill removes it.
+    spawnSync('cmd', ['/c',
+      `for /f "tokens=5" %a in ('netstat -ano ^| findstr " 0.0.0.0:${BACKEND_PORT} " ^| findstr LISTENING') do taskkill /f /pid %a`,
+    ], { stdio: 'ignore' });
+  } catch (_) { /* best-effort; failure is non-fatal */ }
+}
+
 function startBackend() {
+  freeBackendPort();   // clear any orphan holding the port before we try to bind
+  backendStopIntentional = false;
   const jar = jarPath();
   if (!fs.existsSync(jar)) {
     dialog.showErrorBox(
@@ -93,7 +111,12 @@ function startBackend() {
   } catch {
     /* logging is best-effort; fall back to discarding output */
   }
-  backendProcess = spawn(resolveJava(), ['-jar', jar], {
+  // In dev builds the JWT secret lives in application-local.properties;
+  // activate the "local" Spring profile so it is loaded automatically.
+  const springArgs = app.isPackaged
+    ? []
+    : ['--spring.profiles.active=local'];
+  backendProcess = spawn(resolveJava(), ['-jar', jar, ...springArgs], {
     cwd: workdir,
     stdio: ['ignore', outFd, outFd],
     windowsHide: true,
@@ -101,8 +124,17 @@ function startBackend() {
   backendProcess.on('error', (err) => {
     dialog.showErrorBox(
       'SavdoPRO',
-      'Backend ishga tushmadi. Java 21 o‘rnatilganligini tekshiring.\n\n' + err.message,
+      `Backend ishga tushmadi. Java 21 o'rnatilganligini tekshiring.\n\n` + err.message,
     );
+  });
+  backendProcess.on('exit', (code) => {
+    if (backendStopIntentional) return; // normal shutdown — do not restart
+    // Unexpected crash — wait 4 s then restart
+    setTimeout(() => {
+      if (!backendStopIntentional && mainWindow && !mainWindow.isDestroyed()) {
+        startBackend();
+      }
+    }, 4000);
   });
 }
 
@@ -110,9 +142,14 @@ function stopBackend() {
   if (!backendProcess || backendProcess.killed) {
     return;
   }
+  backendStopIntentional = true;
   try {
     if (process.platform === 'win32') {
-      spawn('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t']);
+      // spawnSync so the kill completes before Electron itself exits.
+      // This prevents the Java process from becoming an orphan (which would
+      // hold port 8086 and block the next startup).
+      spawnSync('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t'],
+        { stdio: 'ignore' });
     } else {
       backendProcess.kill('SIGTERM');
     }
@@ -148,6 +185,64 @@ async function waitForBackend() {
 }
 
 /**
+ * Polls the VPS update manifest and, when a newer version is available,
+ * shows a non-blocking dialog that lets the user open the download URL.
+ *
+ * Works in both dev and packaged builds.
+ *
+ * VPS nginx config required (add inside the server {} block):
+ *
+ *   location = /update-desktop.json {
+ *       alias /opt/barakat/update-desktop.json;
+ *       add_header Cache-Control "no-cache, no-store, must-revalidate";
+ *       add_header Content-Type application/json;
+ *       add_header Access-Control-Allow-Origin *;
+ *   }
+ */
+async function checkForDesktopUpdate() {
+  const UPDATE_URL = 'https://167-172-164-214.nip.io/update-desktop.json';
+  try {
+    // net.fetch is available in Electron 21+; fall back to a Node https request
+    // so the call works in older runtimes too.
+    const { net } = require('electron');
+    const res = await net.fetch(UPDATE_URL);
+    if (!res.ok) {
+      console.log(`Update check: server returned ${res.status}`);
+      return;
+    }
+    const data = await res.json();
+    const remoteVersion = (data.version || '').trim();
+    const currentVersion = app.getVersion();
+
+    if (!remoteVersion || remoteVersion === currentVersion) {
+      console.log(`Update check: up-to-date (${currentVersion})`);
+      return;
+    }
+
+    console.log(`Update check: new version ${remoteVersion} available (current: ${currentVersion})`);
+
+    if (!mainWindow) {
+      return;
+    }
+
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: 'info',
+      title: 'Yangi versiya mavjud',
+      message: `SavdoPRO v${remoteVersion} yangi versiyasi mavjud!\n\n${data.changelog || ''}`,
+      buttons: ['⬇️ Yuklab olish', 'Keyinroq'],
+      defaultId: 0,
+    });
+
+    if (choice === 0 && data.url) {
+      shell.openExternal(data.url);
+    }
+  } catch (err) {
+    // Network errors, JSON parse errors, etc. — all silently swallowed.
+    console.log('Update check failed (non-fatal):', err.message);
+  }
+}
+
+/**
  * Checks GitHub Releases for a newer version. The download happens in the
  * background; when it is ready the user is offered an immediate restart
  * (the same way Telegram / Claude desktop deliver updates).
@@ -170,7 +265,7 @@ function setupAutoUpdate() {
       cancelId: 1,
       title: 'Yangilanish tayyor',
       message: `SavdoPRO ${info.version} versiyasi yuklab olindi.`,
-      detail: 'Yangilanishni o‘rnatish uchun dastur qayta ishga tushadi. '
+      detail: `Yangilanishni o'rnatish uchun dastur qayta ishga tushadi. `
         + '"Keyinroq" tugmasini bossangiz, dastur keyingi yopilganda yangilanadi.',
     });
     if (choice === 0) {
@@ -237,6 +332,8 @@ function createWindow() {
     }
     if (ready) {
       mainWindow.loadURL(APP_URL);
+      // Check for updates 5 s after the UI is loaded so startup isn't blocked.
+      setTimeout(() => checkForDesktopUpdate(), 5000);
     } else {
       mainWindow.loadFile(path.join(__dirname, 'splash.html'), { hash: 'error' });
     }
@@ -244,7 +341,35 @@ function createWindow() {
 }
 
 // Only allow a single running instance.
-if (!app.requestSingleInstanceLock()) {
+//
+// Problem on Windows: when the laptop hibernates or is force-powered-off,
+// the previous SavdoPRO / electron processes can survive in a zombie state.
+// They hold requestSingleInstanceLock() but have no visible window, so a
+// fresh launch immediately quits without explanation.
+//
+// Fix: if the lock is denied on Windows, evict any stale electron/SavdoPRO
+// processes (excluding ourselves) and retry once. A real live instance will
+// have already focused its window via the second-instance event; a zombie
+// will not, and this kill will clear it.
+function evictZombiesAndRetry() {
+  if (process.platform !== 'win32') return false;
+  // Kill all electron.exe and SavdoPRO.exe processes except our own PID.
+  spawnSync('wmic', [
+    'process', 'where',
+    `(name='electron.exe' or name='SavdoPRO.exe') and processid!='${process.pid}'`,
+    'call', 'terminate',
+  ], { stdio: 'ignore' });
+  // Give Windows ~1 s to release the named-pipe lock handles.
+  spawnSync('cmd', ['/c', 'ping -n 2 127.0.0.1 >nul'], { stdio: 'ignore' });
+  return app.requestSingleInstanceLock();
+}
+
+let gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  gotLock = evictZombiesAndRetry();
+}
+
+if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {

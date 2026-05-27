@@ -693,6 +693,86 @@ const RU = {
   "Bu yerda barcha": 'Здесь собраны данные всех',
   "ta do'konning ma'lumotlari jamlangan. Yangi mahsulot/mijoz/to'lov qo'shish uchun aniq do'konni tanlang.":
     " магазинов. Чтобы добавить товар/клиента/платёж — выберите конкретный магазин.",
+
+  // ---------- Phase 5: new modules / panels (TIER 1 + TIER 2) ----------
+  // Account modules editor
+  'Sidebar modullari va sozlamalar': 'Модули и настройки боковой панели',
+  "Akkaunt sozlamalari": 'Настройки аккаунта',
+  "Akkauntlar ro'yxati": 'Список аккаунтов',
+  "Modullar": 'Модули',
+  "Hammasini yoqish": 'Включить все',
+  "Hammasini o'chirish": 'Выключить все',
+  "Belgilangan modullar shu akkauntning barcha foydalanuvchilari uchun chap menyuda ko'rinadi. Hech narsa belgilanmasa — hammasi ko'rinadi (legacy default).":
+    'Отмеченные модули показываются всем пользователям этого аккаунта в боковом меню. Если ничего не отмечено — видны все (legacy default).',
+  "Saqlandi — foydalanuvchilar keyingi kirishda yangi sozlamani ko'radi":
+    'Сохранено — пользователи увидят новые настройки при следующем входе',
+  "Saqlab bo'lmadi": 'Не удалось сохранить',
+  "Foydalanuvchilar": 'Пользователи',
+  "Oxirgi kirish": 'Последний вход',
+
+  // Audit log
+  'Audit log': 'Журнал аудита',
+  "Super-admin amallar tarixi — append-only, oxirgisi tepada":
+    'История действий супер-админа — только добавление, новейшее сверху',
+  "Audit log bo'sh": 'Журнал пуст',
+  'Vaqt': 'Время',
+  'Amal': 'Действие',
+  'Obyekt': 'Объект',
+  'Tafsilot': 'Детали',
+  'IP': 'IP',
+  'Yangilash': 'Обновить',
+  'Yana yuklash': 'Загрузить ещё',
+  'Yuklanmoqda...': 'Загрузка...',
+
+  // Low stock widget
+  "Past stok ogohlantirishi": 'Предупреждение: мало товара',
+  "tovar tugash arafasida": 'товар(ов) заканчиваются',
+  "Omborni tekshirish": 'Проверить склад',
+  "Hammasi yetarli": 'Всего достаточно',
+
+  // Reports / new tabs
+  'Mahsulot bo\'yicha foyda': 'Прибыль по товарам',
+  'Soatlik sotuvlar': 'Продажи по часам',
+  'Eng foydali mahsulotlar': 'Самые прибыльные товары',
+  'Sekin sotilayotgan tovarlar': 'Медленно продающиеся товары',
+  'Foyda': 'Прибыль',
+  'Sotilgan dona': 'Продано шт.',
+
+  // Price tags PDF
+  'Narx yorliqlari': 'Ценники',
+  'Yorliq chiqarish': 'Печать ценников',
+  'Tanlangan mahsulotlar': 'Выбранные товары',
+
+  // Refund workflow
+  'Qaytarish': 'Возврат',
+  'Chek raqami': 'Номер чека',
+  'Qaytarish sababi': 'Причина возврата',
+  "Qisman qaytarish": 'Частичный возврат',
+  "To'liq qaytarish": 'Полный возврат',
+  "Sotuvni topish": 'Найти продажу',
+
+  // Discounts
+  'Chegirma': 'Скидка',
+  'Chegirma %': 'Скидка %',
+  'Chegirma summa': 'Скидка сумма',
+  "Chegirma qo'llanildi": 'Скидка применена',
+
+  // Excel export
+  'Excel\'ga eksport': 'Экспорт в Excel',
+  "Eksport qilinmoqda...": 'Экспорт...',
+  'Eksport tayyor': 'Экспорт готов',
+
+  // Quick search (Ctrl+K)
+  "Tezkor qidiruv": 'Быстрый поиск',
+  "Sahifa, mahsulot, mijoz...": 'Страница, товар, клиент...',
+  "Hech narsa topilmadi": 'Ничего не найдено',
+  "Sahifalar": 'Страницы',
+  "Mahsulotlar": 'Товары',
+  "Mijozlar": 'Клиенты',
+
+  // Auto-backup
+  'Backup yaratildi': 'Резервная копия создана',
+  "Oxirgi backup": 'Последняя копия',
 };
 
 /** Translates an Uzbek-Latin string into the given language. */

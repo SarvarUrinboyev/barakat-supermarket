@@ -11,4 +11,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     /** Finds the customer linked to a Telegram chat (self-service bot). */
     Optional<Customer> findByTelegramChatId(Long telegramChatId);
+
+    /** Finds the customer whose loyalty card QR matches the scanned code. */
+    Optional<Customer> findByCardCode(String cardCode);
 }

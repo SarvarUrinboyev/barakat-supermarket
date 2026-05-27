@@ -68,4 +68,17 @@ public class Account extends BaseEntity {
 
     @Column(name = "brand_footer_note", length = 300)
     private String brandFooterNote;
+
+    /**
+     * Comma-separated module keys this account is allowed to see in the
+     * sidebar (e.g. "dashboard,warehouse,reports,customers"). NULL means
+     * all modules are visible — the default for any legacy account that
+     * existed before the per-module gating feature was added.
+     *
+     * The frontend's Sidebar.jsx owns the canonical list of module keys;
+     * the backend treats this column as opaque text so future modules
+     * don't require a schema change.
+     */
+    @Column(name = "enabled_modules", length = 2000)
+    private String enabledModules;
 }

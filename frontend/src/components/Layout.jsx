@@ -1,7 +1,11 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { useMemo } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AiChatWidget } from './AiChatWidget.jsx';
+import { QuickSearch } from './QuickSearch.jsx';
 import { Sidebar } from './Sidebar.jsx';
 import { ShopSwitcher } from './ShopSwitcher.jsx';
 import { ErrorBoundary } from './ErrorBoundary.jsx';
+import { useKeyboard } from '../hooks/useKeyboard.js';
 import { useAuth } from '../context/Auth.jsx';
 import { useSettings } from '../context/Settings.jsx';
 import { useShop } from '../context/Shop.jsx';
@@ -13,6 +17,8 @@ const WARNING_DAYS = 4;
 
 const PAGE_TITLES = {
   '/dashboard': 'Boshqaruv',
+  '/pos': 'Kassa (POS)',
+  '/pos/history': 'Sotuvlar tarixi',
   '/management': 'Menejment',
   '/home-expenses': "Do'kon xarajatlari",
   '/payments': "To'lov",
@@ -26,6 +32,7 @@ const PAGE_TITLES = {
   '/shift-close': 'Smena yopish',
   '/admin': 'Super-admin',
   '/shops': "Do'konlar",
+  '/reports': 'Hisobotlar',
 };
 
 /** Resolves the topbar title, treating nested routes by their prefix. */
@@ -54,8 +61,21 @@ export function Layout({ shift }) {
     && user.daysUntilBlock <= WARNING_DAYS
     && user.daysUntilBlock >= 0;
 
+  const navigate = useNavigate();
+  // Global function-key shortcuts: jump to common pages without using the mouse.
+  useKeyboard(useMemo(() => ({
+    F2: () => navigate('/warehouse/new'),   // new product
+    F3: () => navigate('/warehouse'),       // warehouse
+    F4: () => navigate('/customers'),       // customers
+    F5: () => navigate('/payments'),        // payments
+    F9: () => navigate('/shift-close'),     // close shift
+    F10: () => navigate('/reports'),        // reports
+  }), [navigate]));
+
   return (
     <div className="app-shell">
+      <QuickSearch />
+      <AiChatWidget />
       <Sidebar shift={shift} />
       <div className="main">
         <header className="topbar">

@@ -234,7 +234,41 @@ public class AdminService {
         return new AdminAccountResponse(
                 a.getId(), a.getName(), a.getContactPhone(), a.getContactNote(),
                 a.getSubscriptionExpires(), Math.max(0, days),
-                a.isBlocked(), expired, userCount, a.getCreatedAt());
+                a.isBlocked(), expired, userCount, a.getCreatedAt(),
+                a.getEnabledModules());
+    }
+
+    /**
+     * Replace the account's enabled-module list.
+     *
+     * The frontend sends a comma-separated key list (or null to mean
+     * "all modules visible"). We trim, lowercase, de-dupe and re-join so
+     * the stored value is normalized regardless of how the client built
+     * the request. The set of valid keys is owned by the frontend; we
+     * never reject unknown keys here so new modules can be rolled out
+     * without an API change.
+     */
+    public AdminAccountResponse setModules(Long id, String enabledModulesCsv) {
+        Account a = accounts.findById(id)
+                .orElseThrow(() -> NotFoundException.of("Akkaunt", id));
+        String normalized = normalizeModules(enabledModulesCsv);
+        a.setEnabledModules(normalized);
+        Account saved = accounts.save(a);
+        audit.record("ACCOUNT_MODULES_SET", "ACCOUNT", id, saved.getName(),
+                normalized == null ? "(all enabled)" : normalized);
+        return toAccountResponse(saved);
+    }
+
+    private static String normalizeModules(String csv) {
+        if (csv == null || csv.isBlank()) return null;
+        java.util.LinkedHashSet<String> keys = new java.util.LinkedHashSet<>();
+        for (String raw : csv.split(",")) {
+            String key = raw == null ? "" : raw.trim().toLowerCase();
+            if (!key.isEmpty()) {
+                keys.add(key);
+            }
+        }
+        return keys.isEmpty() ? null : String.join(",", keys);
     }
 
     private static AdminUserResponse toUserResponse(AppUser u) {

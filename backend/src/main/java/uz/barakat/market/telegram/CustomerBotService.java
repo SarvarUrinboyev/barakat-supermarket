@@ -143,15 +143,35 @@ public class CustomerBotService {
             linkAndShow(chatId, contact.path("phone_number").asText());
             return;
         }
-        String text = message.path("text").asText("");
+        String text = message.path("text").asText("").trim();
         if (text.startsWith("/start")) {
             api.sendMessage(chatId, welcomeText(), contactKeyboard());
-        } else {
-            api.sendMessage(chatId,
-                    "Qarzingizni bilish uchun pastdagi \"📱 Telefon raqamni yuborish\" "
-                    + "tugmasini bosing.",
-                    contactKeyboard());
+            return;
         }
+        if (text.equalsIgnoreCase("/balans") || text.equalsIgnoreCase("/qarz")) {
+            Optional<Customer> linked = customers.findByTelegramChatId(chatId);
+            if (linked.isEmpty()) {
+                api.sendMessage(chatId,
+                        "Avval tugma orqali telefon raqamingizni yuboring.",
+                        contactKeyboard());
+            } else {
+                api.sendMessage(chatId, summaryText(linked.get()), rangeKeyboard());
+            }
+            return;
+        }
+        if (text.equalsIgnoreCase("/help") || text.equalsIgnoreCase("/yordam")) {
+            api.sendMessage(chatId,
+                    "BUYRUQLAR:\n" +
+                    "/start  — boshlash\n" +
+                    "/balans — qarzingiz va sotib olganlaringiz\n" +
+                    "/help   — shu yordam\n\n" +
+                    "Mahsulot narxlari va savollar uchun do'konga murojaat qiling.");
+            return;
+        }
+        api.sendMessage(chatId,
+                "Qarzingizni bilish uchun pastdagi \"📱 Telefon raqamni yuborish\" "
+                + "tugmasini bosing.\nYoki: /balans, /help",
+                contactKeyboard());
     }
 
     private void handleCallback(JsonNode callback) {

@@ -23,9 +23,13 @@ import { getToken, setToken } from './client.js';
 
 const LICENSE_URL_KEY = 'savdopro.licenseUrl';
 const REFRESH_KEY = 'savdopro.refreshToken';
-// Production VPS — HTTPS via Let's Encrypt (nip.io cert, valid 90 d).
-// No localhost fallback; every machine points to the same server.
-const DEFAULT_URL = 'https://167-172-164-214.nip.io';
+// Local-first: a Windows Scheduled Task launches the license server on
+// user logon (port 9090). The desktop hits localhost so login keeps
+// working when the VPS is unreachable. The remote VPS is the off-site
+// fallback when localhost is down (e.g. service didn't start yet).
+const LOCAL_URL = 'http://127.0.0.1:9090';
+const VPS_URL = 'https://167-172-164-214.nip.io';
+const DEFAULT_URL = LOCAL_URL;
 
 function urlFromQuery() {
   try {
@@ -44,13 +48,23 @@ export function getLicenseUrl() {
   if (fromQuery) return fromQuery;
 
   const stored = localStorage.getItem(LICENSE_URL_KEY);
-  // Migrate: wipe any plain-HTTP / localhost URL saved by an old build
-  // so the new default takes effect immediately on next launch.
-  if (stored && (stored.startsWith('http://') || stored.includes('localhost'))) {
+  // Migrate: any old build that pinned the URL to the VPS gets wiped so
+  // the new local-first default takes effect on next launch. Keep custom
+  // URLs (LAN IPs, alternative hosts) that the operator set intentionally.
+  if (stored && (stored.includes('nip.io') || stored.startsWith('http://localhost'))) {
     localStorage.removeItem(LICENSE_URL_KEY);
     return DEFAULT_URL;
   }
   return stored || DEFAULT_URL;
+}
+
+/**
+ * Off-site fallback URL — used by the client when {@link getLicenseUrl}
+ * (typically localhost) is unreachable. Returns the remote VPS so a
+ * machine without the local service still gets to log in.
+ */
+export function getFallbackLicenseUrl() {
+  return VPS_URL;
 }
 
 export function setLicenseUrl(url) {
@@ -127,8 +141,12 @@ async function refreshOnce() {
   return refreshInFlight;
 }
 
-async function rawFetch(method, path, body) {
-  const base = getLicenseUrl().replace(/\/+$/, '');
+// 8-second hard timeout per fetch so the UI is never stuck on a dead
+// host — a TCP connect to an unreachable VPS would otherwise hang for
+// ~75 s on Windows before the OS gives up.
+const FETCH_TIMEOUT_MS = 8_000;
+
+function buildOptions(method, body) {
   const options = { method, headers: {} };
   if (body !== undefined) {
     options.headers['Content-Type'] = 'application/json';
@@ -136,7 +154,32 @@ async function rawFetch(method, path, body) {
   }
   const token = getToken();
   if (token) options.headers.Authorization = `Bearer ${token}`;
-  return fetch(`${base}${path}`, options);
+  return options;
+}
+
+function fetchWithTimeout(url, options, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal })
+    .finally(() => clearTimeout(timer));
+}
+
+async function rawFetch(method, path, body) {
+  const primaryBase = getLicenseUrl().replace(/\/+$/, '');
+  const fallbackBase = getFallbackLicenseUrl().replace(/\/+$/, '');
+  const options = buildOptions(method, body);
+
+  // Try the configured (usually local) URL first.
+  try {
+    return await fetchWithTimeout(`${primaryBase}${path}`, options);
+  } catch (err) {
+    // If the primary IS the fallback, there is no point retrying.
+    if (primaryBase === fallbackBase) throw err;
+    // Network failure on localhost → try the off-site VPS as a backup.
+    // This is the "VPS comes back to life" path so users can log in even
+    // if the local service hasn't started yet.
+    return fetchWithTimeout(`${fallbackBase}${path}`, options);
+  }
 }
 
 async function request(method, path, body) {

@@ -118,12 +118,40 @@ export const AdminApi = {
   updateAccount: (id, body) => licenseApi.put(`/api/admin/accounts/${id}`, body),
   setBlocked: (id, blocked) =>
     licenseApi.patch(`/api/admin/accounts/${id}/block`, { blocked }),
+  setModules: (id, enabledModules) =>
+    licenseApi.patch(`/api/admin/accounts/${id}/modules`, { enabledModules }),
   deleteAccount: (id) => licenseApi.del(`/api/admin/accounts/${id}`),
   createUser: (accountId, body) =>
     licenseApi.post(`/api/admin/accounts/${accountId}/users`, body),
   resetPassword: (userId, password) =>
     licenseApi.patch(`/api/admin/users/${userId}/password`, { password }),
   deleteUser: (userId) => licenseApi.del(`/api/admin/users/${userId}`),
+  auditList: (page = 0, size = 50) => licenseApi.get(`/api/admin/audit?page=${page}&size=${size}`),
+};
+
+export const AiApi = {
+  ask: (question) => api.post('/ai/ask', { question }),
+  forecast: () => api.get('/ai/forecast'),
+  reorderQueue: () => api.get('/ai/reorder-queue'),
+  slowMovers: () => api.get('/ai/slow-movers'),
+  cashboxForecast: () => api.get('/ai/cashbox-forecast'),
+  anomalies: () => api.get('/ai/anomalies'),
+};
+
+export const PromoApi = {
+  list: () => api.get('/promos'),
+  active: () => api.get('/promos/active'),
+  get: (id) => api.get(`/promos/${id}`),
+  create: (body) => api.post('/promos', body),
+  update: (id, body) => api.put(`/promos/${id}`, body),
+  remove: (id) => api.del(`/promos/${id}`),
+};
+
+export const PosApi = {
+  checkout: (body) => api.post('/pos/checkout', body),
+  recent: () => api.get('/pos/sales'),
+  get: (id) => api.get(`/pos/sales/${id}`),
+  refund: (id, body) => api.post(`/pos/sales/${id}/refund`, body ?? { items: [] }),
 };
 
 export const ProductApi = {
@@ -134,6 +162,7 @@ export const ProductApi = {
   remove: (id) => api.del(`/products/${id}`),
   adjust: (id, body) => api.patch(`/products/${id}/adjust`, body),
   movements: (id) => api.get(`/products/${id}/movements`),
+  lowStock: () => api.get('/products/low-stock'),
   scan: (body) => api.post('/products/scan', body),
   importFile: (file) => uploadFile('/products/import', file),
   templateUrl: '/api/products/import/template',
@@ -162,6 +191,8 @@ export const TerminalApi = {
 export const ReportApi = {
   endOfDay: (date) => api.get('/report/end-of-day' + qs({ date })),
   sendTelegram: (date) => api.post('/report/send-telegram' + qs({ date })),
+  profitByProduct: (params) => api.get('/report/profit-by-product' + qs(params)),
+  hourlySales: (params) => api.get('/report/hourly-sales' + qs(params)),
   // Branded PDF downloads (Phase 4.1). These return raw URLs because
   // the desktop's print pipeline opens them directly — see lib/download.js.
   salesPdfUrl: (params) => '/api/report/pdf/sales' + qs(params),

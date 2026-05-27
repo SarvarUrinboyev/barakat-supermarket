@@ -10,10 +10,12 @@ import uz.barakat.market.dto.DashboardResponse;
 import uz.barakat.market.dto.OrderResponse;
 import uz.barakat.market.service.DashboardService;
 import uz.barakat.market.service.MoneyFormat;
+import uz.barakat.market.service.StockAlertService;
 
 /**
- * Scheduled Telegram reminders: an 08:00 briefing of the day ahead and a
- * 22:00 nudge to close the shift. Cron expressions come from configuration.
+ * Scheduled Telegram reminders: an 08:00 briefing of the day ahead, a
+ * 09:00 low-stock audit, and a 22:00 nudge to close the shift.
+ * Cron expressions come from configuration.
  */
 @Component
 public class NotificationScheduler {
@@ -23,11 +25,14 @@ public class NotificationScheduler {
 
     private final DashboardService dashboardService;
     private final TelegramService telegramService;
+    private final StockAlertService stockAlertService;
 
     public NotificationScheduler(DashboardService dashboardService,
-                                 TelegramService telegramService) {
+                                 TelegramService telegramService,
+                                 StockAlertService stockAlertService) {
         this.dashboardService = dashboardService;
         this.telegramService = telegramService;
+        this.stockAlertService = stockAlertService;
     }
 
     /** Morning briefing: today's deliveries, overdue orders and total debt. */
@@ -59,6 +64,13 @@ public class NotificationScheduler {
         sb.append("\nUmumiy qarz: ").append(MoneyFormat.usd(dash.totalDebt())).append('\n');
         sb.append("Yaxshi savdo tilaymiz!");
         telegramService.sendMessage(sb.toString());
+    }
+
+    /** Daily low-stock audit: alerts the owner for products below their threshold. */
+    @Scheduled(cron = "${telegram.stock-alert-cron}")
+    public void stockAlertReminder() {
+        log.info("Running daily low-stock Telegram alert");
+        stockAlertService.checkAndAlert();
     }
 
     /** Evening nudge to close the shift. */

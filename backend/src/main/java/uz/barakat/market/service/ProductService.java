@@ -75,6 +75,15 @@ public class ProductService {
         return Mappers.product(product, categoryName(product.getCategoryId()));
     }
 
+    /** Products at or below their configured low-stock threshold. */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> lowStock() {
+        Map<Long, String> names = categoryNames();
+        return products.findLowStockProducts().stream()
+                .map(p -> Mappers.product(p, names.get(p.getCategoryId())))
+                .toList();
+    }
+
     public ProductResponse create(ProductRequest request) {
         Product product = new Product();
         applyFields(product, request);

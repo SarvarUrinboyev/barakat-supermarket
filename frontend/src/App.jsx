@@ -9,6 +9,8 @@ import { CustomerDetail } from './pages/CustomerDetail.jsx';
 import { Customers } from './pages/Customers.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { Admin } from './pages/Admin.jsx';
+import { AccountDetail } from './pages/AccountDetail.jsx';
+import { AuditLog } from './pages/AuditLog.jsx';
 import { Debt } from './pages/Debt.jsx';
 import { HomeExpenses } from './pages/HomeExpenses.jsx';
 import { Login } from './pages/Login.jsx';
@@ -16,6 +18,9 @@ import { Shops } from './pages/Shops.jsx';
 import { Management } from './pages/Management.jsx';
 import { Orders } from './pages/Orders.jsx';
 import { Payments } from './pages/Payments.jsx';
+import { Pos } from './pages/Pos.jsx';
+import { PosHistory } from './pages/PosHistory.jsx';
+import { Promos } from './pages/Promos.jsx';
 import { ShiftClose } from './pages/ShiftClose.jsx';
 import { ShiftHistory } from './pages/ShiftHistory.jsx';
 import { ShiftOpen } from './pages/ShiftOpen.jsx';
@@ -24,6 +29,7 @@ import { SupplierDetail } from './pages/SupplierDetail.jsx';
 import { Suppliers } from './pages/Suppliers.jsx';
 import { Transfers } from './pages/Transfers.jsx';
 import { Warehouse } from './pages/Warehouse.jsx';
+import { Reports } from './pages/Reports.jsx';
 
 /**
  * Top level: until a shift is open the app shows the "open shift" gate;
@@ -109,8 +115,14 @@ function Authenticated() {
         <Route path="shift-history" element={<ShiftHistory />} />
         <Route path="shift-close" element={<ShiftClose onClosed={reload} />} />
         <Route path="admin" element={<Admin />} />
+        <Route path="admin/accounts/:id" element={<AccountDetail />} />
+        <Route path="admin/audit" element={<AuditLog />} />
         <Route path="shops" element={<Shops />} />
         <Route path="transfers" element={<Transfers />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="pos" element={<Pos />} />
+        <Route path="pos/history" element={<PosHistory />} />
+        <Route path="promos" element={<Promos />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

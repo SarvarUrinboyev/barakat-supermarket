@@ -181,11 +181,17 @@ public class AuthService {
 
     private MeResponse toMe(AppUser user, Account account) {
         int days = daysUntilBlock(account);
+        // SUPER_ADMIN ignores the allow-list — they need every page to
+        // diagnose / configure other tenants. Everyone else sees only
+        // what their account has enabled (null = all visible).
+        String modules = user.getRole() == uz.barakat.license.domain.UserRole.SUPER_ADMIN
+                ? null
+                : account.getEnabledModules();
         return new MeResponse(
                 user.getId(), user.getUsername(), user.getFullName(), user.getRole().name(),
                 account.getId(), account.getName(),
                 account.getSubscriptionExpires(), days, account.isBlocked(),
-                brandFor(account));
+                brandFor(account), modules);
     }
 
     /**

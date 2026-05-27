@@ -23,7 +23,15 @@ public final class AdminDtos {
             boolean blocked,
             boolean expired,
             int userCount,
-            LocalDateTime createdAt) {
+            LocalDateTime createdAt,
+            /** Comma-separated module keys; null = all modules visible. */
+            String enabledModules) {
+    }
+
+    /** Body of {@code PATCH /api/admin/accounts/{id}/modules}. */
+    public record ModulesRequest(
+            /** Comma-separated module keys, or null/empty to enable all. */
+            String enabledModules) {
     }
 
     public record AdminUserResponse(
