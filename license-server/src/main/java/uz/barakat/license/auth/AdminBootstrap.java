@@ -19,26 +19,45 @@ import uz.barakat.license.repository.AppUserRepository;
  * (gitignored) so they never end up in the repo. If the configured user
  * doesn't exist yet it is created; if it exists, the password is left
  * alone (manual change via SQL / admin API later).
+ *
+ * <h2>Weak-password gate</h2>
+ * Before creating the seeded super-admin, we fail closed if the
+ * configured password is unset, shorter than 8 chars, or equal to the
+ * well-known {@code admin123} fallback. The operator must supply a
+ * strong value via the {@code SAVDOPRO_ADMIN_PASSWORD} env var.
+ * <p>Setting {@code SAVDOPRO_ALLOW_DEV_ADMIN=true} opts in to the weak
+ * default with a loud WARN and is intended for local development only.
+ * Mirrors the {@code SAVDOPRO_ALLOW_DEV_SECRET} flag enforced by
+ * {@link JwtService}.
  */
 @Component
 public class AdminBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(AdminBootstrap.class);
 
+    /** Well-known weak default we explicitly reject. Compared case-insensitively. */
+    static final String WEAK_DEFAULT_PASSWORD = "admin123";
+
+    /** Minimum acceptable length for the bootstrapped admin password. */
+    static final int MIN_PASSWORD_LENGTH = 8;
+
     private final AppUserRepository users;
     private final String adminUsername;
     private final String adminPassword;
     private final String adminFullName;
+    private final boolean allowDevDefaults;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public AdminBootstrap(AppUserRepository users,
                           @Value("${savdopro.admin.username:admin}") String username,
                           @Value("${savdopro.admin.password:admin123}") String password,
-                          @Value("${savdopro.admin.full-name:Super Admin}") String fullName) {
+                          @Value("${savdopro.admin.full-name:Super Admin}") String fullName,
+                          @Value("${SAVDOPRO_ALLOW_DEV_ADMIN:false}") boolean allowDevDefaults) {
         this.users = users;
         this.adminUsername = username;
         this.adminPassword = password;
         this.adminFullName = fullName;
+        this.allowDevDefaults = allowDevDefaults;
     }
 
     @PostConstruct
@@ -46,6 +65,29 @@ public class AdminBootstrap {
     public void ensureAdmin() {
         if (users.existsByUsernameIgnoreCase(adminUsername)) {
             return;
+        }
+        // Fail closed before persisting a weak super-admin. If the operator
+        // hasn't supplied a strong SAVDOPRO_ADMIN_PASSWORD, refuse to start
+        // unless SAVDOPRO_ALLOW_DEV_ADMIN=true explicitly opts in to the
+        // weak default (intended for local development only).
+        boolean weak = adminPassword == null
+                || adminPassword.length() < MIN_PASSWORD_LENGTH
+                || WEAK_DEFAULT_PASSWORD.equalsIgnoreCase(adminPassword);
+        if (weak) {
+            if (!allowDevDefaults) {
+                throw new IllegalStateException(
+                        "REFUSING TO START: savdopro.admin.password is unset, shorter than "
+                                + MIN_PASSWORD_LENGTH + " chars, or equal to the well-known '"
+                                + WEAK_DEFAULT_PASSWORD + "' default. Generate a strong "
+                                + "password and pass it via the SAVDOPRO_ADMIN_PASSWORD env "
+                                + "var. To explicitly allow the weak default for local "
+                                + "development, set SAVDOPRO_ALLOW_DEV_ADMIN=true.");
+            }
+            log.warn("=================================================================");
+            log.warn("  Admin password is WEAK — DO NOT USE IN PRODUCTION.");
+            log.warn("  SAVDOPRO_ALLOW_DEV_ADMIN=true is set; booting anyway.");
+            log.warn("  Set SAVDOPRO_ADMIN_PASSWORD to a strong value before deploy.");
+            log.warn("=================================================================");
         }
         AppUser u = new AppUser();
         u.setUsername(adminUsername.toLowerCase());

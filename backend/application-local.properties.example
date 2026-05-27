@@ -32,3 +32,12 @@ telegram.customer-bot.token=PUT-CUSTOMER-BOT-TOKEN-HERE
 # random string via the SAVDOPRO_JWT_SECRET environment variable
 # (`openssl rand -base64 48`).
 SAVDOPRO_ALLOW_DEV_SECRET=true
+
+# --- License-server admin bootstrap (local development only) ---
+# The license-server seeds a super-admin on first launch. Its fail-closed
+# gate refuses to boot if savdopro.admin.password is unset, shorter than
+# 8 chars, or equal to the well-known 'admin123' default. For local dev
+# this flag opts in to the weak default with a loud WARN. For production,
+# REMOVE this line and supply a strong password via the
+# SAVDOPRO_ADMIN_PASSWORD environment variable.
+SAVDOPRO_ALLOW_DEV_ADMIN=true
