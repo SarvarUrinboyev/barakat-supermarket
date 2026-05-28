@@ -2,6 +2,7 @@ package uz.barakat.license.auth;
 
 import jakarta.annotation.PostConstruct;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,13 @@ public class AdminBootstrap {
     @PostConstruct
     @Transactional
     public void ensureAdmin() {
-        if (users.existsByUsernameIgnoreCase(adminUsername)) {
+        Optional<AppUser> existing = users.findByUsernameIgnoreCase(adminUsername);
+        if (existing.isPresent()) {
+            // Bootstrap is a no-op for the existing user, but the operator
+            // may have inherited a deploy where the super-admin still
+            // carries a hash of a well-known weak default. Probe it and
+            // shout in the log so they know to rotate.
+            warnIfStoredHashMatchesWeakDefault(existing.get());
             return;
         }
         // Fail closed before persisting a weak super-admin. If the operator
@@ -116,5 +123,31 @@ public class AdminBootstrap {
         u.setAccountId(1L); // seeded super-admin account
         users.save(u);
         log.info("Bootstrapped super-admin user '{}' (change the password!)", adminUsername);
+    }
+
+    /**
+     * BCrypt-checks the stored hash against every entry of
+     * {@link #WEAK_DEFAULT_PASSWORDS}. Emits a loud WARN block on the
+     * first match and returns. Worst case ~1.75 s of CPU at boot (cost
+     * 12, seven candidates) — acceptable for a one-shot startup probe.
+     * Never throws: the admin must remain able to log in to fix it.
+     */
+    void warnIfStoredHashMatchesWeakDefault(AppUser admin) {
+        String hash = admin.getPasswordHash();
+        if (hash == null || hash.isBlank()) {
+            return;
+        }
+        for (String weak : WEAK_DEFAULT_PASSWORDS) {
+            if (encoder.matches(weak, hash)) {
+                log.warn("=================================================================");
+                log.warn("  Existing super-admin '{}' still uses a WEAK password.",
+                        admin.getUsername());
+                log.warn("  Rotate via the admin API (resetPassword) or by issuing");
+                log.warn("  UPDATE app_users SET password_hash = ... WHERE id = {}", admin.getId());
+                log.warn("  before deploying to production.");
+                log.warn("=================================================================");
+                return;
+            }
+        }
     }
 }
