@@ -61,4 +61,13 @@ public class AppUser extends BaseEntity {
      */
     @Column(name = "telegram_id", unique = true)
     private Long telegramId;
+
+    /**
+     * Phone number used for SMS-code login (Phase 4.5, V8 migration).
+     * Stored verbatim — normalisation (E.164 etc.) is done by the
+     * service layer. Null = SMS login not enabled for this user. Unique
+     * across the table so a phone number maps to one SavdoPRO identity.
+     */
+    @Column(name = "phone", unique = true, length = 20)
+    private String phone;
 }

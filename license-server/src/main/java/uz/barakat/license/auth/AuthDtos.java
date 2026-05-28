@@ -24,6 +24,19 @@ public final class AuthDtos {
             @NotBlank(message = "Kod kiritilishi shart") String code) { }
 
     /**
+     * Phase 4.5 SMS login: request a one-time code for the given phone.
+     * The phone must already be on the {@code app_users.phone} column —
+     * cold sign-up by phone is intentionally not supported.
+     */
+    public record SmsRequestRequest(
+            @NotBlank(message = "Telefon raqami kiritilishi shart") String phone) { }
+
+    /** Phase 4.5 SMS login: exchange a fresh code for a session. */
+    public record SmsVerifyRequest(
+            @NotBlank(message = "Telefon raqami kiritilishi shart") String phone,
+            @NotBlank(message = "Kod kiritilishi shart") String code) { }
+
+    /**
      * Raw payload Telegram's Login Widget posts. The server verifies the
      * HMAC over these fields and only trusts {@code id} as the linkage
      * key after verification passes — everything else (first/last name,

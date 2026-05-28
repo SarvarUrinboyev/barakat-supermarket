@@ -32,6 +32,8 @@ public class AuthService {
     private final RefreshTokenService refreshTokens;
     private final TotpService totp;
     private final TelegramOAuthVerifier telegramVerifier;
+    private final OtpService otp;
+    private final SmsProvider sms;
     // Cost 12 — see AdminBootstrap; old hashes (cost 10) still verify
     // because BCrypt stores the cost inside the hash, so existing users
     // keep logging in until their next password reset re-hashes at 12.
@@ -39,13 +41,16 @@ public class AuthService {
 
     public AuthService(AppUserRepository users, AccountRepository accounts,
                        JwtService jwt, RefreshTokenService refreshTokens,
-                       TotpService totp, TelegramOAuthVerifier telegramVerifier) {
+                       TotpService totp, TelegramOAuthVerifier telegramVerifier,
+                       OtpService otp, SmsProvider sms) {
         this.users = users;
         this.accounts = accounts;
         this.jwt = jwt;
         this.refreshTokens = refreshTokens;
         this.totp = totp;
         this.telegramVerifier = telegramVerifier;
+        this.otp = otp;
+        this.sms = sms;
     }
 
     public LoginResponse login(LoginRequest request, String clientIp) {
@@ -179,6 +184,82 @@ public class AuthService {
                 .orElseThrow(() -> new BadRequestException("Sessiya yaroqsiz"));
         user.setTelegramId(null);
         users.save(user);
+    }
+
+    // ============================================================ SMS login
+
+    /**
+     * Mint a one-time code for the given phone and dispatch it via the
+     * configured {@link SmsProvider}. The response intentionally does NOT
+     * leak whether the phone exists in our DB — an attacker enumerating
+     * phone numbers should see the same shape regardless.
+     */
+    public void requestSmsCode(String rawPhone) {
+        String phone = normalisePhone(rawPhone);
+        if (phone == null) {
+            throw new BadRequestException("Telefon raqami noto'g'ri");
+        }
+        // Cooldown applies regardless of whether the phone is known —
+        // again, no enumeration channel.
+        OtpService.Result result = otp.requestCode(phone);
+        if (result instanceof OtpService.Result.CooldownActive cd) {
+            throw new BadRequestException(
+                    "Iltimos, " + cd.secondsRemaining() + " soniyadan keyin qayta urinib ko'ring");
+        }
+        if (!(result instanceof OtpService.Result.Issued issued)) {
+            throw new BadRequestException("Kod yuborilmadi");
+        }
+        // Only attempt to send when the phone is on a known user; for
+        // unknown phones we silently swallow the code (no SMS sent) so
+        // an attacker can't probe membership via SMS-bill-side effects.
+        users.findByPhone(phone).ifPresent(u ->
+                sms.send(phone, "SavdoPRO kirish kodi: " + issued.code()
+                        + ". Kod 5 daqiqada amal qiladi."));
+    }
+
+    /**
+     * Verify the SMS code and mint a session. Returns the same
+     * {@link LoginResponse} shape as password login so the client can
+     * treat both paths interchangeably.
+     */
+    public LoginResponse loginViaSms(String rawPhone, String code, String clientIp) {
+        String phone = normalisePhone(rawPhone);
+        if (phone == null || !otp.verify(phone, code)) {
+            throw new BadRequestException("Kod noto'g'ri yoki muddati o'tgan");
+        }
+        AppUser user = users.findByPhone(phone)
+                .orElseThrow(() -> new BadRequestException(
+                        "Bu telefon raqamiga bog'langan SavdoPRO foydalanuvchisi topilmadi"));
+        Account account = requireUsableAccount(user.getAccountId());
+        user.setLastLoginAt(LocalDateTime.now());
+        users.save(user);
+        RefreshTokenService.Issued refresh = refreshTokens.issue(
+                user.getId(), account.getId(), clientIp);
+        return new LoginResponse(
+                jwt.issue(user),
+                refresh.plaintext(),
+                jwt.accessTtlSeconds(),
+                refresh.expiresAt(),
+                toMe(user, account));
+    }
+
+    /**
+     * Tolerant phone normaliser: strip whitespace and dashes, ensure the
+     * result is either a leading "+" followed by 9–15 digits, or a plain
+     * 9–15 digit string we prefix with "+". Returns null when the input
+     * doesn't look like a phone at all.
+     */
+    static String normalisePhone(String raw) {
+        if (raw == null) return null;
+        String cleaned = raw.replaceAll("[\\s\\-()]", "").trim();
+        if (cleaned.isEmpty()) return null;
+        if (cleaned.startsWith("+")) {
+            String digits = cleaned.substring(1);
+            if (digits.matches("\\d{9,15}")) return "+" + digits;
+            return null;
+        }
+        if (cleaned.matches("\\d{9,15}")) return "+" + cleaned;
+        return null;
     }
 
     /**

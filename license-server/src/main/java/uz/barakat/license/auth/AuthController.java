@@ -15,6 +15,8 @@ import uz.barakat.license.auth.AuthDtos.LoginRequest;
 import uz.barakat.license.auth.AuthDtos.LoginResponse;
 import uz.barakat.license.auth.AuthDtos.MeResponse;
 import uz.barakat.license.auth.AuthDtos.RefreshRequest;
+import uz.barakat.license.auth.AuthDtos.SmsRequestRequest;
+import uz.barakat.license.auth.AuthDtos.SmsVerifyRequest;
 import uz.barakat.license.auth.AuthDtos.TelegramAuthRequest;
 import uz.barakat.license.auth.AuthDtos.TotpSetupResponse;
 import uz.barakat.license.auth.AuthDtos.TotpVerifyRequest;
@@ -149,6 +151,24 @@ public class AuthController {
     @PostMapping("/telegram/unlink")
     public void telegramUnlink(HttpServletRequest request) {
         service.unlinkTelegram(requireUserId(request));
+    }
+
+    // ============================================================ SMS login
+
+    /**
+     * Request an SMS one-time code for the given phone. Public endpoint —
+     * the response is intentionally opaque (no DB-membership signal).
+     */
+    @PostMapping("/sms/request")
+    public void smsRequest(@Valid @RequestBody SmsRequestRequest body) {
+        service.requestSmsCode(body.phone());
+    }
+
+    /** Exchange a valid SMS code for a session. */
+    @PostMapping("/sms/verify")
+    public LoginResponse smsVerify(@Valid @RequestBody SmsVerifyRequest body,
+                                   HttpServletRequest http) {
+        return service.loginViaSms(body.phone(), body.code(), clientIp(http));
     }
 
     private static Long requireUserId(HttpServletRequest request) {
