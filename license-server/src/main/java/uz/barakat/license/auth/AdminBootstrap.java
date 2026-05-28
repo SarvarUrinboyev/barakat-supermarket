@@ -63,7 +63,9 @@ public class AdminBootstrap {
     private final String adminPassword;
     private final String adminFullName;
     private final boolean allowDevDefaults;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    // Cost 12 (~250ms/hash on a modern CPU) — ROADMAP Phase 4.5: was 10,
+    // bumped to make brute-forcing a leaked hash ~4x more expensive.
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     public AdminBootstrap(AppUserRepository users,
                           @Value("${savdopro.admin.username:admin}") String username,

@@ -31,7 +31,10 @@ public class AuthService {
     private final JwtService jwt;
     private final RefreshTokenService refreshTokens;
     private final TotpService totp;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    // Cost 12 — see AdminBootstrap; old hashes (cost 10) still verify
+    // because BCrypt stores the cost inside the hash, so existing users
+    // keep logging in until their next password reset re-hashes at 12.
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     public AuthService(AppUserRepository users, AccountRepository accounts,
                        JwtService jwt, RefreshTokenService refreshTokens,
