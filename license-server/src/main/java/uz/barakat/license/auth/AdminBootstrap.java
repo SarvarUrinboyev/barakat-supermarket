@@ -98,16 +98,18 @@ public class AdminBootstrap {
         // weak default (intended for local development only).
         boolean weak = adminPassword == null
                 || adminPassword.length() < MIN_PASSWORD_LENGTH
-                || WEAK_DEFAULT_PASSWORDS.contains(adminPassword.toLowerCase(Locale.ROOT));
+                || WEAK_DEFAULT_PASSWORDS.contains(adminPassword.toLowerCase(Locale.ROOT))
+                || !hasLetterAndDigit(adminPassword);
         if (weak) {
             if (!allowDevDefaults) {
                 throw new IllegalStateException(
                         "REFUSING TO START: savdopro.admin.password is unset, shorter than "
-                                + MIN_PASSWORD_LENGTH + " chars, or matches a well-known weak "
-                                + "default. Generate a strong password and pass it via the "
-                                + "SAVDOPRO_ADMIN_PASSWORD env var. To explicitly allow the "
-                                + "weak default for local development, set "
-                                + "SAVDOPRO_ALLOW_DEV_ADMIN=true.");
+                                + MIN_PASSWORD_LENGTH + " chars, matches a well-known weak "
+                                + "default, or fails the complexity rule (must contain at "
+                                + "least one letter AND one digit). Generate a strong "
+                                + "password and pass it via the SAVDOPRO_ADMIN_PASSWORD env "
+                                + "var. To explicitly allow the weak default for local "
+                                + "development, set SAVDOPRO_ALLOW_DEV_ADMIN=true.");
             }
             log.warn("=================================================================");
             log.warn("  Admin password is WEAK — DO NOT USE IN PRODUCTION.");
@@ -123,6 +125,25 @@ public class AdminBootstrap {
         u.setAccountId(1L); // seeded super-admin account
         users.save(u);
         log.info("Bootstrapped super-admin user '{}' (change the password!)", adminUsername);
+    }
+
+    /**
+     * Complexity rule: the password must contain at least one letter
+     * AND at least one digit. Catches all-digit ("19990101") and
+     * all-letter ("supermarket") passwords that slip past the weak-
+     * defaults set and the length check.
+     */
+    static boolean hasLetterAndDigit(String password) {
+        if (password == null) return false;
+        boolean hasLetter = false;
+        boolean hasDigit = false;
+        for (int i = 0; i < password.length(); i++) {
+            char c = password.charAt(i);
+            if (Character.isLetter(c)) hasLetter = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            if (hasLetter && hasDigit) return true;
+        }
+        return false;
     }
 
     /**

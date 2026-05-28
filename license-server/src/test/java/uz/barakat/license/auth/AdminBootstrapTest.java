@@ -145,7 +145,11 @@ class AdminBootstrapTest {
             // Case variants — equalsIgnoreCase / toLowerCase contract.
             "ADMIN123", "Admin123", "PASSWORD", "QwErTy", "BARAKAT",
             // Boundary lengths — anything below MIN_PASSWORD_LENGTH (8).
-            "", "a", "abc", "1234567"
+            "", "a", "abc", "1234567",
+            // Complexity rule — must contain at least one letter AND one digit.
+            "abcdefgh", "supermarket", "STRONGPASS",   // all letters, no digit
+            "11111111", "19990101", "987654321",        // all digits, no letter
+            "!!!!!!!!", "        "                        // no letter, no digit
     })
     void rejectsEveryWeakOrTooShortValue(String weak) {
         when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.empty());
