@@ -1,7 +1,12 @@
 package uz.barakat.license.auth;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,6 +59,27 @@ public class AdminController {
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "50") int size) {
         return audit.recent(page, size);
+    }
+
+    /**
+     * Stream the audit log as RFC 4180 CSV for download. Date range is
+     * inclusive on both ends ({@code from}/{@code to} are dates, not
+     * timestamps — the server widens them to cover the full UTC day).
+     * Either bound is optional; omitting both exports everything.
+     */
+    @GetMapping(value = "/audit/export", produces = "text/csv")
+    public ResponseEntity<byte[]> auditExport(
+            @RequestParam(name = "from", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] body = audit.exportCsv(from, to);
+        String filename = "audit-" + LocalDate.now().format(DateTimeFormatter.ISO_DATE) + ".csv";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .body(body);
     }
 
     @GetMapping("/accounts")
