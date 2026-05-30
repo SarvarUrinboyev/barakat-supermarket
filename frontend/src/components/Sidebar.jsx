@@ -162,7 +162,7 @@ const NAV_ITEMS = [
   { key: 'reports',       to: '/reports',       label: 'Hisobotlar' },
 ];
 
-export function Sidebar({ shift }) {
+export function Sidebar({ shift, open }) {
   const t = useT();
   const { user, logout } = useAuth();
   const shiftOpen = Boolean(shift);
@@ -174,7 +174,7 @@ export function Sidebar({ shift }) {
   const moduleCsv = user?.enabledModules ?? null;
   const isOn = (key) => isModuleEnabled(moduleCsv, key);
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${open ? ' show' : ''}`}>
       <div className="sidebar-brand">
         <div className="logo">
           <svg viewBox="0 0 40 40" aria-hidden="true">

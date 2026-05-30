@@ -24,6 +24,48 @@ public final class AuthDtos {
             @NotBlank(message = "Kod kiritilishi shart") String code) { }
 
     /**
+     * Phase 4.5 SMS login: request a one-time code for the given phone.
+     * The phone must already be on the {@code app_users.phone} column —
+     * cold sign-up by phone is intentionally not supported.
+     */
+    public record SmsRequestRequest(
+            @NotBlank(message = "Telefon raqami kiritilishi shart") String phone) { }
+
+    /** Phase 4.5 SMS login: exchange a fresh code for a session. */
+    public record SmsVerifyRequest(
+            @NotBlank(message = "Telefon raqami kiritilishi shart") String phone,
+            @NotBlank(message = "Kod kiritilishi shart") String code) { }
+
+    /**
+     * Raw payload Telegram's Login Widget posts. The server verifies the
+     * HMAC over these fields and only trusts {@code id} as the linkage
+     * key after verification passes — everything else (first/last name,
+     * username, photo) is informational and is allowed to mutate.
+     */
+    public record TelegramAuthRequest(
+            String id,
+            String firstName,
+            String lastName,
+            String username,
+            String photoUrl,
+            String authDate,
+            @NotBlank(message = "Telegram imzosi bo'lishi kerak") String hash) {
+
+        /** Project into the field map the verifier expects (snake_case keys). */
+        public java.util.Map<String, String> asFieldMap() {
+            java.util.LinkedHashMap<String, String> m = new java.util.LinkedHashMap<>();
+            m.put("id", id);
+            if (firstName != null) m.put("first_name", firstName);
+            if (lastName != null) m.put("last_name", lastName);
+            if (username != null) m.put("username", username);
+            if (photoUrl != null) m.put("photo_url", photoUrl);
+            if (authDate != null) m.put("auth_date", authDate);
+            m.put("hash", hash);
+            return m;
+        }
+    }
+
+    /**
      * Refresh-token rotation payload. The plaintext refresh token never
      * appears in the access JWT — we keep them on separate transports so
      * a stolen JWT alone can't extend itself.
@@ -67,7 +109,14 @@ public final class AuthDtos {
              * to see. NULL = all modules visible (legacy/default).
              * The desktop sidebar filters its nav-items against this list.
              */
-            String enabledModules) {
+            String enabledModules,
+            /**
+             * Phase 4.5: effective resource-action permissions (role
+             * defaults + per-user overrides). The client uses this to
+             * hide affordances the user can't action. SUPER_ADMIN comes
+             * back as the single token {@code "*:*"}.
+             */
+            java.util.Set<String> permissions) {
     }
 
     /**

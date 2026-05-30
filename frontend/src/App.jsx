@@ -7,6 +7,8 @@ import { useAuth } from './context/Auth.jsx';
 import { useApi } from './hooks/useApi.js';
 import { Login } from './pages/Login.jsx';
 import { ShiftOpen } from './pages/ShiftOpen.jsx';
+import { IS_WEB } from './config.js';
+import { isModuleEnabled } from './lib/modules.js';
 
 // Route-level pages are lazy-loaded so each renders only when first navigated
 // to, keeping the initial bundle small. The Suspense boundary lives inside
@@ -40,9 +42,29 @@ const Transfers = lazyPage(() => import('./pages/Transfers.jsx'), 'Transfers');
 const Warehouse = lazyPage(() => import('./pages/Warehouse.jsx'), 'Warehouse');
 const Reports = lazyPage(() => import('./pages/Reports.jsx'), 'Reports');
 
+const OWNER_ROLES = ['ACCOUNT_OWNER', 'SUPER_ADMIN'];
+
 /**
- * Top level: until a shift is open the app shows the "open shift" gate;
- * once open it renders the dashboard and its pages.
+ * Route-level access guard. Blocks direct URL access (not just menu hiding)
+ * by role and/or the account module allow-list, mirroring the Sidebar. The
+ * backend permission checks remain the hard gate (a denied API call returns
+ * 403); this is the UX layer that keeps unauthorized pages off screen.
+ * Denied access redirects to the always-available dashboard.
+ */
+function Access({ module, roles, children }) {
+  const { user } = useAuth();
+  const roleOk = !roles || roles.includes(user?.role);
+  const moduleOk = !module || isModuleEnabled(user?.enabledModules ?? null, module);
+  if (!roleOk || !moduleOk) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+const g = (element, opts) => <Access {...opts}>{element}</Access>;
+
+/**
+ * Top level: until a shift is open the app shows the "open shift" gate
+ * (desktop POS only); once open — or always, on the web portal — it renders
+ * the dashboard and its pages.
  */
 export default function App() {
   const auth = useAuth();
@@ -98,7 +120,10 @@ function Authenticated() {
     );
   }
 
-  if (!shift) {
+  // The POS "open a shift" gate is a cashier / in-store concept. The hosted
+  // web merchant portal skips it so an owner reviewing dashboards and reports
+  // isn't forced to open a till first.
+  if (!shift && !IS_WEB) {
     return <ShiftOpen onOpened={reload} />;
   }
 
@@ -107,31 +132,31 @@ function Authenticated() {
       <Route element={<Layout shift={shift} />}>
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="management" element={<Management />} />
+        <Route path="management" element={g(<Management />, { module: 'management' })} />
         <Route path="expenses" element={<Navigate to="/home-expenses" replace />} />
-        <Route path="home-expenses" element={<HomeExpenses />} />
-        <Route path="payments" element={<Payments />} />
-        <Route path="orders" element={<Orders />} />
-        <Route path="warehouse" element={<Warehouse />} />
-        <Route path="warehouse/new" element={<ProductEditor />} />
-        <Route path="warehouse/:id" element={<ProductEditor />} />
-        <Route path="customers" element={<Customers />} />
-        <Route path="customers/:id" element={<CustomerDetail />} />
-        <Route path="suppliers" element={<Suppliers />} />
-        <Route path="suppliers/:id" element={<SupplierDetail />} />
-        <Route path="debt" element={<Debt />} />
-        <Route path="calculator" element={<Calculator />} />
-        <Route path="shift-history" element={<ShiftHistory />} />
-        <Route path="shift-close" element={<ShiftClose onClosed={reload} />} />
-        <Route path="admin" element={<Admin />} />
-        <Route path="admin/accounts/:id" element={<AccountDetail />} />
-        <Route path="admin/audit" element={<AuditLog />} />
-        <Route path="shops" element={<Shops />} />
-        <Route path="transfers" element={<Transfers />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="pos" element={<Pos />} />
-        <Route path="pos/history" element={<PosHistory />} />
-        <Route path="promos" element={<Promos />} />
+        <Route path="home-expenses" element={g(<HomeExpenses />, { module: 'home-expenses' })} />
+        <Route path="payments" element={g(<Payments />, { module: 'payments' })} />
+        <Route path="orders" element={g(<Orders />, { module: 'orders' })} />
+        <Route path="warehouse" element={g(<Warehouse />, { module: 'warehouse' })} />
+        <Route path="warehouse/new" element={g(<ProductEditor />, { module: 'warehouse' })} />
+        <Route path="warehouse/:id" element={g(<ProductEditor />, { module: 'warehouse' })} />
+        <Route path="customers" element={g(<Customers />, { module: 'customers' })} />
+        <Route path="customers/:id" element={g(<CustomerDetail />, { module: 'customers' })} />
+        <Route path="suppliers" element={g(<Suppliers />, { module: 'suppliers' })} />
+        <Route path="suppliers/:id" element={g(<SupplierDetail />, { module: 'suppliers' })} />
+        <Route path="debt" element={g(<Debt />, { module: 'debt' })} />
+        <Route path="calculator" element={g(<Calculator />, { module: 'calculator' })} />
+        <Route path="shift-history" element={g(<ShiftHistory />, { module: 'shift-history' })} />
+        <Route path="shift-close" element={g(<ShiftClose onClosed={reload} />, { module: 'shift-close' })} />
+        <Route path="admin" element={g(<Admin />, { roles: ['SUPER_ADMIN'] })} />
+        <Route path="admin/accounts/:id" element={g(<AccountDetail />, { roles: ['SUPER_ADMIN'] })} />
+        <Route path="admin/audit" element={g(<AuditLog />, { roles: ['SUPER_ADMIN'] })} />
+        <Route path="shops" element={g(<Shops />, { module: 'shops', roles: OWNER_ROLES })} />
+        <Route path="transfers" element={g(<Transfers />, { module: 'transfers', roles: OWNER_ROLES })} />
+        <Route path="reports" element={g(<Reports />, { module: 'reports' })} />
+        <Route path="pos" element={g(<Pos />, { module: 'pos' })} />
+        <Route path="pos/history" element={g(<PosHistory />, { module: 'pos-history' })} />
+        <Route path="promos" element={g(<Promos />, { module: 'promos' })} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
     </Routes>

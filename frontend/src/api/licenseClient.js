@@ -20,6 +20,7 @@
 //     parallel requests don't trigger 20 refreshes.
 
 import { getToken, setToken } from './client.js';
+import { LICENSE_ORIGIN } from '../config.js';
 
 const LICENSE_URL_KEY = 'savdopro.licenseUrl';
 const REFRESH_KEY = 'savdopro.refreshToken';
@@ -44,6 +45,9 @@ function urlFromQuery() {
 }
 
 export function getLicenseUrl() {
+  // Hosted web build: the License Server origin is fixed at build time.
+  if (LICENSE_ORIGIN) return LICENSE_ORIGIN;
+
   const fromQuery = urlFromQuery();
   if (fromQuery) return fromQuery;
 
@@ -64,6 +68,9 @@ export function getLicenseUrl() {
  * machine without the local service still gets to log in.
  */
 export function getFallbackLicenseUrl() {
+  // Web build: the configured origin is authoritative — skip the
+  // localhost->VPS fallback dance (a desktop-only resilience hack).
+  if (LICENSE_ORIGIN) return LICENSE_ORIGIN;
   return VPS_URL;
 }
 

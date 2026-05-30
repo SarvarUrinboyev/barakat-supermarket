@@ -52,4 +52,31 @@ public class AppUser extends BaseEntity {
 
     @Column(name = "totp_enabled", nullable = false)
     private boolean totpEnabled = false;
+
+    /**
+     * Telegram numeric user id when the user has linked their Telegram
+     * account via the Login Widget. Null = not linked. Unique across the
+     * table (V7 migration), so a Telegram account can only point at one
+     * SavdoPRO user.
+     */
+    @Column(name = "telegram_id", unique = true)
+    private Long telegramId;
+
+    /**
+     * Phone number used for SMS-code login (Phase 4.5, V8 migration).
+     * Stored verbatim — normalisation (E.164 etc.) is done by the
+     * service layer. Null = SMS login not enabled for this user. Unique
+     * across the table so a phone number maps to one SavdoPRO identity.
+     */
+    @Column(name = "phone", unique = true, length = 20)
+    private String phone;
+
+    /**
+     * Comma-separated "RESOURCE:ACTION" tokens granting access beyond
+     * (or restricting under) the role defaults (Phase 4.5, V9 migration).
+     * NULL = fall back to {@link UserRole}'s default permission set.
+     * See {@link uz.barakat.license.auth.PermissionService}.
+     */
+    @Column(name = "permissions", length = 500)
+    private String permissions;
 }

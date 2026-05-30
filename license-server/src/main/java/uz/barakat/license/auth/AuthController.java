@@ -15,6 +15,9 @@ import uz.barakat.license.auth.AuthDtos.LoginRequest;
 import uz.barakat.license.auth.AuthDtos.LoginResponse;
 import uz.barakat.license.auth.AuthDtos.MeResponse;
 import uz.barakat.license.auth.AuthDtos.RefreshRequest;
+import uz.barakat.license.auth.AuthDtos.SmsRequestRequest;
+import uz.barakat.license.auth.AuthDtos.SmsVerifyRequest;
+import uz.barakat.license.auth.AuthDtos.TelegramAuthRequest;
 import uz.barakat.license.auth.AuthDtos.TotpSetupResponse;
 import uz.barakat.license.auth.AuthDtos.TotpVerifyRequest;
 import uz.barakat.license.exception.BadRequestException;
@@ -117,6 +120,55 @@ public class AuthController {
     @PostMapping("/totp/disable")
     public void totpDisable(HttpServletRequest request) {
         service.disableTotp(requireUserId(request));
+    }
+
+    // ============================================================ Telegram OAuth
+
+    /**
+     * Mint a session from a verified Telegram Login Widget payload.
+     * Public endpoint (no JWT required) — the Telegram HMAC itself
+     * is the credential. The Telegram id must already be linked to an
+     * existing user (see {@code /telegram/link}); cold sign-up via
+     * Telegram is intentionally not supported.
+     */
+    @PostMapping("/telegram")
+    public LoginResponse telegramLogin(@Valid @RequestBody TelegramAuthRequest request,
+                                       HttpServletRequest http) {
+        return service.loginViaTelegram(request, clientIp(http));
+    }
+
+    /**
+     * Attach the current session's user to a verified Telegram id. Used
+     * once, from the "Telegram'ni ulash" button inside the settings page.
+     */
+    @PostMapping("/telegram/link")
+    public void telegramLink(HttpServletRequest request,
+                             @Valid @RequestBody TelegramAuthRequest body) {
+        service.linkTelegram(requireUserId(request), body);
+    }
+
+    /** Detach the Telegram id from the current user. Idempotent. */
+    @PostMapping("/telegram/unlink")
+    public void telegramUnlink(HttpServletRequest request) {
+        service.unlinkTelegram(requireUserId(request));
+    }
+
+    // ============================================================ SMS login
+
+    /**
+     * Request an SMS one-time code for the given phone. Public endpoint —
+     * the response is intentionally opaque (no DB-membership signal).
+     */
+    @PostMapping("/sms/request")
+    public void smsRequest(@Valid @RequestBody SmsRequestRequest body) {
+        service.requestSmsCode(body.phone());
+    }
+
+    /** Exchange a valid SMS code for a session. */
+    @PostMapping("/sms/verify")
+    public LoginResponse smsVerify(@Valid @RequestBody SmsVerifyRequest body,
+                                   HttpServletRequest http) {
+        return service.loginViaSms(body.phone(), body.code(), clientIp(http));
     }
 
     private static Long requireUserId(HttpServletRequest request) {

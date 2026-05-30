@@ -1,4 +1,4 @@
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AiChatWidget } from './AiChatWidget.jsx';
 import { QuickSearch } from './QuickSearch.jsx';
@@ -57,6 +57,9 @@ export function Layout({ shift }) {
   const { user } = useAuth();
   const { isConsolidated, shops } = useShop();
   const title = resolveTitle(pathname);
+  // Mobile off-canvas nav. Closes automatically whenever the route changes.
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => { setNavOpen(false); }, [pathname]);
   const showSubWarning = user
     && user.subscriptionExpires
     && user.daysUntilBlock <= WARNING_DAYS
@@ -77,9 +80,25 @@ export function Layout({ shift }) {
     <div className="app-shell">
       <QuickSearch />
       <AiChatWidget />
-      <Sidebar shift={shift} />
+      <Sidebar shift={shift} open={navOpen} />
+      {navOpen && (
+        <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
+      )}
       <div className="main">
         <header className="topbar">
+          <button
+            type="button"
+            className="nav-toggle"
+            onClick={() => setNavOpen((v) => !v)}
+            aria-label={t('Menyu')}
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none"
+                 stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
           <div className="breadcrumb">
             <span className="bc-base">{t('Platforma')}</span>
             <span className="bc-sep">/</span>

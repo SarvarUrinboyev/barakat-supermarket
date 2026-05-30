@@ -16,6 +16,12 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
     boolean existsByUsernameIgnoreCase(String username);
 
+    /** Telegram OAuth login looks the user up by their linked Telegram numeric id. */
+    Optional<AppUser> findByTelegramId(Long telegramId);
+
+    /** SMS-code login looks the user up by their stored phone number. */
+    Optional<AppUser> findByPhone(String phone);
+
     /**
      * Per-account user counts in a single grouped query. Used by the
      * admin account-list endpoint to avoid the N+1 fan-out of calling

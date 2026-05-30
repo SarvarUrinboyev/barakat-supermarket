@@ -9,8 +9,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,7 +39,7 @@ class AdminBootstrapTest {
 
     @Test
     void weakPasswordWithoutDevFlagRefusesToStart() {
-        when(users.existsByUsernameIgnoreCase(USERNAME)).thenReturn(false);
+        when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.empty());
         AdminBootstrap bootstrap = new AdminBootstrap(
                 users, USERNAME, "admin123", FULL_NAME, false);
 
@@ -52,7 +55,7 @@ class AdminBootstrapTest {
 
     @Test
     void weakPasswordWithDevFlagBootsAndCreatesUser() {
-        when(users.existsByUsernameIgnoreCase(USERNAME)).thenReturn(false);
+        when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.empty());
         when(users.save(any(AppUser.class))).thenAnswer(inv -> inv.getArgument(0));
         AdminBootstrap bootstrap = new AdminBootstrap(
                 users, USERNAME, "admin123", FULL_NAME, true);
@@ -70,7 +73,7 @@ class AdminBootstrapTest {
 
     @Test
     void strongPasswordCreatesSuperAdminWithBcryptHash() {
-        when(users.existsByUsernameIgnoreCase(USERNAME)).thenReturn(false);
+        when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.empty());
         when(users.save(any(AppUser.class))).thenAnswer(inv -> inv.getArgument(0));
         AdminBootstrap bootstrap = new AdminBootstrap(
                 users, USERNAME, STRONG_PASSWORD, FULL_NAME, false);
@@ -90,13 +93,71 @@ class AdminBootstrapTest {
     }
 
     @Test
-    void existingAdminMakesEnsureAdminNoOp() {
-        when(users.existsByUsernameIgnoreCase(USERNAME)).thenReturn(true);
+    void existingAdminWithStrongHashMakesEnsureAdminNoOp() {
+        AppUser existing = adminWithHash(STRONG_PASSWORD);
+        when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.of(existing));
         AdminBootstrap bootstrap = new AdminBootstrap(
                 users, USERNAME, STRONG_PASSWORD, FULL_NAME, false);
 
         bootstrap.ensureAdmin();
 
+        verify(users, never()).save(any(AppUser.class));
+    }
+
+    /**
+     * The stored hash matches a well-known weak default → the bootstrap
+     * must warn (via the SLF4J logger; we don't assert on that here) and
+     * carry on. Throwing would lock the operator out of the very system
+     * they need to log into to rotate the password.
+     */
+    @Test
+    void existingAdminWithWeakHashWarnsButDoesNotThrowOrSave() {
+        AppUser existing = adminWithHash("admin123");
+        when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.of(existing));
+        AdminBootstrap bootstrap = new AdminBootstrap(
+                users, USERNAME, STRONG_PASSWORD, FULL_NAME, false);
+
+        bootstrap.ensureAdmin();   // does not throw
+
+        verify(users, never()).save(any(AppUser.class));
+    }
+
+    private static AppUser adminWithHash(String plaintext) {
+        AppUser u = new AppUser();
+        u.setUsername(USERNAME);
+        u.setPasswordHash(new BCryptPasswordEncoder().encode(plaintext));
+        u.setRole(UserRole.SUPER_ADMIN);
+        u.setAccountId(1L);
+        return u;
+    }
+
+    /**
+     * Every well-known weak default (in every case variant we care about),
+     * plus a few boundary-length values, must trip the gate. If this test
+     * fails after a refactor it almost certainly means
+     * {@link AdminBootstrap#WEAK_DEFAULT_PASSWORDS} or
+     * {@link AdminBootstrap#MIN_PASSWORD_LENGTH} silently lost an entry.
+     */
+    @ParameterizedTest(name = "[{index}] \"{0}\" must be rejected")
+    @ValueSource(strings = {
+            // The 7 explicit weak defaults.
+            "admin", "admin123", "password", "12345678", "qwerty", "savdopro", "barakat",
+            // Case variants — equalsIgnoreCase / toLowerCase contract.
+            "ADMIN123", "Admin123", "PASSWORD", "QwErTy", "BARAKAT",
+            // Boundary lengths — anything below MIN_PASSWORD_LENGTH (8).
+            "", "a", "abc", "1234567",
+            // Complexity rule — must contain at least one letter AND one digit.
+            "abcdefgh", "supermarket", "STRONGPASS",   // all letters, no digit
+            "11111111", "19990101", "987654321",        // all digits, no letter
+            "!!!!!!!!", "        "                        // no letter, no digit
+    })
+    void rejectsEveryWeakOrTooShortValue(String weak) {
+        when(users.findByUsernameIgnoreCase(USERNAME)).thenReturn(Optional.empty());
+        AdminBootstrap bootstrap = new AdminBootstrap(
+                users, USERNAME, weak, FULL_NAME, false);
+
+        assertThrows(IllegalStateException.class, bootstrap::ensureAdmin,
+                "value \"" + weak + "\" should have been rejected");
         verify(users, never()).save(any(AppUser.class));
     }
 }

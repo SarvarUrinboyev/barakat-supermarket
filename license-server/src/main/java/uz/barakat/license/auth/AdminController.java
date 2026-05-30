@@ -1,7 +1,12 @@
 package uz.barakat.license.auth;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +27,7 @@ import uz.barakat.license.auth.AdminDtos.CreateAccountRequest;
 import uz.barakat.license.auth.AdminDtos.CreateUserRequest;
 import uz.barakat.license.auth.AdminDtos.ModulesRequest;
 import uz.barakat.license.auth.AdminDtos.SetPasswordRequest;
+import uz.barakat.license.auth.AdminDtos.SetPermissionsRequest;
 import uz.barakat.license.auth.AdminDtos.UpdateAccountRequest;
 import uz.barakat.license.domain.AdminAuditEntry;
 
@@ -37,10 +43,13 @@ public class AdminController {
 
     private final AdminService service;
     private final AuditService audit;
+    private final PermissionService permissions;
 
-    public AdminController(AdminService service, AuditService audit) {
+    public AdminController(AdminService service, AuditService audit,
+                           PermissionService permissions) {
         this.service = service;
         this.audit = audit;
+        this.permissions = permissions;
     }
 
     /**
@@ -54,6 +63,27 @@ public class AdminController {
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "50") int size) {
         return audit.recent(page, size);
+    }
+
+    /**
+     * Stream the audit log as RFC 4180 CSV for download. Date range is
+     * inclusive on both ends ({@code from}/{@code to} are dates, not
+     * timestamps — the server widens them to cover the full UTC day).
+     * Either bound is optional; omitting both exports everything.
+     */
+    @GetMapping(value = "/audit/export", produces = "text/csv")
+    public ResponseEntity<byte[]> auditExport(
+            @RequestParam(name = "from", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] body = audit.exportCsv(from, to);
+        String filename = "audit-" + LocalDate.now().format(DateTimeFormatter.ISO_DATE) + ".csv";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + filename + "\"")
+                .body(body);
     }
 
     @GetMapping("/accounts")
@@ -110,6 +140,21 @@ public class AdminController {
     public ResponseEntity<Void> resetPassword(@PathVariable Long userId,
                                               @Valid @RequestBody SetPasswordRequest request) {
         service.resetPassword(userId, request.password());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Replace the per-user permission CSV (Phase 4.5 granular ACL).
+     * Body: {@code {"permissions":"USERS:READ,AUDIT:READ"}}. Send null
+     * or empty to clear the override and fall back to role defaults.
+     */
+    @PatchMapping("/users/{userId}/permissions")
+    public ResponseEntity<Void> setPermissions(@PathVariable Long userId,
+                                               @RequestBody SetPermissionsRequest request) {
+        permissions.setPermissions(userId,
+                request == null ? null : request.permissions());
+        audit.record("USER_SET_PERMISSIONS", "USER", userId, null,
+                request == null ? null : request.permissions());
         return ResponseEntity.noContent().build();
     }
 

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.barakat.market.auth.TenantContext;
 import uz.barakat.market.domain.Product;
 import uz.barakat.market.repository.ProductRepository;
 import uz.barakat.market.repository.StockMovementRepository;
@@ -58,7 +59,12 @@ public class AnalyticsService {
         LocalDateTime toDt = (to == null ? LocalDate.now() : to).plusDays(1).atStartOfDay();
 
         // Pre-load every referenced product in one trip so we don't N+1.
-        List<Object[]> raw = movements.sumSalesQtyByProduct(fromDt, toDt);
+        List<Long> scope = TenantContext.activeScope();
+        if (scope.isEmpty()) return List.of();
+        // Revenue + cost are computed in SQL from the per-movement price
+        // snapshot (COALESCE to the product's current price for legacy rows),
+        // so a later price change no longer rewrites past-period profit.
+        List<Object[]> raw = movements.salesProfitByProduct(scope, fromDt, toDt);
         if (raw.isEmpty()) return List.of();
 
         Map<Long, Product> byId = new HashMap<>();
@@ -70,11 +76,8 @@ public class AnalyticsService {
             int qty = ((Number) r[1]).intValue();
             Product p = byId.get(pid);
             if (p == null) continue;
-            BigDecimal sell = nullSafe(p.getSalePrice());
-            BigDecimal cost = nullSafe(p.getPurchasePrice());
-            BigDecimal qtyDec = BigDecimal.valueOf(qty);
-            BigDecimal revenue = sell.multiply(qtyDec).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal totalCost = cost.multiply(qtyDec).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal revenue = toBig(r[2]).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal totalCost = toBig(r[3]).setScale(2, RoundingMode.HALF_UP);
             BigDecimal profit = revenue.subtract(totalCost);
             BigDecimal margin = revenue.signum() == 0
                     ? BigDecimal.ZERO
@@ -93,17 +96,21 @@ public class AnalyticsService {
         LocalDateTime toDt = (to == null ? LocalDate.now() : to).plusDays(1).atStartOfDay();
 
         long[] hours = new long[24];
-        for (Object[] r : movements.hourlySalesCount(fromDt, toDt)) {
-            int h = ((Number) r[0]).intValue();
-            long c = ((Number) r[1]).longValue();
-            if (h >= 0 && h < 24) hours[h] += c;
+        List<Long> scope = TenantContext.activeScope();
+        if (!scope.isEmpty()) {
+            for (Object[] r : movements.hourlySalesCount(scope, fromDt, toDt)) {
+                int h = ((Number) r[0]).intValue();
+                long c = ((Number) r[1]).longValue();
+                if (h >= 0 && h < 24) hours[h] += c;
+            }
         }
         List<HourlySalesBucket> out = new ArrayList<>(24);
         for (int h = 0; h < 24; h++) out.add(new HourlySalesBucket(h, hours[h]));
         return out;
     }
 
-    private static BigDecimal nullSafe(BigDecimal v) {
-        return v == null ? BigDecimal.ZERO : v;
+    /** Coerce a SQL aggregate value (BigDecimal / Double / etc.) to BigDecimal. */
+    private static BigDecimal toBig(Object v) {
+        return v == null ? BigDecimal.ZERO : new BigDecimal(v.toString());
     }
 }

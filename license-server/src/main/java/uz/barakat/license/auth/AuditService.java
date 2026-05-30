@@ -70,6 +70,58 @@ public class AuditService {
         return result.getContent();
     }
 
+    /**
+     * RFC 4180 CSV export of audit entries between {@code from} (inclusive)
+     * and {@code to} (exclusive). When {@code to} is null we extend to "now";
+     * when {@code from} is null we start at epoch. Returns UTF-8 bytes with
+     * a BOM so Excel auto-detects the encoding.
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportCsv(java.time.LocalDate from, java.time.LocalDate to) {
+        java.time.LocalDateTime fromTs = (from == null
+                ? java.time.LocalDateTime.of(1970, 1, 1, 0, 0)
+                : from.atStartOfDay());
+        java.time.LocalDateTime toTs = (to == null
+                ? java.time.LocalDateTime.now()
+                : to.plusDays(1).atStartOfDay());   // inclusive-to-end-of-day
+        List<AdminAuditEntry> rows = audit
+                .findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
+                        fromTs, toTs);
+        return renderCsv(rows);
+    }
+
+    /** Visible for testing — pure CSV rendering, no DB. */
+    static byte[] renderCsv(List<AdminAuditEntry> rows) {
+        StringBuilder sb = new StringBuilder(256 + rows.size() * 128);
+        sb.append('﻿');   // BOM
+        sb.append("id,created_at,actor_user_id,actor_name,action,")
+                .append("target_type,target_id,target_label,detail,client_ip\r\n");
+        for (AdminAuditEntry r : rows) {
+            sb.append(r.getId()).append(',');
+            sb.append(csv(r.getCreatedAt() == null ? null : r.getCreatedAt().toString())).append(',');
+            sb.append(r.getActorUserId()).append(',');
+            sb.append(csv(r.getActorName())).append(',');
+            sb.append(csv(r.getAction())).append(',');
+            sb.append(csv(r.getTargetType())).append(',');
+            sb.append(r.getTargetId() == null ? "" : r.getTargetId()).append(',');
+            sb.append(csv(r.getTargetLabel())).append(',');
+            sb.append(csv(r.getDetail())).append(',');
+            sb.append(csv(r.getClientIp())).append("\r\n");
+        }
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    /** RFC 4180 field escape: quote if necessary, double inner quotes. */
+    private static String csv(String value) {
+        if (value == null) return "";
+        boolean needsQuoting = value.indexOf(',') >= 0
+                || value.indexOf('"') >= 0
+                || value.indexOf('\n') >= 0
+                || value.indexOf('\r') >= 0;
+        if (!needsQuoting) return value;
+        return "\"" + value.replace("\"", "\"\"") + "\"";
+    }
+
     // ------------------------------------------------------------ helpers
 
     private Long currentUserId() {

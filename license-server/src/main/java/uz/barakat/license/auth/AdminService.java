@@ -35,7 +35,11 @@ public class AdminService {
     private final AppUserRepository users;
     private final AuditService audit;
     private final RefreshTokenService refreshTokens;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    // Cost 12 — see AdminBootstrap. All new passwords admin sets via
+    // createAccount / createUser / resetPassword are hashed at the
+    // stronger factor; old hashes verify normally because the cost
+    // travels inside the hash.
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     public AdminService(AccountRepository accounts, AppUserRepository users,
                         AuditService audit, RefreshTokenService refreshTokens) {

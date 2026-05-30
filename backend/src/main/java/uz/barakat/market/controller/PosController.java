@@ -50,7 +50,7 @@ public class PosController {
 
     @PostMapping("/sales/{id}/refund")
     public SaleResponse refund(@PathVariable Long id,
-                               @RequestBody(required = false) RefundRequest request) {
+                               @Valid @RequestBody(required = false) RefundRequest request) {
         return service.refund(id, request);
     }
 }
