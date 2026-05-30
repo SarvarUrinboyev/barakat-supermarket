@@ -49,6 +49,7 @@ class PermissionServiceTest {
         assertTrue(service.has(owner, "DEBTS:WRITE"));
         assertTrue(service.has(owner, "SALES:WRITE"));
         assertTrue(service.has(owner, "MANAGEMENT:WRITE"));
+        assertTrue(service.has(owner, "SHIFTS:ADMIN"));   // may clear shift history
         // But NOT platform-level account administration (SUPER_ADMIN only).
         assertFalse(service.has(owner, "ACCOUNTS:WRITE"));
     }
@@ -133,6 +134,7 @@ class PermissionServiceTest {
         // But not owner / admin functions.
         assertFalse(service.has(shop, "PRODUCTS:WRITE"));
         assertFalse(service.has(shop, "MANAGEMENT:READ"));
+        assertFalse(service.has(shop, "SHIFTS:ADMIN"));   // can run a shift, not erase history
         assertFalse(service.has(shop, "USERS:WRITE"));
         assertFalse(service.has(shop, "ACCOUNTS:WRITE"));
     }

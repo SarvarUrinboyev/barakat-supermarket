@@ -37,7 +37,10 @@ public class PermissionService {
             "REPORTS", "PRODUCTS", "ORDERS", "DEBTS", "SALES", "PAYMENTS",
             "CUSTOMERS", "SUPPLIERS", "EXPENSES", "MANAGEMENT", "TRANSFERS",
             "SHIFTS", "SHOPS", "PROMOS");
-    static final Set<String> KNOWN_ACTIONS = Set.of("READ", "WRITE");
+    // ADMIN is an owner-level action above WRITE, for destructive/sensitive
+    // operations that an ordinary writer (cashier) must not perform — e.g.
+    // erasing shift history.
+    static final Set<String> KNOWN_ACTIONS = Set.of("READ", "WRITE", "ADMIN");
 
     private final AppUserRepository users;
 
@@ -130,7 +133,7 @@ public class PermissionService {
                     "EXPENSES:READ", "EXPENSES:WRITE",
                     "MANAGEMENT:READ", "MANAGEMENT:WRITE",
                     "TRANSFERS:READ", "TRANSFERS:WRITE",
-                    "SHIFTS:READ", "SHIFTS:WRITE",
+                    "SHIFTS:READ", "SHIFTS:WRITE", "SHIFTS:ADMIN",
                     "SHOPS:READ", "SHOPS:WRITE",
                     "PROMOS:READ", "PROMOS:WRITE");
             // Cashier / shop staff — front-of-shop operations only: ring up

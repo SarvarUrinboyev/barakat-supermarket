@@ -79,6 +79,23 @@ class AuthorizationEndpointTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void clearShiftHistoryDeniedForCashier() throws Exception {
+        // SHOP_USER has SHIFTS:READ + SHIFTS:WRITE but NOT SHIFTS:ADMIN, so a
+        // cashier cannot erase shift history (which could hide cash gaps).
+        mvc.perform(delete("/api/shifts/history")
+                        .header("Authorization", bearer("SHOP_USER", "SHIFTS:READ", "SHIFTS:WRITE")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void clearShiftHistoryAllowedForOwnerWithShiftsAdmin() throws Exception {
+        mvc.perform(delete("/api/shifts/history")
+                        .header("Authorization", bearer("ACCOUNT_OWNER",
+                                "SHIFTS:READ", "SHIFTS:WRITE", "SHIFTS:ADMIN")))
+                .andExpect(status().isOk());
+    }
+
     private static String bearer(String role, String... perms) {
         SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
         Instant now = Instant.now();

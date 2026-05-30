@@ -85,6 +85,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/promos/**").access(perm("PROMOS", "WRITE"))
                         .requestMatchers(HttpMethod.GET, "/api/shops/**").access(perm("SHOPS", "READ"))
                         .requestMatchers("/api/shops/**").access(perm("SHOPS", "WRITE"))
+                        // Clearing shift history is destructive (it can hide cash
+                        // discrepancies), so it is owner-only — SHIFTS:ADMIN, which
+                        // cashiers do NOT have, not plain SHIFTS:WRITE. Must precede
+                        // the general shift rules (first match wins).
+                        .requestMatchers(HttpMethod.DELETE, "/api/shifts/history").access(perm("SHIFTS", "ADMIN"))
                         .requestMatchers(HttpMethod.GET, "/api/shifts/**", "/api/balance/**", "/api/terminal/**").access(perm("SHIFTS", "READ"))
                         .requestMatchers("/api/shifts/**", "/api/balance/**", "/api/terminal/**").access(perm("SHIFTS", "WRITE"))
                         // AI insights are read-only (the POST /ask is a query, not a mutation).
