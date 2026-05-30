@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -38,6 +39,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex,
                                                           HttpServletRequest req) {
         return entity(HttpStatus.BAD_REQUEST, ex.getMessage(), req.getRequestURI(), null);
+    }
+
+    /** DB constraint hit (e.g. a per-shop unique collision) -> 409, not a 500. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrity(DataIntegrityViolationException ex,
+                                                        HttpServletRequest req) {
+        log.warn("Data integrity violation on {} {}: {}",
+                req.getMethod(), req.getRequestURI(),
+                ex.getMostSpecificCause().getMessage());
+        return entity(HttpStatus.CONFLICT,
+                "Amalni bajarib bo'lmadi: ma'lumotlar bazasi cheklovi buzildi "
+                        + "(takroriy yoki bog'liq yozuv).",
+                req.getRequestURI(), null);
     }
 
     @ExceptionHandler(Exception.class)

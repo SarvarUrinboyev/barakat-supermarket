@@ -1,7 +1,9 @@
 package uz.barakat.market.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,7 +25,7 @@ public final class PosDtos {
     }
 
     public record CheckoutRequest(
-            List<CartItem> items,
+            @NotEmpty(message = "Savatcha bo'sh bo'lishi mumkin emas") @Valid List<CartItem> items,
             /** Whole-sale percent discount (0–100). */
             BigDecimal discountPercent,
             /** Whole-sale flat-amount discount in UZS. */
@@ -43,7 +45,7 @@ public final class PosDtos {
 
     public record RefundRequest(
             /** Empty list = full refund of all remaining items. */
-            List<RefundItemRequest> items,
+            @Valid List<RefundItemRequest> items,
             String reason) {
     }
 
