@@ -68,6 +68,17 @@ class AuthorizationEndpointTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void bareBasePathStillRequiresItsPermission() throws Exception {
+        // /api/dashboard has no sub-segment. Confirm the "/api/dashboard/**"
+        // rule covers the bare base too (REPORTS:READ) and does NOT fall
+        // through to the bare ".requestMatchers(/api/**).authenticated()"
+        // default — a token WITHOUT REPORTS:READ must still get 403, not 200.
+        mvc.perform(get("/api/dashboard")
+                        .header("Authorization", bearer("SHOP_USER", "CUSTOMERS:READ")))
+                .andExpect(status().isForbidden());
+    }
+
     private static String bearer(String role, String... perms) {
         SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
         Instant now = Instant.now();
