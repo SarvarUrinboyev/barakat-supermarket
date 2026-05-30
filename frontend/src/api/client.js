@@ -7,8 +7,11 @@ import {
   setRefreshToken,
   clearAuthPair,
 } from './licenseClient.js';
+import { API_ORIGIN } from '../config.js';
 
-const BASE = '/api';
+// '' (same origin) for the desktop / single-origin web deploy; an absolute
+// origin when VITE_API_URL points the SPA at a separate API host.
+const BASE = `${API_ORIGIN}/api`;
 const TOKEN_KEY = 'savdopro.token';
 const ACTIVE_SHOP_KEY = 'savdopro.activeShopId';
 
@@ -113,9 +116,19 @@ async function request(method, path, body) {
   }
 
   if (response.status === 403) {
-    // Hard permission denial (not an expired token) — do not attempt refresh.
-    // Clear session state and bounce to login so the user can re-authenticate
-    // with an account that has the correct role.
+    // Distinguish a permission denial from a dead session. The backend tags
+    // pure authorization failures with {"code":"FORBIDDEN"}; those must NOT
+    // log the user out — a cashier hitting an owner-only action stays signed
+    // in and just sees the error. A 403 WITHOUT that code means the account
+    // was blocked / the subscription expired → end the session.
+    const denial = safeParse(await response.clone().text());
+    if (denial?.code === 'FORBIDDEN') {
+      throw new ApiError(
+        denial.message || "Bu amal uchun ruxsatingiz yo'q",
+        403,
+        denial.fieldErrors,
+      );
+    }
     clearAuthPair();
     localStorage.removeItem(ACTIVE_SHOP_KEY);
     if (onUnauthorized) onUnauthorized(response.status);

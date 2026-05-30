@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
+import { IS_WEB } from '../config.js';
 
 // localStorage keys for the "remember me" feature. The login screen
 // only appears when the JWT is gone, so when the user does land here
@@ -34,7 +35,11 @@ export function Login() {
     try { return localStorage.getItem(SAVED_USERNAME_KEY) || ''; }
     catch { return ''; }
   })();
+  // Never persist/restore the password on the hosted web build — that
+  // localStorage entry is a credential-theft vector on a shared machine.
+  // The desktop kiosk build keeps the "press Kirish once" convenience.
   const savedPassword = (() => {
+    if (IS_WEB) return '';
     try { return localStorage.getItem(SAVED_PASSWORD_KEY) || ''; }
     catch { return ''; }
   })();
@@ -57,10 +62,11 @@ export function Login() {
     setError('');
     try {
       await login(uname.trim(), pwd, code);
-      // Persist on success so next time we can auto-submit.
+      // Remember the username for convenience. The password is persisted
+      // only on the desktop kiosk build — never on the web portal.
       try {
         localStorage.setItem(SAVED_USERNAME_KEY, uname.trim());
-        localStorage.setItem(SAVED_PASSWORD_KEY, pwd);
+        if (!IS_WEB) localStorage.setItem(SAVED_PASSWORD_KEY, pwd);
       } catch { /* private mode / quota — non-fatal */ }
     } catch (err) {
       const msg = err.message || t('Login muvaffaqiyatsiz');
