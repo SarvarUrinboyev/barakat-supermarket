@@ -87,6 +87,19 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- PostgreSQL: the hosted multi-tenant web deployment (activate the
+             `prod` profile). H2 above stays the default for the desktop build.
+             flyway-database-postgresql is required by Flyway 10+ to run the
+             migrations against a real Postgres server. -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
 
         <!-- Boilerplate reduction -->
         <dependency>
