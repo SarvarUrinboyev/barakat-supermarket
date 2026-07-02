@@ -100,7 +100,7 @@ public class AiChatService {
             @Value("${ai.providers:gemini,nvidia-deepseek,nvidia-kimi,openrouter}") String chainOrder,
             // Per-provider keys + models. All optional; unset = skipped.
             @Value("${ai.gemini.key:${GEMINI_API_KEY:}}") String geminiKey,
-            @Value("${ai.gemini.model:gemini-2.0-flash-exp}") String geminiModel,
+            @Value("${ai.gemini.model:gemini-2.5-flash}") String geminiModel,
             @Value("${ai.nvidia.deepseek.key:${NVIDIA_DEEPSEEK_KEY:}}") String nvDeepseekKey,
             @Value("${ai.nvidia.deepseek.model:deepseek-ai/deepseek-v4-flash}") String nvDeepseekModel,
             @Value("${ai.nvidia.kimi.key:${NVIDIA_KIMI_KEY:}}") String nvKimiKey,

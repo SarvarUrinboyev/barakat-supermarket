@@ -14,7 +14,7 @@ bo'ladi**; qolganlari zaxira.
 
 | Slot | Model (default) | Kalit env | Qayerdan | Narx |
 |---|---|---|---|---|
-| gemini | gemini-2.0-flash-exp | `GEMINI_API_KEY` | aistudio.google.com/apikey | bepul tier |
+| gemini | gemini-2.5-flash | `GEMINI_API_KEY` (yoki `AI_GEMINI_KEY`) | aistudio.google.com/apikey | bepul tier |
 | nvidia-deepseek | deepseek-ai/deepseek-v4-flash | `NVIDIA_DEEPSEEK_KEY` | build.nvidia.com | bepul NIM |
 | nvidia-kimi | moonshotai/kimi-k2.6 | `NVIDIA_KIMI_KEY` | build.nvidia.com (o'sha kalit) | bepul NIM |
 | openrouter | anthropic/claude-3.5-haiku | `OPENROUTER_API_KEY` | openrouter.ai/keys | pullik (oxirgi zaxira) |
@@ -22,6 +22,18 @@ bo'ladi**; qolganlari zaxira.
 Model/tartibni env orqali o'zgartirish: `ai.providers`, `ai.gemini.model`,
 `ai.openrouter.model` va h.k. (application.properties'dagi placeholderlarga
 mos env nomlari bilan).
+
+> ⚠️ **Precedence gotcha (2026-07-02 da tishladi):** kalit placeholder'i
+> `${ai.gemini.key:${GEMINI_API_KEY:}}` — ya'ni `ai.gemini.key` BIRINCHI
+> o'qiladi. Agar `application-local.properties` da `ai.gemini.key` o'rnatilgan
+> bo'lsa, `GEMINI_API_KEY` env E'TIBORGA OLINMAYDI. Bunday holda yangi kalitni
+> `AI_GEMINI_KEY` env orqali bering (u `ai.gemini.key` ni ustidan bosadi).
+> Prod backend'da aynan shunday: 30-ai.conf drop-in `AI_GEMINI_KEY` +
+> `AI_GEMINI_MODEL=gemini-2.5-flash` + `AI_PROVIDERS=gemini,...` (gemini birinchi).
+>
+> **Model eskirishi:** `gemini-2.0-flash-exp` va `gemini-2.0-flash` endi
+> ishlamaydi (404 / kvota). Jonli mavjud modellar ro'yxati:
+> `curl "https://generativelanguage.googleapis.com/v1beta/models?key=KEY"`.
 
 ## Yoqish (droplet, systemd)
 
