@@ -1,0 +1,42 @@
+# Prometheus + Grafana on a separate monitoring box, scraping SavdoPRO
+# remotely (see prometheus.remote.yml). Loopback-only ports — reach via SSH
+# tunnel. Grafana on 3009 because 3001 is taken by TezGo's admin panel on the
+# live box; change if your box differs.
+#
+#   cp prometheus.remote.yml prometheus/prometheus.yml   # (or mount directly)
+#   docker compose -f docker-compose.remote.yml up -d
+name: savdopro-monitoring
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./secrets/scrape-token:/etc/prometheus/scrape-token:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9091:9090"
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    restart: unless-stopped
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:?set GF_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3009:3000"
+
+volumes:
+  prometheus-data:
+  grafana-data:
