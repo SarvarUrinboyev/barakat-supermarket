@@ -13,6 +13,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uz.barakat.market.domain.CustomerTxType;
 import uz.barakat.market.domain.Product;
 import uz.barakat.market.dto.CustomerResponse;
@@ -50,6 +51,13 @@ import uz.barakat.market.repository.SaleRepository;
  * </ul>
  */
 @Service
+// Read-only tx per tool call: the TenantFilterAspect enables the Hibernate
+// tenant filter on the CURRENT session, which only exists inside a
+// transaction (open-in-view=false). Without this, each repository call ran
+// in its own filterless session and the TenantScopedEntity @PostLoad guard
+// (correctly) killed the query with NotFoundException — every filter-reliant
+// tool (inventoryValue, productInfo, lowStock…) answered "topilmadi".
+@Transactional(readOnly = true)
 public class AiToolService {
 
     private static final Logger log = LoggerFactory.getLogger(AiToolService.class);
