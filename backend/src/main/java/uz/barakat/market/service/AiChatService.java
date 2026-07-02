@@ -176,10 +176,18 @@ public class AiChatService {
         String system = SYSTEM_PROMPT
                 + "\n\nBUGUNGI SANA: " + LocalDate.now() + "\n\n"
                 + tools.catalog()
-                + "\nQO'SHIMCHA ma'lumot kerak bo'lsa, FAQAT bitta qatorda shunday yoz:\n"
+                + "\n\nMUHIM QOIDA: do'kon ma'lumoti (savdo, ombor, qoldiq, foyda, "
+                + "qarz, mijoz, xarajat, buyurtma, yetkazib beruvchi...) haqidagi "
+                + "HAR QANDAY savolga AVVAL mos TOOL chaqir. Tool chaqirish uchun "
+                + "FAQAT bitta qatorda, boshqa hech narsasiz shunday yoz:\n"
                 + "TOOL <nom> {\"arg\":\"qiymat\"}\n"
-                + "Boshqa hech narsa yozma. Ma'lumot yetarli bo'lsa — to'g'ridan-to'g'ri "
-                + "yakuniy javobni yoz (TOOL'siz). Sanalar YYYY-MM-DD ko'rinishida."
+                + "Hech qachon tool chaqirmasdan \"ma'lumot topilmadi\" DEMA. Kerakli "
+                + "ma'lumot [natija] sifatida kelgach, yakuniy javobni yoz (TOOL'siz). "
+                + "Sanalar YYYY-MM-DD ko'rinishida.\n"
+                + "MISOL:\nSavol: Ombor qiymati qancha?\nJavob: TOOL inventoryValue {}\n"
+                + "MISOL:\nSavol: Bugun savdo qancha?\n"
+                + "Javob: TOOL salesInRange {\"from\":\"" + LocalDate.now()
+                + "\",\"to\":\"" + LocalDate.now() + "\"}"
                 + "\n\nAMALLAR (action): agar foydalanuvchiga aniq amal foydali bo'lsa, "
                 + "yakuniy javob OXIRIDA har birini alohida qatorda shunday yoz "
                 + "(ilova ularni tugmaga aylantiradi, sen O'ZING bajarma):\n"

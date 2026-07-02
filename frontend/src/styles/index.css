@@ -4142,3 +4142,85 @@ textarea.input { resize: vertical; min-height: 110px; font-family: inherit; }
 /* defence-in-depth: the collapsed rail margin must never reach the POS kiosk
    (the JS already withholds the class there; this neutralises it regardless) */
 .app-shell.app-shell-pos-kiosk.sidebar-collapsed .main { margin-left: 0; }
+
+/* =====================================================================
+   PREMIUM POLISH v2 — shared refinements that lift every /app section at
+   once (stat tiles, cards, tables, buttons, page headers). Appended last so
+   it augments the base without touching it. Kept tasteful for a data-dense
+   POS tool: richer accents + depth, still crisp and legible.
+   ===================================================================== */
+
+/* --- stat / metric tiles: gradient icon tile + tone hairline + presence --- */
+.tone-red    { --mtone: var(--red); }
+.tone-amber  { --mtone: var(--amber); }
+.tone-green  { --mtone: var(--green); }
+.tone-blue   { --mtone: var(--blue); }
+.tone-orange { --mtone: var(--orange); }
+.metric { position: relative; overflow: hidden; border-radius: 20px; }
+.metric::after {
+  content: ''; position: absolute; inset: 0 0 auto; height: 3px;
+  background: linear-gradient(90deg, var(--mtone, var(--accent)), transparent 82%);
+  opacity: .9;
+}
+.metric .m-ico {
+  color: #fff !important;
+  background: linear-gradient(160deg, var(--mtone, var(--accent)),
+      color-mix(in srgb, var(--mtone, var(--accent)) 60%, #0b1220)) !important;
+  box-shadow: 0 10px 20px -8px var(--mtone, var(--accent)),
+      inset 0 1px 0 rgba(255, 255, 255, .28);
+  width: 46px; height: 46px; border-radius: 13px;
+  transition: transform .18s ease;
+}
+.metric:hover .m-ico { transform: scale(1.06) rotate(-3deg); }
+.metric .m-value { font-size: 24px; }
+
+/* --- cards: refined depth + a hairline top highlight for premium feel --- */
+.card { border-radius: 20px; }
+.card, .metric, .balance-hero {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 14px 34px -18px rgba(15, 23, 42, .18);
+}
+[data-theme="dark"] .card,
+[data-theme="dark"] .metric,
+[data-theme="dark"] .balance-hero {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 40px -20px rgba(0, 0, 0, .6);
+}
+
+/* --- tables: premium header + softer rounded body + accent row hover --- */
+.card .table-wrap { border-radius: 0 0 20px 20px; }
+.tbl th {
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--surface-2) 92%, var(--accent)), var(--surface-2));
+  border-bottom: 1.5px solid var(--border-strong, var(--border));
+  position: sticky; top: 0; z-index: 1;
+}
+.tbl tbody tr { transition: background .12s ease, box-shadow .12s ease; }
+.tbl tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* --- buttons: gradient fills + lift; ghost toolbar buttons gain an accent --- */
+.btn-primary {
+  background: linear-gradient(120deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent) 75%, transparent);
+}
+.btn-accent { background: linear-gradient(120deg, var(--blue), color-mix(in srgb, var(--blue) 62%, #0b1220)); }
+.btn-green  { background: linear-gradient(120deg, var(--green), var(--accent-strong)); }
+.btn-red    { background: linear-gradient(120deg, var(--red), color-mix(in srgb, var(--red) 62%, #2a0810)); }
+.btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn-ghost { transition: transform .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease; }
+.btn-ghost:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border-strong));
+  color: var(--accent-strong);
+  box-shadow: 0 6px 16px -10px var(--accent);
+  transform: translateY(-1px);
+}
+
+/* --- page header: a touch more presence --- */
+.page-head h1 { font-size: 24px; }
+.page-head::before { box-shadow: 0 0 18px -2px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* --- toolbar chip rows (Warehouse etc.): tighten to a premium segmented look --- */
+.chip-row .chip { transition: background .12s ease, color .12s ease, border-color .12s ease; }
+.chip-row .chip.active { box-shadow: 0 6px 16px -10px var(--accent); }
