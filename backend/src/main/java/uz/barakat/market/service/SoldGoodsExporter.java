@@ -29,10 +29,11 @@ public class SoldGoodsExporter {
     private static final DateTimeFormatter TIMESTAMP =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
+    // Amounts are so'm-canonical (from SALE movement snapshots) after Gate C.
     /** Column headers, shared by both formats. */
     private static final String[] HEADERS = {
-        "Sana", "Mahsulot", "Soni", "Sotuv narxi (USD)",
-        "Tan narxi (USD)", "Summa (USD)", "Foyda (USD)", "Izoh",
+        "Sana", "Mahsulot", "Soni", "Sotuv narxi (so'm)",
+        "Tan narxi (so'm)", "Summa (so'm)", "Foyda (so'm)", "Izoh",
     };
 
     // ------------------------------------------------------------------- CSV

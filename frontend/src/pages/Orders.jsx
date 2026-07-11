@@ -3,9 +3,9 @@ import { OrderApi } from '../api/endpoints.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useT } from '../context/Settings.jsx';
-import { EmptyState, Loader, PageHeader } from '../components/ui.jsx';
+import { CurrencyToggle, EmptyState, Loader, PageHeader } from '../components/ui.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { PAYMENT_LABELS, formatDate, money, todayIso, usd } from '../lib/format.js';
+import { PAYMENT_LABELS, formatDate, formatMoney, money, todayIso } from '../lib/format.js';
 
 export function Orders() {
   const { data, loading, error, reload } = useApi(() => OrderApi.grouped(), []);
@@ -136,7 +136,7 @@ function OrderSection({ tag, title, orders, actions }) {
                     </div>
                   </div>
                   <div className="mono" style={{ fontWeight: 700 }}>
-                    {usd(o.amount)}
+                    {formatMoney(o.amount, o.currency)}
                   </div>
                 </div>
                 <div className="li-actions">
@@ -172,6 +172,7 @@ function OrderFormModal({ title, initial, onSubmit, onClose }) {
   const [name, setName] = useState(initial?.name ?? '');
   const [supplier, setSupplier] = useState(initial?.supplier ?? '');
   const [amount, setAmount] = useState(initial?.amount ?? '');
+  const [currency, setCurrency] = useState(initial?.currency ?? 'UZS');
   const [orderDate, setOrderDate] = useState(initial?.orderDate ?? todayIso());
   const [deliveryDate, setDeliveryDate] = useState(initial?.deliveryDate ?? todayIso());
   const [note, setNote] = useState(initial?.note ?? '');
@@ -194,6 +195,7 @@ function OrderFormModal({ title, initial, onSubmit, onClose }) {
         name: name.trim(),
         supplier: supplier.trim() || null,
         amount: Number(amount) || 0,
+        currency,
         orderDate,
         deliveryDate,
         note: note.trim() || null,
@@ -231,7 +233,11 @@ function OrderFormModal({ title, initial, onSubmit, onClose }) {
                onChange={(e) => setSupplier(e.target.value)} />
       </div>
       <div className="field">
-        <label>{t('Summa (USD)')}</label>
+        <label>{t('Valyuta')}</label>
+        <CurrencyToggle value={currency} onChange={setCurrency} />
+      </div>
+      <div className="field">
+        <label>{currency === 'USD' ? t('Summa (USD)') : t("Summa (so'm)")}</label>
         <input className="input" type="number" value={amount}
                onChange={(e) => setAmount(e.target.value)} placeholder="0" />
       </div>

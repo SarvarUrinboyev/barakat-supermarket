@@ -106,6 +106,8 @@ public class OrderService {
         order.setName(request.name().strip());
         order.setSupplier(request.supplier());
         order.setAmount(request.amount() != null ? request.amount() : BigDecimal.ZERO);
+        order.setCurrency(request.currency() != null
+                ? request.currency() : uz.barakat.market.domain.Currency.UZS);
         order.setNote(request.note());
     }
 

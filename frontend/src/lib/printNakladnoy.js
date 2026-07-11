@@ -6,7 +6,7 @@
  * listed normally; goods on credit show a minus sign on the line total
  * so the customer can see at a glance which items they owe for.
  */
-import { formatDate, formatTime, money, usd } from './format.js';
+import { formatDate, formatTime, formatMoney, money } from './format.js';
 
 /** @typedef {{ description?: string, amount: number, type?: string }} Goods */
 
@@ -18,20 +18,25 @@ export function buildNakladnoyText({ customer, date, items, paid = 0, note }) {
   const total = items.reduce((sum, it) => sum + Number(it.amount || 0), 0);
   const debt = total - paid;
   const isCredit = debt > 0.009;
+  // A nakladnoy is one delivery, normally single-currency. Use the items'
+  // common currency for the note-level totals; fall back to so'm if they mix.
+  const noteCurrency = items.length
+    && items.every((it) => (it.currency || 'UZS') === (items[0].currency || 'UZS'))
+    ? (items[0].currency || 'UZS') : 'UZS';
 
   const lines = items.map((it) => {
     const name = it.description || it.note || '—';
     const amt = Number(it.amount || 0);
     const sign = isCredit ? '−' : '';   // credit items show minus
-    return `${pad(name, 28)} ${sign}${usd(amt)}`;
+    return `${pad(name, 28)} ${sign}${formatMoney(amt, it.currency)}`;
   }).join('\n');
 
   const stamp = isCredit
     ? `\n*** QARZGA OLINGAN ***\n` +
-      `To'langan:    ${usd(paid)}\n` +
-      `Qoldiq qarz:  −${usd(debt)}\n`
+      `To'langan:    ${formatMoney(paid, noteCurrency)}\n` +
+      `Qoldiq qarz:  −${formatMoney(debt, noteCurrency)}\n`
     : `\n*** TO'LANDI ***\n` +
-      `To'langan:    ${usd(paid || total)}\n`;
+      `To'langan:    ${formatMoney(paid || total, noteCurrency)}\n`;
 
   return (
 `===============================
@@ -47,7 +52,7 @@ TOVARLAR:
 ${lines}
 
 -------------------------------
-JAMI:                ${usd(total)}
+JAMI:                ${formatMoney(total, noteCurrency)}
 ${stamp}===============================
 ${note ? `Izoh: ${note}\n===============================\n` : ''}Imzo: __________________
 

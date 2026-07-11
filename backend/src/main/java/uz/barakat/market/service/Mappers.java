@@ -52,8 +52,8 @@ public final class Mappers {
 
     public static OrderResponse order(Order o, LocalDate today) {
         return new OrderResponse(o.getId(), o.getOrderDate(), o.getDeliveryDate(), o.getName(),
-                o.getSupplier(), o.getAmount(), o.isCompleted(), o.getCompletedAt(), o.getNote(),
-                orderStatus(o, today));
+                o.getSupplier(), o.getAmount(), o.getCurrency(), o.isCompleted(),
+                o.getCompletedAt(), o.getNote(), orderStatus(o, today));
     }
 
     /** Derived bucket for an order: COMPLETED / TODAY / OVERDUE / UPCOMING. */

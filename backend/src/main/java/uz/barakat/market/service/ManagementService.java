@@ -135,8 +135,11 @@ public class ManagementService {
             totalCost = totalCost.add(lineCost);
         }
         lines.sort(Comparator.comparing(SoldGoodsLine::soldAt));
+        // so'm-canonical: the amounts come from SALE movement snapshots, which
+        // the POS stores in so'm after Gate C.
         return new SoldGoodsReport(from, to, lines, totalUnits,
-                totalRevenue, totalCost, totalRevenue.subtract(totalCost));
+                totalRevenue, totalCost, totalRevenue.subtract(totalCost),
+                uz.barakat.market.domain.Currency.UZS);
     }
 
     public ManagementCostResponse createCost(ManagementCostRequest request) {

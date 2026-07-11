@@ -98,7 +98,7 @@ class OrderServiceTest {
     void createSavesOrderWithAllFieldsFromRequest() {
         OrderRequest req = new OrderRequest(
                 LocalDate.of(2026, 5, 20), LocalDate.of(2026, 5, 28),
-                "Hydrolife", "ZelTrade", new BigDecimal("1500.00"), "first batch");
+                "Hydrolife", "ZelTrade", new BigDecimal("1500.00"), null, "first batch");
 
         OrderResponse response = service.create(req);
 
@@ -119,7 +119,7 @@ class OrderServiceTest {
     void createDefaultsOrderDateToTodayWhenMissing() {
         OrderRequest req = new OrderRequest(
                 null, LocalDate.of(2026, 6, 1),
-                "Non", null, new BigDecimal("100"), null);
+                "Non", null, new BigDecimal("100"), null, null);
 
         service.create(req);
 
@@ -131,7 +131,7 @@ class OrderServiceTest {
     @Test
     void createDefaultsAmountToZeroWhenMissing() {
         OrderRequest req = new OrderRequest(
-                TODAY, TODAY.plusDays(3), "Sut", "ACME", null, null);
+                TODAY, TODAY.plusDays(3), "Sut", "ACME", null, null, null);
 
         service.create(req);
 
@@ -143,7 +143,7 @@ class OrderServiceTest {
     @Test
     void createStripsWhitespaceFromName() {
         OrderRequest req = new OrderRequest(
-                TODAY, TODAY.plusDays(3), "  Sut  ", null, BigDecimal.ONE, null);
+                TODAY, TODAY.plusDays(3), "  Sut  ", null, BigDecimal.ONE, null, null);
 
         service.create(req);
 
@@ -156,7 +156,7 @@ class OrderServiceTest {
     void createReturnsResponseWithDerivedStatus() {
         OrderRequest req = new OrderRequest(
                 TODAY, TODAY.plusDays(5), "Cola", "ACME",
-                new BigDecimal("250"), null);
+                new BigDecimal("250"), null, null);
 
         OrderResponse response = service.create(req);
 
@@ -171,7 +171,7 @@ class OrderServiceTest {
         when(orders.findById(7L)).thenReturn(Optional.of(existing));
         OrderRequest req = new OrderRequest(
                 LocalDate.of(2026, 5, 25), LocalDate.of(2026, 6, 5),
-                "New Name", "NewSupplier", new BigDecimal("999.99"), "updated");
+                "New Name", "NewSupplier", new BigDecimal("999.99"), null, "updated");
 
         service.update(7L, req);
 
@@ -189,7 +189,7 @@ class OrderServiceTest {
     void updateThrowsNotFoundWhenOrderMissing() {
         when(orders.findById(99L)).thenReturn(Optional.empty());
         OrderRequest req = new OrderRequest(
-                TODAY, TODAY.plusDays(1), "Sut", null, BigDecimal.ONE, null);
+                TODAY, TODAY.plusDays(1), "Sut", null, BigDecimal.ONE, null, null);
 
         assertThrows(NotFoundException.class, () -> service.update(99L, req));
         verify(orders, never()).save(any(Order.class));
@@ -202,7 +202,7 @@ class OrderServiceTest {
         existing.setCompletedAt(earlierCompletion);
         when(orders.findById(7L)).thenReturn(Optional.of(existing));
         OrderRequest req = new OrderRequest(
-                TODAY, TODAY.plusDays(1), "Renamed", null, BigDecimal.TEN, "note");
+                TODAY, TODAY.plusDays(1), "Renamed", null, BigDecimal.TEN, null, "note");
 
         service.update(7L, req);
 

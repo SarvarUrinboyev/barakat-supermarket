@@ -653,6 +653,7 @@ function GiveGoodsModal({ customer, onSubmit, onPreview, onClose }) {
           items: chosen.map((p) => ({
             description: `${p.name} × ${qtyOf(p)} @ ${formatMoney(p.salePrice, p.currency)}`,
             amount: Number(p.salePrice) * qtyOf(p),
+            currency: p.currency,
           })),
           paid: 0, // on-credit by default
           note: note.trim() || null,
