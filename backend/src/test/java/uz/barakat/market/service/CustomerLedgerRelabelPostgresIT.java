@@ -63,8 +63,18 @@ class CustomerLedgerRelabelPostgresIT {
 
     @BeforeAll
     static void setup() throws Exception {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable(),
-                "Docker not available — skipping the Postgres engine test (runs on CI)");
+        boolean docker = DockerClientFactory.instance().isDockerAvailable();
+        // On CI, a silent skip is a false-green vector: if Docker detection
+        // misfires on the runner, "proven on Postgres" quietly stops being true.
+        // So on CI (GitHub Actions sets CI=true), no Docker => FAIL, not skip.
+        // Locally, skipping when Docker is absent stays correct.
+        if (System.getenv("CI") != null && !docker) {
+            throw new IllegalStateException(
+                    "CI runner reports no Docker — this Postgres engine test must not "
+                    + "silently skip on CI (it is the only proof the runbook SQL runs on "
+                    + "the real engine). Fix the runner's Docker availability.");
+        }
+        assumeTrue(docker, "Docker not available — skipping the Postgres engine test (local only; runs on CI)");
         PG = new PostgreSQLContainer<>("postgres:16-alpine");
         PG.start();
         conn = DriverManager.getConnection(PG.getJdbcUrl(), PG.getUsername(), PG.getPassword());
