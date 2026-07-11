@@ -2,6 +2,8 @@ package uz.barakat.market.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -55,4 +57,20 @@ public class SaleItem extends BaseEntity {
     /** How many units of this line have been returned via refund. */
     @Column(name = "refunded_qty", nullable = false)
     private int refundedQty = 0;
+
+    /**
+     * Native currency this line was sold in (the product's currency at sell
+     * time). Legacy rows backfilled from the product's population currency.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private Currency currency = Currency.UZS;
+
+    /**
+     * USD→UZS rate used to fold this line into the so'm-canonical sale total,
+     * pinned per line. Null for UZS lines and legacy rows. Enables receipt
+     * annotation "$1 350 @ 12 650" and correct later profit math.
+     */
+    @Column(name = "usd_rate_at_sale", precision = 12, scale = 2)
+    private BigDecimal usdRateAtSale;
 }

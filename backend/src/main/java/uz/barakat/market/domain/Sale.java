@@ -3,6 +3,8 @@ package uz.barakat.market.domain;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -43,6 +45,23 @@ public class Sale extends TenantScopedEntity {
 
     @Column(name = "subtotal_uzs", nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotalUzs = BigDecimal.ZERO;
+
+    /**
+     * Canonical currency of this sale's stored totals. New sales are booked
+     * so'm-canonical (UZS lines plus USD lines converted at {@link
+     * #usdRateAtSale}); legacy rows were dollar-valued and backfilled USD.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private Currency currency = Currency.UZS;
+
+    /**
+     * USD→UZS rate applied when this sale was rung up, pinned for audit and
+     * correct historical profit. Null when no conversion happened (pure-UZS
+     * sale) or on legacy rows.
+     */
+    @Column(name = "usd_rate_at_sale", precision = 12, scale = 2)
+    private BigDecimal usdRateAtSale;
 
     @Column(name = "discount_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal discountAmount = BigDecimal.ZERO;
