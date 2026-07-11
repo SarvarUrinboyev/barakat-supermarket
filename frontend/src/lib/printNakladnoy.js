@@ -6,7 +6,7 @@
  * listed normally; goods on credit show a minus sign on the line total
  * so the customer can see at a glance which items they owe for.
  */
-import { formatDate, formatTime, formatMoney, money } from './format.js';
+import { formatDate, formatTime, formatMoney } from './format.js';
 
 /** @typedef {{ description?: string, amount: number, type?: string }} Goods */
 
@@ -15,14 +15,17 @@ import { formatDate, formatTime, formatMoney, money } from './format.js';
  * inside an on-screen preview before sending it to a printer.
  */
 export function buildNakladnoyText({ customer, date, items, paid = 0, note }) {
-  const total = items.reduce((sum, it) => sum + Number(it.amount || 0), 0);
-  const debt = total - paid;
-  const isCredit = debt > 0.009;
-  // A nakladnoy is one delivery, normally single-currency. Use the items'
-  // common currency for the note-level totals; fall back to so'm if they mix.
-  const noteCurrency = items.length
-    && items.every((it) => (it.currency || 'UZS') === (items[0].currency || 'UZS'))
-    ? (items[0].currency || 'UZS') : 'UZS';
+  // Totals are summed PER CURRENCY and never merged (Gate C AM-11) — a printed
+  // note mixing so'm goods with a USD phone must read "X so'm + $Y", never a
+  // single number under an assumed currency.
+  const totalBy = sumByCurrency(items);
+  // `paid` is a single figure. Allocate it so'm-first then USD (a defined
+  // convention for the rare mixed-currency + partial-payment note; for the
+  // common all-credit note paid is 0, so both buckets stay untouched).
+  const paidUzs = Math.min(paid, totalBy.UZS);
+  const paidBy = { UZS: paidUzs, USD: Math.min(paid - paidUzs, totalBy.USD) };
+  const debtBy = { UZS: totalBy.UZS - paidBy.UZS, USD: totalBy.USD - paidBy.USD };
+  const isCredit = debtBy.UZS > 0.009 || debtBy.USD > 0.009;
 
   const lines = items.map((it) => {
     const name = it.description || it.note || '—';
@@ -33,10 +36,10 @@ export function buildNakladnoyText({ customer, date, items, paid = 0, note }) {
 
   const stamp = isCredit
     ? `\n*** QARZGA OLINGAN ***\n` +
-      `To'langan:    ${formatMoney(paid, noteCurrency)}\n` +
-      `Qoldiq qarz:  −${formatMoney(debt, noteCurrency)}\n`
+      `To'langan:    ${splitMoney(paidBy)}\n` +
+      `Qoldiq qarz:  −${splitMoney(debtBy)}\n`
     : `\n*** TO'LANDI ***\n` +
-      `To'langan:    ${formatMoney(paid || total, noteCurrency)}\n`;
+      `To'langan:    ${splitMoney(paid > 0 ? paidBy : totalBy)}\n`;
 
   return (
 `===============================
@@ -52,7 +55,7 @@ TOVARLAR:
 ${lines}
 
 -------------------------------
-JAMI:                ${formatMoney(total, noteCurrency)}
+JAMI:                ${splitMoney(totalBy)}
 ${stamp}===============================
 ${note ? `Izoh: ${note}\n===============================\n` : ''}Imzo: __________________
 
@@ -125,6 +128,23 @@ function escapeHtml(s) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/** Sums nakladnoy items into { UZS, USD } buckets by each item's currency. */
+function sumByCurrency(items) {
+  return (items || []).reduce((a, it) => {
+    if (it.currency === 'USD') a.USD += Number(it.amount || 0);
+    else a.UZS += Number(it.amount || 0);
+    return a;
+  }, { UZS: 0, USD: 0 });
+}
+
+/** Renders a per-currency bucket as "X so'm + $Y" (only non-zero buckets). */
+function splitMoney(by) {
+  const parts = [];
+  if (Math.abs(by.UZS) > 0.009) parts.push(formatMoney(by.UZS, 'UZS'));
+  if (Math.abs(by.USD) > 0.009) parts.push(formatMoney(by.USD, 'USD'));
+  return parts.length ? parts.join(' + ') : formatMoney(0, 'UZS');
 }
 
 function pad(text, len) {

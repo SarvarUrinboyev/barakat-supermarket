@@ -131,3 +131,29 @@ SELECT shop_id, currency, count(*) FROM products GROUP BY shop_id, currency;
 
 Report the before/after counts back into the Gate C thread. No app restart is
 needed; currency is read live on the next request.
+
+## 5. SoldGoods USD-era exposure (AM-10)
+
+The sold-goods export (Management page) tags the whole report so'm-canonical
+(post-Gate-C SALE movement snapshots are so'm). Sales of dollar-priced products
+made BEFORE the deploy stored genuine USD snapshots, so over that history the
+report labels them "so'm". A StockMovement has no currency column and no clean
+link to its sale_item, so a correct per-line source needs a schema change (a
+later gate). Meanwhile, QUANTIFY the exposure so it is known, not silent —
+`:deploy_day` = the Gate C deploy date:
+
+```sql
+-- How many pre-deploy SALE movements price a now-USD product (rows the report
+-- would print as "so'm" but which hold dollar-magnitude snapshots).
+SELECT count(*) AS usd_era_sold_goods_rows
+FROM stock_movements m
+JOIN products p ON p.id = m.product_id
+WHERE m.reason = 'SALE'
+  AND p.currency = 'USD'
+  AND m.created_at < DATE :deploy_day;
+```
+
+If the count is 0 (a shop that never sold a USD product before deploy — the
+common all-so'm case), the report is exactly correct and there is nothing to do.
+If non-zero, note it against any historical sold-goods figures until the
+stock-movement currency column lands.
