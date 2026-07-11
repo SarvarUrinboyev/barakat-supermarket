@@ -54,6 +54,9 @@ class AccountingReconciliationIT {
         Shop s = new Shop();
         s.setAccountId(1L);
         s.setName("Acct recon shop");
+        // kurs 1:1 — USD test products map 1:1 to the ledger's canonical unit,
+        // keeping asserted balances identical while satisfying the D6 block rule.
+        s.setUsdRate(java.math.BigDecimal.ONE);
         shopId = shops.save(s).getId();
         TenantContext.setShopId(shopId);
     }
@@ -137,6 +140,9 @@ class AccountingReconciliationIT {
         p.setPurchasePrice(BigDecimal.valueOf(cost));
         p.setSalePrice(BigDecimal.valueOf(sale));
         p.setQuantity(qty);
+        // Single-currency ledger arithmetic; USD = ledger's canonical unit so
+        // no kurs conversion is applied and the asserted balances stay as-is.
+        p.setCurrency(Currency.USD);
         return products.save(p);
     }
 

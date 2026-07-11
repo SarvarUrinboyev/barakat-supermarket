@@ -59,6 +59,14 @@ public class ShopController {
         return service.setMain(currentAccountId(request), id);
     }
 
+    /** Set / clear the shop's USD→UZS kurs (POS header widget). Owner only. */
+    @PatchMapping("/{id}/usd-rate")
+    public ShopResponse setUsdRate(HttpServletRequest request, @PathVariable Long id,
+                                   @RequestBody ShopService.UsdRateRequest body) {
+        requireOwner(request);
+        return service.setUsdRate(currentAccountId(request), id, body.usdRate());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(HttpServletRequest request, @PathVariable Long id) {
         requireOwner(request);

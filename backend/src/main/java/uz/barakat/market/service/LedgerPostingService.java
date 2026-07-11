@@ -157,14 +157,21 @@ public class LedgerPostingService {
         }
         Map<String, GlAccount> acc = chart.byCode();
 
-        BigDecimal subtotal = nz(sale.getSubtotalUzs());   // gross, USD-valued
-        BigDecimal total = nz(sale.getTotalUzs());         // net after discounts
+        // Sales are stored so'm-canonical (Gate C); the ledger is USD-canonical
+        // like every expense/payment posting (toUsd calls below). Convert the
+        // whole sale to USD at its pinned rate so revenue, COGS and the cash it
+        // shares with expenses all land in ONE unit. One rate for every line of
+        // this entry keeps the double entry balanced. Legacy rows (currency USD)
+        // convert as a no-op, preserving their historical postings exactly.
+        BigDecimal subtotal = ledgerUsd(nz(sale.getSubtotalUzs()), sale);
+        BigDecimal total = ledgerUsd(nz(sale.getTotalUzs()), sale);
         BigDecimal discount = subtotal.subtract(total).max(ZERO);
-        BigDecimal cogs = ZERO;
+        BigDecimal cogsSom = ZERO;
         for (SaleItem it : sale.getItems()) {
-            cogs = cogs.add(costOf(it.getCostAtSaleUzs(), it.getProductId())
+            cogsSom = cogsSom.add(costOf(it.getCostAtSaleUzs(), it.getProductId())
                     .multiply(BigDecimal.valueOf(it.getQuantity())));
         }
+        BigDecimal cogs = ledgerUsd(cogsSom, sale);
 
         JournalEntry e = newEntry(sale.getShopId(), date, JournalSource.SALE, ref,
                 "Sotuv #" + sale.getId());
@@ -416,6 +423,22 @@ public class LedgerPostingService {
      */
     private BigDecimal costOf(BigDecimal snapshot, Long productId) {
         return snapshot != null ? snapshot : unitCost(productId);
+    }
+
+    /**
+     * A so'm-canonical sale amount in the ledger's USD unit. Uses the rate
+     * pinned at sell time (usd_rate_at_sale) so a past sale's booked profit
+     * never drifts with today's rate; falls back to the live rate for pure
+     * so'm sales that pinned none. Legacy USD-valued sales pass through.
+     */
+    private BigDecimal ledgerUsd(BigDecimal som, Sale sale) {
+        if (sale.getCurrency() == Currency.USD) {
+            return som;
+        }
+        BigDecimal rate = sale.getUsdRateAtSale() != null && sale.getUsdRateAtSale().signum() > 0
+                ? sale.getUsdRateAtSale()
+                : converter.usdToUzs();
+        return som.divide(rate, 2, java.math.RoundingMode.HALF_UP);
     }
 
     private BigDecimal unitCost(Long productId) {

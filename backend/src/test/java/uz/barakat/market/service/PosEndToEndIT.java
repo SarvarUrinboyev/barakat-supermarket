@@ -71,6 +71,10 @@ class PosEndToEndIT {
         Shop s = new Shop();
         s.setAccountId(1L);
         s.setName("POS E2E shop");
+        // kurs 1:1 so the USD test products behave as the ledger's canonical
+        // unit — every asserted integer stays identical while the D6 block rule
+        // (a USD line needs a configured kurs) is satisfied.
+        s.setUsdRate(java.math.BigDecimal.ONE);
         shopId = shops.save(s).getId();
         TenantContext.setShopId(shopId);
     }
@@ -203,6 +207,11 @@ class PosEndToEndIT {
         p.setPurchasePrice(BigDecimal.valueOf(cost));
         p.setSalePrice(BigDecimal.valueOf(sale));
         p.setQuantity(qty);
+        // These tests assert ledger arithmetic in a single currency; USD keeps
+        // amounts in the ledger's canonical unit (no kurs conversion), so the
+        // expected values stay exactly as written. Currency-specific behaviour
+        // (UZS conversion, mixed cart, block rule) is covered by PosCurrencyIT.
+        p.setCurrency(uz.barakat.market.domain.Currency.USD);
         return products.save(p);
     }
 

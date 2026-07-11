@@ -17,6 +17,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.barakat.market.auth.TenantContext;
+import uz.barakat.market.domain.Currency;
 import uz.barakat.market.domain.Customer;
 import uz.barakat.market.domain.CustomerTransaction;
 import uz.barakat.market.domain.CustomerTxType;
@@ -45,6 +47,7 @@ import uz.barakat.market.repository.CustomerTransactionRepository;
 import uz.barakat.market.repository.PaymentRepository;
 import uz.barakat.market.repository.ProductRepository;
 import uz.barakat.market.repository.SaleRepository;
+import uz.barakat.market.repository.ShopRepository;
 import uz.barakat.market.repository.SoldDeviceRepository;
 import uz.barakat.market.repository.StockMovementRepository;
 
@@ -74,6 +77,7 @@ public class PosService {
 
     private final SaleRepository sales;
     private final ProductRepository products;
+    private final ShopRepository shops;
     private final PaymentRepository payments;
     private final StockMovementRepository movements;
     private final CustomerRepository customers;
@@ -87,6 +91,7 @@ public class PosService {
     private final ApplicationEventPublisher events;
 
     public PosService(SaleRepository sales, ProductRepository products,
+                      ShopRepository shops,
                       PaymentRepository payments, StockMovementRepository movements,
                       CustomerRepository customers, CustomerTransactionRepository customerTx,
                       SoldDeviceRepository soldDevices,
@@ -97,6 +102,7 @@ public class PosService {
                       ApplicationEventPublisher events) {
         this.sales = sales;
         this.products = products;
+        this.shops = shops;
         this.payments = payments;
         this.movements = movements;
         this.customers = customers;
@@ -146,6 +152,13 @@ public class PosService {
             sale.setCustomerId(req.customerId());
         }
 
+        // The shop's kurs (USD->UZS). Null = not configured: checkout of any
+        // USD-priced line is then blocked below rather than guessed at. A pure
+        // so'm cart never needs it. Everything is booked so'm-canonical: USD
+        // lines are folded to so'm at this rate and the rate is pinned per line.
+        BigDecimal kurs = currentShopUsdRate();
+        BigDecimal saleRate = null;   // set once a USD line is folded in
+
         BigDecimal subtotal = BigDecimal.ZERO;
         Set<Long> seenIds = new HashSet<>();
         // Per-unit IMEI/serial captures, keyed by productId (unique per sale).
@@ -169,7 +182,22 @@ public class PosService {
                         "Yetarli ombor yo'q: " + p.getName()
                         + " (qoldiq " + p.getQuantity() + ", talab " + c.quantity() + ")");
             }
-            BigDecimal unit = nz(p.getSalePrice());
+            // Fold the product's native price into the so'm-canonical sale.
+            // UZS products pass through; USD products convert at the shop kurs,
+            // which MUST be configured (D6 hard rule — the system never guesses).
+            Currency lineCurrency = p.getCurrency() == null ? Currency.UZS : p.getCurrency();
+            BigDecimal lineRate = null;
+            if (lineCurrency == Currency.USD) {
+                if (kurs == null || kurs.signum() <= 0) {
+                    throw new BadRequestException(
+                            "Dollarli mahsulot uchun kurs sozlanmagan: " + p.getName()
+                            + ". Kassa sozlamalarida USD kursini kiriting.");
+                }
+                lineRate = kurs;
+                saleRate = kurs;
+            }
+            BigDecimal unit = toSom(nz(p.getSalePrice()), lineCurrency, kurs);
+            BigDecimal costSom = toSom(nz(p.getPurchasePrice()), lineCurrency, kurs);
             BigDecimal gross = unit.multiply(BigDecimal.valueOf(c.quantity()));
             BigDecimal lineDisc = nz(c.lineDiscountUzs());
             if (lineDisc.compareTo(gross) > 0) {
@@ -186,9 +214,13 @@ public class PosService {
             item.setUnitPriceUzs(unit);
             item.setLineDiscountUzs(lineDisc);
             item.setLineTotalUzs(lineTotal);
-            // Freeze the cost price now so COGS stays correct even if the
-            // product's purchase_price is edited after this sale.
-            item.setCostAtSaleUzs(nz(p.getPurchasePrice()));
+            // Freeze the cost price (so'm-canonical) so COGS stays correct even
+            // if the product's purchase_price is edited after this sale.
+            item.setCostAtSaleUzs(costSom);
+            // Native currency + the kurs used to fold it in, for the receipt
+            // annotation ("$1 350 @ 12 650") and correct later profit math.
+            item.setCurrency(lineCurrency);
+            item.setUsdRateAtSale(lineRate);
             sale.addItem(item);
 
             // Capture per-unit IMEIs for IMEI-tracked goods (saved after the sale).
@@ -213,9 +245,9 @@ public class PosService {
             mv.setResultingQuantity(newQty);
             mv.setReason(StockReason.SALE);
             mv.setNote("POS sale");
-            // Freeze the price for historical profit reporting.
-            mv.setUnitSalePrice(p.getSalePrice());
-            mv.setUnitCostPrice(p.getPurchasePrice());
+            // Freeze the price (so'm-canonical) for historical profit reporting.
+            mv.setUnitSalePrice(unit);
+            mv.setUnitCostPrice(costSom);
             movements.save(mv);
 
             // Broadcast stock change — live warehouse view picks this up.
@@ -255,6 +287,9 @@ public class PosService {
         BigDecimal total = afterPercent.setScale(2, RoundingMode.HALF_UP);
         sale.setSubtotalUzs(subtotal);
         sale.setTotalUzs(total);
+        // Booked so'm-canonical; pin the kurs when any USD line was folded in.
+        sale.setCurrency(Currency.UZS);
+        sale.setUsdRateAtSale(saleRate);
 
         // Book the money in the Payment journal — skipped for fully-on-credit
         // sales (those are reflected in customer_debts, not payments).
@@ -632,5 +667,26 @@ public class PosService {
 
     private static String blankToNull(String v) {
         return v == null || v.isBlank() ? null : v.strip();
+    }
+
+    /** The active shop's configured kurs (USD→UZS), or null when unset. */
+    private BigDecimal currentShopUsdRate() {
+        Long shopId = TenantContext.currentShopId();
+        if (shopId == null) {
+            return null;
+        }
+        return shops.findById(shopId).map(uz.barakat.market.domain.Shop::getUsdRate).orElse(null);
+    }
+
+    /**
+     * A native amount folded into so'm: UZS passes through, USD multiplies by
+     * the kurs. Callers guarantee kurs is present + positive before passing a
+     * USD amount (the D6 checkout block rule), so this never guesses a rate.
+     */
+    private static BigDecimal toSom(BigDecimal amount, Currency currency, BigDecimal kurs) {
+        if (currency == Currency.USD && kurs != null) {
+            return amount.multiply(kurs).setScale(2, RoundingMode.HALF_UP);
+        }
+        return amount;
     }
 }
