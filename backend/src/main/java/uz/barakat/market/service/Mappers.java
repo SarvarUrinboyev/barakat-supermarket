@@ -174,7 +174,7 @@ public final class Mappers {
 
     public static CustomerTransactionResponse customerTransaction(CustomerTransaction t) {
         return new CustomerTransactionResponse(t.getId(), t.getDate(), t.getType(),
-                t.getDescription(), t.getAmount(), t.getNote(), t.getCreatedAt());
+                t.getDescription(), t.getAmount(), t.getCurrency(), t.getNote(), t.getCreatedAt());
     }
 
     public static ManagementCostResponse managementCost(ManagementCost c) {

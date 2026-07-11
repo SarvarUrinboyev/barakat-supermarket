@@ -5,11 +5,21 @@ import { downloadAuthed } from '../lib/download.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { NakladnoyPreview } from '../components/NakladnoyPreview.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { EmptyState, Loader, MetricCard } from '../components/ui.jsx';
+import { CurrencyToggle, EmptyState, Loader, MetricCard } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatMoney, todayIso, usd } from '../lib/format.js';
+import { balanceDisplay } from '../lib/customerBalance.js';
 import { balanceInfo, CustomerFormModal } from './Customers.jsx';
+
+/** Sums ledger lines into { uzs, usd } buckets by each line's currency. */
+function sumByCurrency(lines) {
+  return lines.reduce((a, x) => {
+    if (x.currency === 'USD') a.usd += Number(x.amount || 0);
+    else a.uzs += Number(x.amount || 0);
+    return a;
+  }, { uzs: 0, usd: 0 });
+}
 
 /** Customer detail: contact info, balance and the goods / payment ledger. */
 export function CustomerDetail() {
@@ -372,8 +382,8 @@ function DayGroupedLedger({ transactions, customer, onEdit, onDelete }) {
       {groups.map((g) => {
         const goodsKey = `g-${g.date}`;
         const payKey = `p-${g.date}`;
-        const goodsTotal = g.goods.reduce((s, x) => s + Number(x.amount || 0), 0);
-        const paidTotal = g.payments.reduce((s, x) => s + Number(x.amount || 0), 0);
+        const goodsSum = sumByCurrency(g.goods);
+        const paidSum = sumByCurrency(g.payments);
         const goodsOpen = expanded.has(goodsKey);
         const payOpen = expanded.has(payKey);
         return (
@@ -395,7 +405,7 @@ function DayGroupedLedger({ transactions, customer, onEdit, onDelete }) {
                       {g.goods.length} {t('ta tovar')}
                     </span>
                     <span className="day-row-sum amount-neg mono">
-                      +{usd(goodsTotal)}
+                      +{balanceDisplay(goodsSum.uzs, goodsSum.usd)}
                     </span>
                   </button>
                   <button
@@ -421,7 +431,7 @@ function DayGroupedLedger({ transactions, customer, onEdit, onDelete }) {
                         {g.goods.map((x) => (
                           <tr key={x.id}>
                             <td className="name-cell">{x.description || x.note || '—'}</td>
-                            <td className="num amount-neg mono">+{usd(x.amount)}</td>
+                            <td className="num amount-neg mono">+{formatMoney(x.amount, x.currency)}</td>
                             <td>
                               <div className="row-actions">
                                 <button className="icon-btn" title={t('Tahrirlash')}
@@ -454,7 +464,7 @@ function DayGroupedLedger({ transactions, customer, onEdit, onDelete }) {
                       {g.payments.length} {t('ta')}
                     </span>
                     <span className="day-row-sum amount-pos mono">
-                      −{usd(paidTotal)}
+                      −{balanceDisplay(paidSum.uzs, paidSum.usd)}
                     </span>
                   </button>
                 </div>
@@ -472,7 +482,7 @@ function DayGroupedLedger({ transactions, customer, onEdit, onDelete }) {
                         {g.payments.map((x) => (
                           <tr key={x.id}>
                             <td className="name-cell">{x.description || x.note || '—'}</td>
-                            <td className="num amount-pos mono">−{usd(x.amount)}</td>
+                            <td className="num amount-pos mono">−{formatMoney(x.amount, x.currency)}</td>
                             <td>
                               <div className="row-actions">
                                 <button className="icon-btn" title={t('Tahrirlash')}
@@ -762,6 +772,7 @@ function GiveGoodsModal({ customer, onSubmit, onPreview, onClose }) {
 function ReceivePaymentModal({ onSubmit, onClose }) {
   const t = useT();
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('UZS');
   const [date, setDate] = useState(todayIso());
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
@@ -779,6 +790,7 @@ function ReceivePaymentModal({ onSubmit, onClose }) {
         date,
         description: description.trim() || null,
         amount: Number(amount),
+        currency,
         note: null,
       });
       onClose();
@@ -806,9 +818,13 @@ function ReceivePaymentModal({ onSubmit, onClose }) {
       <p className="muted" style={{ marginBottom: 12 }}>
         {t("Qabul qilingan to'lov mijoz qarzini kamaytiradi.")}
       </p>
+      <div className="field">
+        <label>{t('Valyuta')}</label>
+        <CurrencyToggle value={currency} onChange={setCurrency} />
+      </div>
       <div className="form-row">
         <div className="field">
-          <label>{t('Summa (USD)')}</label>
+          <label>{currency === 'USD' ? t('Summa (USD)') : t("Summa (so'm)")}</label>
           <input className="input" type="number" autoFocus value={amount}
                  onChange={(e) => setAmount(e.target.value)} placeholder="0" />
         </div>
