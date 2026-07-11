@@ -1,114 +1,114 @@
 name: Deploy
 
-# Build + deploy to the production droplet. Manual by default (Run workflow),
-# and automatically on a version tag. Mirrors the hand-deploy runbook:
-# build → upload .new → verify SHA256 → systemctl swap → health-verify.
+# Build + deploy to production. MANUAL trigger only for now (Run workflow →
+# choose the unit). After Gate C ships, flip to auto-on-merge by uncommenting
+# the `push: branches: [main]` block below — that one line is the whole switch
+# (see ops/DEPLOY.md §flip). Merging to main is then the release "go".
 #
-# REQUIRED GitHub repo secrets (Settings → Secrets and variables → Actions):
-#   DEPLOY_SSH_KEY   — private SSH key authorised on the droplet (root)
-#   DEPLOY_HOST      — 167.172.164.214
-#   DEPLOY_USER      — root
-# Optional variables (Settings → Variables), with sensible defaults:
-#   LICENSE_URL      — https://167-172-164-214.nip.io  (VITE_LICENSE_URL for the web build)
+# Model: the built jar is uploaded to <base>/releases/<sha>/ and ops/deploy.sh
+# (on the server) takes a pre-deploy DB dump, repoints the <base>/current
+# symlink, restarts the unit, health-checks, and AUTO-ROLLS-BACK on failure.
+#
+# REQUIRED repo secrets (Settings → Secrets and variables → Actions):
+#   DEPLOY_SSH_KEY   — private key of the dedicated CI `deploy` user (NOT root)
+#   DEPLOY_HOST      — 168.119.64.239 / savdopro.topsites.uz
+#   DEPLOY_USER      — deploy
+# Optional secrets: DEPLOY_PORT (default 22)
+# Required variables: LICENSE_URL (public host, VITE_LICENSE_URL for the build)
+# Optional variables: MXIK_PROXY_URL (VITE_MXIK_PROXY_URL; blank = off, as today)
 on:
   workflow_dispatch:
-  push:
-    tags: ["v*"]
+    inputs:
+      unit:
+        description: "Which service to deploy"
+        type: choice
+        default: backend
+        options: [backend, license]
+  # --- Gate-C flip: uncomment to release automatically on merge to main ---
+  # push:
+  #   branches: [main]
 
 concurrency:
   group: deploy-prod
   cancel-in-progress: false
 
+env:
+  # workflow_dispatch → the chosen unit; push (after the flip) → backend.
+  UNIT: ${{ github.event.inputs.unit || 'backend' }}
+
 jobs:
-  # Tests GATE the deploy: a red suite means no jar reaches the droplet.
-  # (Emergency path: the manual hand-deploy runbook, not a CI bypass.)
+  # Tests GATE the deploy: a red suite means no jar reaches the server.
   test-backend:
     name: Backend tests (gate)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
+    defaults: { run: { working-directory: backend } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-      - name: Run tests
-        run: |
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - run: |
           chmod +x ./mvnw
           ./mvnw -B --no-transfer-progress test
 
   test-license:
     name: License-server tests (gate)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: license-server
+    defaults: { run: { working-directory: license-server } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-      - name: Run tests
-        run: |
+        with: { distribution: temurin, java-version: "21", cache: maven }
+      - run: |
           chmod +x ./mvnw
           ./mvnw -B --no-transfer-progress test
 
   deploy:
-    name: Build & deploy to prod
+    name: Build & deploy (${{ github.event.inputs.unit || 'backend' }})
     runs-on: ubuntu-latest
     needs: [test-backend, test-license]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: maven
-
+        with: { distribution: temurin, java-version: "21", cache: maven }
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # 1) Frontend → bundled into the backend's static resources
+      # 1) Frontend (backend unit only — the SPA is bundled INTO the backend jar)
       - name: Build web frontend
+        if: env.UNIT == 'backend'
         working-directory: frontend
         env:
           VITE_TARGET: web
-          VITE_LICENSE_URL: ${{ vars.LICENSE_URL || 'https://167-172-164-214.nip.io' }}
+          VITE_LICENSE_URL: ${{ vars.LICENSE_URL }}
+          # D0's home: blank = off (as today); set the Actions var when D1 lands.
+          VITE_MXIK_PROXY_URL: ${{ vars.MXIK_PROXY_URL }}
         run: |
+          test -n "$VITE_LICENSE_URL" || { echo "::error::Set Actions variable LICENSE_URL to the public host before deploying"; exit 1; }
+          case "$VITE_LICENSE_URL" in
+            *167-172-164-214.nip.io*|*167.172.164.214*) echo "::error::LICENSE_URL still points at the OLD server"; exit 1 ;;
+          esac
           npm ci
           npm run build
-          # Guard against a partial build (e.g. an obfuscator/plugin dropping
-          # lazy chunks): a missing page chunk 404s at runtime and takes the
-          # page down. Assert every key chunk exists + a sane total, else FAIL
-          # the deploy loudly instead of shipping a broken UI (incident 2026-06-04).
+          # Guard a partial build (a dropped lazy chunk 404s at runtime): assert
+          # each key page chunk + a sane total, else FAIL loudly (incident 2026-06-04).
           ASSETS=../backend/src/main/resources/static/assets
           n=$(ls "$ASSETS"/*.js | wc -l); echo "frontend js chunks: $n"
           for p in Dashboard ProductEditor Payments Reports Customers Warehouse Orders Debt; do
             ls "$ASSETS" | grep -qE "^${p}-" || { echo "::error::frontend build missing the $p chunk — refusing to deploy"; exit 1; }
           done
           [ "$n" -ge 25 ] || { echo "::error::frontend build produced only $n chunks (expected >=25) — refusing to deploy"; exit 1; }
-          echo "frontend build complete ✓"
 
-      # 2) Backend jar (bundles the freshly built frontend) + license jar
       - name: Build backend jar
+        if: env.UNIT == 'backend'
         working-directory: backend
         run: |
           chmod +x ./mvnw
           ./mvnw -B --no-transfer-progress -DskipTests clean package
-          # jar:jar can intermittently omit src/main/resources from the jar
-          # (no application.properties / db migrations / static) — see
-          # memory/prod-deploy.md INCIDENT 2026-06-02. Repackage the fully
-          # populated target/classes and ASSERT the resources are present;
-          # retry a few times, then fail loudly rather than ship a broken jar.
+          # jar:jar can intermittently omit src/main/resources (incident 2026-06-02):
+          # repackage target/classes and ASSERT the bundled resources are present.
           ok=0
           for attempt in 1 2 3; do
             ./mvnw -B --no-transfer-progress -o jar:jar spring-boot:repackage
@@ -119,54 +119,60 @@ jobs:
             if [ "$props" -ge 1 ] && [ "$sql" -ge 20 ] && [ "$ui" -ge 1 ]; then ok=1; break; fi
           done
           [ "$ok" = "1" ] || { echo "::error::jar is missing bundled resources after 3 attempts"; exit 1; }
+
       - name: Build license-server jar
+        if: env.UNIT == 'license'
         working-directory: license-server
         run: |
           chmod +x ./mvnw
           ./mvnw -B --no-transfer-progress -DskipTests clean package
 
-      # 3) Deploy over SSH: upload .new, verify SHA256, swap, restart, verify
+      # 2) Upload the jar to releases/<sha>/ and run the server-side deploy.sh
       - name: Deploy
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+          test -n "$HOST" || { echo "::error::DEPLOY_HOST is empty"; exit 1; }
+          case "$HOST" in
+            167.172.164.214|167-172-164-214.nip.io) echo "::error::DEPLOY_HOST still points at the OLD server"; exit 1 ;;
+          esac
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p "$PORT" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          SSH="ssh -i $HOME/.ssh/id_deploy -p $PORT $USER@$HOST"
+          SCP="scp -i $HOME/.ssh/id_deploy -P $PORT"
 
-          BE=$(ls backend/target/*.jar | grep -v original | head -1)
-          LS=$(ls license-server/target/*.jar | grep -v original | head -1)
-          BE_SHA=$(sha256sum "$BE" | cut -d' ' -f1)
-          LS_SHA=$(sha256sum "$LS" | cut -d' ' -f1)
+          case "$UNIT" in
+            backend) BASE=/opt/barakat;  JAR=$(ls backend/target/*.jar | grep -v original | head -1); NAME=barakat-market.jar ;;
+            license) BASE=/opt/savdopro; JAR=$(ls license-server/target/*.jar | grep -v original | head -1); NAME=savdopro-license-server.jar ;;
+            *) echo "::error::unknown unit $UNIT"; exit 1 ;;
+          esac
+          SHA_SHORT="${SHA:0:12}"
 
-          scp -i ~/.ssh/id_deploy "$BE" "$USER@$HOST:/opt/barakat/barakat-market.jar.new"
-          scp -i ~/.ssh/id_deploy "$LS" "$USER@$HOST:/opt/savdopro/savdopro-license-server.jar.new"
+          # Refresh the server-side scripts + stage the jar into releases/<sha>/.
+          $SSH "mkdir -p ~/ops $BASE/releases/$SHA_SHORT"
+          $SCP ops/deploy.sh ops/backup-postgres.sh "$USER@$HOST:~/ops/"
+          $SCP "$JAR" "$USER@$HOST:$BASE/releases/$SHA_SHORT/$NAME"
+          $SSH "chmod +x ~/ops/deploy.sh ~/ops/backup-postgres.sh"
 
-          ssh -i ~/.ssh/id_deploy "$USER@$HOST" \
-            BE_SHA="$BE_SHA" LS_SHA="$LS_SHA" 'bash -s' <<'REMOTE'
-          set -euo pipefail
-          [ "$(sha256sum /opt/barakat/barakat-market.jar.new | cut -d" " -f1)" = "$BE_SHA" ] || { echo "backend SHA mismatch"; exit 1; }
-          [ "$(sha256sum /opt/savdopro/savdopro-license-server.jar.new | cut -d" " -f1)" = "$LS_SHA" ] || { echo "license SHA mismatch"; exit 1; }
-          systemctl stop savdopro-backend savdopro-license
-          cp -f /opt/barakat/barakat-market.jar /opt/barakat/barakat-market.jar.bak-ci 2>/dev/null || true
-          cp -f /opt/savdopro/savdopro-license-server.jar /opt/savdopro/savdopro-license-server.jar.bak-ci 2>/dev/null || true
-          mv -f /opt/barakat/barakat-market.jar.new /opt/barakat/barakat-market.jar
-          mv -f /opt/savdopro/savdopro-license-server.jar.new /opt/savdopro/savdopro-license-server.jar
-          systemctl start savdopro-license
-          for i in $(seq 1 30); do sleep 4; curl -sf -m4 http://127.0.0.1:9090/actuator/health >/dev/null 2>&1 && break; done
-          systemctl start savdopro-backend
-          # NB: under `set -e`, `c=$(curl ...)` aborts the WHOLE script the first
-          # time curl can't connect (backend still starting → curl exit 7), so the
-          # retry loop never actually retries — the deploy reports a false failure
-          # even though the jars are already swapped and the service comes up fine.
-          # Use the same `&& { ok=1; break; }` form as the license check below: set -e
-          # exempts a command that isn't the last in an && list, so a failed poll
-          # just continues the loop. (See prod-deploy runbook, v2.1.0 deploy.)
-          ok=0; for i in $(seq 1 40); do sleep 4; curl -sf -m4 http://127.0.0.1:8086/actuator/health >/dev/null 2>&1 && { ok=1; break; }; done
-          [ "$ok" = "1" ] || { echo "backend health check FAILED"; exit 1; }
-          echo "deploy OK"
-          REMOTE
+          # Run the deploy; tee everything to a log we upload as an artifact.
+          set +e
+          $SSH "bash ~/ops/deploy.sh $UNIT $SHA_SHORT" 2>&1 | tee deploy.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          exit "$rc"
+
+      - name: Upload deploy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log-${{ github.event.inputs.unit || 'backend' }}-${{ github.run_id }}
+          path: deploy.log
+          retention-days: 30
+          if-no-files-found: ignore

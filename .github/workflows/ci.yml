@@ -99,7 +99,7 @@ jobs:
           ./mvnw -B --no-transfer-progress test -Dtest=LicenseContextSmokeTest
 
   frontend:
-    name: Frontend build
+    name: Frontend unit tests + build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -112,6 +112,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      # Pure-logic unit tests (vitest): the money formatter + the per-currency
+      # customer-balance helpers. These guard money-display correctness, so a
+      # red vitest must block merge — not just a broken build.
+      - run: npm test
       - run: npm run build
 
   # Full-stack smoke E2E: builds the real images (SPA baked into the jar),
