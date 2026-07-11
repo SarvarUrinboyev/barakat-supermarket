@@ -165,6 +165,34 @@ class PosCurrencyIT {
         assertThat(sale.getUsdRateAtSale()).isEqualByComparingTo("12650");
     }
 
+    // ---- Q2: a no-kurs pure-UZS sale still posts (no silent failure) ----
+
+    /**
+     * Design decision (Q2): a UZS-only cart never requires a shop kurs — the
+     * D6 block rule fires only for USD lines. Such a sale still posts to the
+     * USD-canonical ledger, converting so'm→USD at the shop kurs when set,
+     * else the live CBU rate, else MoneyConverter's documented fallback. That
+     * chain always yields a positive rate, so ledger posting can never fail
+     * silently for a UZS sale. (USD lines remain hard-blocked without a kurs.)
+     */
+    @Test
+    void noKursUzsSalePostsToLedgerWithoutSilentFailure() {
+        shopId = newShop(null);   // no kurs configured
+        Product bread = product("Non", 3000, 5000, 100, Currency.UZS);
+
+        SaleResponse resp = checkout(line(bread, 4));   // succeeds: no USD line
+        assertThat(resp.totalUzs()).isEqualByComparingTo("20000");
+
+        backfill.run();   // must not throw / skip
+        TrialBalanceResponse tb = statements.trialBalance(
+                LocalDate.now().withDayOfMonth(1), LocalDate.now());
+        assertThat(tb.balanced()).isTrue();
+        // Revenue actually landed (positive), converted at the live/fallback rate.
+        ProfitLossResponse pnl = statements.profitLoss(
+                LocalDate.now().withDayOfMonth(1), LocalDate.now());
+        assertThat(pnl.revenueTotal().signum()).isPositive();
+    }
+
     // ---- AM-6: the ledger reconciles UZS + USD sales in one unit ----
 
     @Test

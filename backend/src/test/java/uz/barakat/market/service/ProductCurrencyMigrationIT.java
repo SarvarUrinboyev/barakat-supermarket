@@ -128,6 +128,36 @@ class ProductCurrencyMigrationIT {
         assertThat(currencyOf(shopId, "Zero Stock")).isEqualTo("UZS");
     }
 
+    @Test
+    void zeroQuantityImportedRowStaysUzs() {
+        // Q1: ~3781 of the 6114 imported rows had qty 0. The importer logs no
+        // opening movement for qty 0 (ProductService.importProducts guards on
+        // quantity > 0), so a qty-0 imported row carries neither the
+        // "Import (fayldan)" nor the "Boshlang'ich qoldiq" note. The note-based
+        // backfill flips only rows WITH the individual-creation note, so a
+        // note-less qty-0 import is never flipped and keeps the UZS column
+        // default — which is the correct answer for an imported (som) row.
+        shopId = freshShop();
+        TenantContext.setShopId(shopId);
+        String csv = "Nomi,Kelish narxi,Sotilish narxi,Miqdor\n"
+                + "Import Zero,1000,1500,0\n"     // qty 0 → no movement
+                + "Import Stocked,2000,2500,4\n"; // qty > 0 → "Import (fayldan)" movement
+        productService.importProducts(new MockMultipartFile(
+                "file", "p.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)));
+        TenantContext.clear();
+
+        // No opening movement exists for the qty-0 row (proves the premise).
+        Long movementsForZero = jdbc.queryForObject(
+                "SELECT count(*) FROM stock_movements sm JOIN products p ON p.id = sm.product_id "
+                        + "WHERE p.shop_id = ? AND p.name = 'Import Zero'", Long.class, shopId);
+        assertThat(movementsForZero).isZero();
+
+        jdbc.update(BACKFILL_PRODUCTS);
+
+        assertThat(currencyOf(shopId, "Import Zero")).isEqualTo("UZS");
+        assertThat(currencyOf(shopId, "Import Stocked")).isEqualTo("UZS");
+    }
+
     private String currencyOf(long shop, String name) {
         return jdbc.queryForObject(
                 "SELECT currency FROM products WHERE shop_id = ? AND name = ?",
