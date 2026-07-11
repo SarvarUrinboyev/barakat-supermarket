@@ -139,9 +139,11 @@ public class ProductController {
     /** Downloadable CSV template for the bulk import. */
     @GetMapping("/import/template")
     public ResponseEntity<byte[]> template() {
-        String csv = "Nomi,Shtrix kod,IMEI 1,IMEI 2,Kelish narxi,Sotilish narxi,Miqdor,Toifa\n"
-                + "iPhone 15 Pro,4780000000017,353915110000001,353915110000002,1100,1350,5,Smartfonlar\n"
-                + "Type-C kabel 1m,4780000000024,,,2,5,40,Aksessuarlar\n";
+        // "Valyuta" is optional and defaults to UZS (so'm); set it to USD for
+        // goods whose Kelish/Sotilish narxi are entered in dollars.
+        String csv = "Nomi,Shtrix kod,IMEI 1,IMEI 2,Kelish narxi,Sotilish narxi,Miqdor,Toifa,Valyuta\n"
+                + "iPhone 15 Pro,4780000000017,353915110000001,353915110000002,1100,1350,5,Smartfonlar,USD\n"
+                + "Type-C kabel 1m,4780000000024,,,25000,60000,40,Aksessuarlar,UZS\n";
         byte[] body = ('﻿' + csv).getBytes(StandardCharsets.UTF_8);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=ombor-shablon.csv")

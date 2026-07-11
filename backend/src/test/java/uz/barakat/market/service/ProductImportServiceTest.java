@@ -52,11 +52,13 @@ class ProductImportServiceTest {
 
     private static ImportRow row(int line, String name, String barcode) {
         return new ImportRow(line, name, barcode, null, null,
-                new BigDecimal("1.00"), new BigDecimal("2.00"), 5, 0, null, null);
+                new BigDecimal("1.00"), new BigDecimal("2.00"), 5, 0, null,
+                uz.barakat.market.domain.Currency.UZS, null);
     }
 
     private static ImportRow parserErrorRow(int line, String message) {
-        return new ImportRow(line, null, null, null, null, null, null, 0, 0, null, message);
+        return new ImportRow(line, null, null, null, null, null, null, 0, 0, null,
+                uz.barakat.market.domain.Currency.UZS, message);
     }
 
     @Test

@@ -3,6 +3,7 @@ package uz.barakat.market.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import uz.barakat.market.domain.Currency;
 
 /**
  * API view of a warehouse product. {@code margin} is the per-unit profit
@@ -30,5 +31,7 @@ public record ProductResponse(
         String unit,
         LocalDate expiryDate,
         boolean requiresImei,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        /** Native currency of purchasePrice / salePrice (drives "$" vs "so'm"). */
+        Currency currency) {
 }

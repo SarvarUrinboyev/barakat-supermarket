@@ -360,6 +360,9 @@ public class ProductService {
             product.setSalePrice(row.salePrice());
             product.setQuantity(row.quantity());
             product.setLowStockThreshold(row.lowStockThreshold());
+            // Optional "Valyuta" column; defaults to UZS in the parser.
+            product.setCurrency(row.currency() != null
+                    ? row.currency() : uz.barakat.market.domain.Currency.UZS);
             if (row.category() != null) {
                 product.setCategoryId(categoryService.resolveOrCreate(row.category()));
             }
@@ -412,6 +415,9 @@ public class ProductService {
                 request.lowStockThreshold() != null ? request.lowStockThreshold() : 0);
         product.setMxikCode(blankToNull(request.mxikCode()));
         product.setVatRate(request.vatRate());
+        // Native currency of the entered prices; default so'm, USD is explicit.
+        product.setCurrency(request.currency() != null
+                ? request.currency() : uz.barakat.market.domain.Currency.UZS);
         String unit = blankToNull(request.unit());
         product.setUnit(unit != null ? unit : "dona");
         product.setExpiryDate(request.expiryDate());

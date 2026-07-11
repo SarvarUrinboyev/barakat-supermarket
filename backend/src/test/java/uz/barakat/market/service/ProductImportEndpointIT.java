@@ -221,6 +221,47 @@ class ProductImportEndpointIT {
         assertThat(qty).isEqualTo(11);
     }
 
+    // ---- Gate C: import currency defaults UZS; optional Valyuta column ----
+
+    @Test
+    void importWithoutValyutaColumnDefaultsEveryRowToUzs() throws Exception {
+        mvc.perform(multipart("/api/products/import")
+                        .file(csv(testCsv(5)))
+                        .header("Authorization", bearer())
+                        .header("X-Shop-Id", String.valueOf(subShop)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.importedCount").value(5));
+
+        Long usd = jdbc.queryForObject(
+                "SELECT count(*) FROM products WHERE shop_id = ? AND currency = 'USD'",
+                Long.class, subShop);
+        assertThat(usd).isZero();
+    }
+
+    @Test
+    void importValyutaColumnMarksUsdRowsUsdAndOthersUzs() throws Exception {
+        String csv = "Nomi,Kelish narxi,Sotilish narxi,Miqdor,Valyuta\n"
+                + "Dollar Phone,1100,1350,5,USD\n"
+                + "Som Kabel,25000,60000,40,UZS\n"
+                + "Blank Currency,1000,2000,3,\n";
+        mvc.perform(multipart("/api/products/import")
+                        .file(csv(csv))
+                        .header("Authorization", bearer())
+                        .header("X-Shop-Id", String.valueOf(subShop)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.importedCount").value(3));
+
+        assertThat(currencyOf(subShop, "Dollar Phone")).isEqualTo("USD");
+        assertThat(currencyOf(subShop, "Som Kabel")).isEqualTo("UZS");
+        assertThat(currencyOf(subShop, "Blank Currency")).isEqualTo("UZS");
+    }
+
+    private String currencyOf(long shop, String name) {
+        return jdbc.queryForObject(
+                "SELECT currency FROM products WHERE shop_id = ? AND name = ?",
+                String.class, shop, name);
+    }
+
     // ------------------------------------------------------------ helpers
 
     private long shop(String name, boolean main) {

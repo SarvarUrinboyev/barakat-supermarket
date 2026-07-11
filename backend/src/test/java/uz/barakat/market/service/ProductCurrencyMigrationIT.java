@@ -72,7 +72,7 @@ class ProductCurrencyMigrationIT {
 
     private ProductRequest req(String name, BigDecimal purchase, int qty) {
         return new ProductRequest(name, null, null, null, purchase, purchase.add(BigDecimal.ONE),
-                qty, null, null, null, 0, null, null, "dona", null, false);
+                qty, null, null, null, 0, null, null, "dona", null, false, null);
     }
 
     @Test
