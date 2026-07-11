@@ -125,4 +125,54 @@ class ProductImportServiceTest {
         assertThat(result.skippedCount()).isEqualTo(1);
         assertThat(result.errors()).anySatisfy(e -> assertThat(e).contains("Qator 4"));
     }
+
+    @Test
+    void duplicateBarcodelessNameWithinFileIsSkipped() {
+        // Two barcode-less rows sharing a name: the name IS the identity for
+        // them, so the second is a row-level duplicate of the first.
+        when(importer.parse(file)).thenReturn(List.of(
+                row(2, "Non 400g", null), row(3, "Non 400g", null)));
+
+        ProductImportResult result = service.importProducts(file);
+
+        verify(products, times(1)).save(any(Product.class));
+        assertThat(result.importedCount()).isEqualTo(1);
+        assertThat(result.skippedCount()).isEqualTo(1);
+        assertThat(result.errors()).anySatisfy(e ->
+                assertThat(e).contains("Qator 3").contains("allaqachon mavjud"));
+    }
+
+    @Test
+    void nameComparisonIsNormalizedAgainstExistingRows() {
+        // Existing shop row carries a double space and different casing; the
+        // imported row must still be recognised as the same product.
+        Product existing = new Product();
+        existing.setName("Olma  Sharbati 1L");
+        when(products.findAllByOrderByNameAsc()).thenReturn(List.of(existing));
+        when(importer.parse(file)).thenReturn(List.of(row(2, "olma sharbati 1l", null)));
+
+        ProductImportResult result = service.importProducts(file);
+
+        verify(products, never()).save(any(Product.class));
+        assertThat(result.importedCount()).isZero();
+        assertThat(result.skippedCount()).isEqualTo(1);
+        assertThat(result.errors()).anySatisfy(e ->
+                assertThat(e).contains("allaqachon mavjud"));
+    }
+
+    @Test
+    void importNeverIssuesPerRowNameExistsQueries() {
+        // The name identity is resolved against ONE prefetched, tenant-scoped
+        // set — never via per-row existsByNameIgnoreCase (which, besides the
+        // N-queries cost, was the surface of the wrong-tenant-scope defect).
+        when(importer.parse(file)).thenReturn(List.of(
+                row(2, "Alpha", null), row(3, "Beta", null), row(4, "Gamma", "77777")));
+        when(products.existsByBarcode(anyString())).thenReturn(false);
+
+        service.importProducts(file);
+
+        verify(products, never()).existsByNameIgnoreCase(anyString());
+        verify(products, times(1)).findAllByOrderByNameAsc();
+        verify(products, times(3)).save(any(Product.class));
+    }
 }

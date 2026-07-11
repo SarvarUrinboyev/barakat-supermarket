@@ -157,7 +157,10 @@ public class ProductImporter {
     private static ImportRow buildRow(int line, String name, String barcode, String imei1,
                                       String imei2, double purchase, double sale, double qty,
                                       double threshold, String category) {
-        return new ImportRow(line, name.strip(),
+        // Collapse runs of internal whitespace so "Cola  0,5 L" and "Cola 0,5 L"
+        // land in the warehouse as one canonical name (spreadsheets exported from
+        // other POS systems routinely carry double spaces).
+        return new ImportRow(line, name.strip().replaceAll("\\s+", " "),
                 blankToNull(barcode), blankToNull(imei1), blankToNull(imei2),
                 money(purchase), money(sale),
                 (int) Math.max(0, Math.round(qty)),
