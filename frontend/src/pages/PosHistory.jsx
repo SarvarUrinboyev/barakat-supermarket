@@ -5,7 +5,7 @@ import { Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, PageHeader, Spinner } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
-import { usd } from '../lib/format.js';
+import { formatMoney } from '../lib/format.js';
 
 /**
  * POS sales history + refund flow.
@@ -116,9 +116,9 @@ export function PosHistory({ embedded = false }) {
                   <td>{s.customerName || <span className="faint">—</span>}</td>
                   <td className="num mono">{s.items.length}</td>
                   <td><span className="badge">{s.paymentMethod}</span></td>
-                  <td className="num mono"><strong>{usd(s.totalUzs)}</strong></td>
+                  <td className="num mono"><strong>{formatMoney(s.totalUzs, 'UZS')}</strong></td>
                   <td className="num mono faint">
-                    {Number(s.refundedTotalUzs) > 0 ? usd(s.refundedTotalUzs) : '—'}
+                    {Number(s.refundedTotalUzs) > 0 ? formatMoney(s.refundedTotalUzs, 'UZS') : '—'}
                   </td>
                   <td>
                     {s.fullyRefunded
@@ -270,8 +270,8 @@ function SaleDetailModal({ sale, onClose, onChanged }) {
                     {it.productSku && <div className="faint mono" style={{ fontSize: 11 }}>{it.productSku}</div>}
                   </td>
                   <td className="num mono">{it.quantity}</td>
-                  <td className="num mono">{usd(it.unitPriceUzs)}</td>
-                  <td className="num mono">{usd(it.lineTotalUzs)}</td>
+                  <td className="num mono">{formatMoney(it.unitPriceUzs, 'UZS')}</td>
+                  <td className="num mono">{formatMoney(it.lineTotalUzs, 'UZS')}</td>
                   <td className="num mono faint">{it.refundedQty || '—'}</td>
                   {hasRemaining && !sale.fullyRefunded && (
                     <td className="num">
@@ -295,13 +295,13 @@ function SaleDetailModal({ sale, onClose, onChanged }) {
       </div>
 
       <div style={{ marginTop: 16, padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-        <Row label={t('Subtotal')} value={usd(sale.subtotalUzs)} />
+        <Row label={t('Subtotal')} value={formatMoney(sale.subtotalUzs, 'UZS')} />
         {(Number(sale.discountAmount) > 0 || Number(sale.discountPercent) > 0) && (
-          <Row label={t('Chegirma')} value={`%${sale.discountPercent} + ${usd(sale.discountAmount)}`} muted />
+          <Row label={t('Chegirma')} value={`%${sale.discountPercent} + ${formatMoney(sale.discountAmount, 'UZS')}`} muted />
         )}
-        <Row label={t('JAMI')} value={usd(sale.totalUzs)} big />
+        <Row label={t('JAMI')} value={formatMoney(sale.totalUzs, 'UZS')} big />
         {Number(sale.refundedTotalUzs) > 0 && (
-          <Row label={t('Allaqachon qaytarilgan')} value={`- ${usd(sale.refundedTotalUzs)}`} muted />
+          <Row label={t('Allaqachon qaytarilgan')} value={`- ${formatMoney(sale.refundedTotalUzs, 'UZS')}`} muted />
         )}
       </div>
 
@@ -314,7 +314,7 @@ function SaleDetailModal({ sale, onClose, onChanged }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
             <div className="faint" style={{ fontSize: 13 }}>
-              {t('Tanlangan summa')}: <strong>{usd(refundTotal)}</strong>
+              {t('Tanlangan summa')}: <strong>{formatMoney(refundTotal, 'UZS')}</strong>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn btn-ghost" onClick={() => doRefund(true)} disabled={busy}>

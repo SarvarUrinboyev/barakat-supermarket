@@ -1,0 +1,13 @@
+# /etc/systemd/system/savdopro-watch.timer
+# Runs the watcher 2 min after boot, then every 2 min.
+[Unit]
+Description=Run SavdoPRO uptime watcher every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Unit=savdopro-watch.service
+
+[Install]
+WantedBy=timers.target

@@ -3,12 +3,14 @@ package uz.barakat.market.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.barakat.market.domain.Currency;
 import uz.barakat.market.domain.Customer;
 import uz.barakat.market.domain.CustomerTransaction;
 import uz.barakat.market.domain.CustomerTxType;
@@ -82,15 +84,15 @@ public class CustomerService {
         return notifications.notify(customer, text).name();
     }
 
-    /** Builds the debt-reminder text from the customer's current balance. */
+    /** Builds the debt-reminder text from the customer's current per-currency balance. */
     private String debtReminderText(Customer customer) {
-        BigDecimal balance = balanceOf(customer.getId());
-        if (balance.signum() <= 0) {
+        Map<Currency, BigDecimal> balances = balanceOf(customer.getId());
+        if (!owesAnything(balances)) {
             return "Hurmatli " + customer.getName()
                     + "! Sizda qarz yo'q. Rahmat! 🙏";
         }
         return "Hurmatli " + customer.getName() + "! 👋\n\n"
-                + "Eslatma: sizning qarzingiz " + MoneyFormat.usd(balance) + ".\n"
+                + "Eslatma: sizning qarzingiz " + debtText(balances) + ".\n"
                 + "Iltimos, qulay vaqtda to'lovni amalga oshiring. Rahmat!";
     }
 
@@ -103,25 +105,31 @@ public class CustomerService {
      * stays one query regardless of customer count.
      */
     public BulkReminderResult remindAllDebtors() {
-        Map<Long, BigDecimal> balances = new HashMap<>();
+        // One GROUP BY, now per (customer, currency): accumulate a per-currency
+        // balance map for each customer so debts are never merged across
+        // currencies (Gate C Q3).
+        Map<Long, Map<Currency, BigDecimal>> balances = new HashMap<>();
         for (CustomerTransactionRepository.LedgerTotals lt
                 : transactions.aggregateLedgerTotals(CustomerTxType.GOODS, CustomerTxType.PAYMENT)) {
             BigDecimal goods = lt.getGoods() == null ? ZERO : lt.getGoods();
             BigDecimal paid = lt.getPaid() == null ? ZERO : lt.getPaid();
-            balances.put(lt.getCustomerId(), goods.subtract(paid));
+            Currency cur = lt.getCurrency() == null ? Currency.UZS : lt.getCurrency();
+            balances.computeIfAbsent(lt.getCustomerId(), k -> new EnumMap<>(Currency.class))
+                    .merge(cur, goods.subtract(paid), BigDecimal::add);
         }
         int debtors = 0;
         int telegram = 0;
         int sms = 0;
         int none = 0;
         for (Customer c : customers.findAll()) {
-            BigDecimal bal = balances.getOrDefault(c.getId(), ZERO);
-            if (bal.signum() <= 0) {
+            Map<Currency, BigDecimal> bal =
+                    balances.getOrDefault(c.getId(), new EnumMap<>(Currency.class));
+            if (!owesAnything(bal)) {
                 continue;
             }
             debtors++;
             String text = "Hurmatli " + c.getName() + "! 👋\n\n"
-                    + "Eslatma: sizning qarzingiz " + MoneyFormat.usd(bal) + ".\n"
+                    + "Eslatma: sizning qarzingiz " + debtText(bal) + ".\n"
                     + "Iltimos, qulay vaqtda to'lovni amalga oshiring. Rahmat!";
             switch (notifications.notify(c, text)) {
                 case TELEGRAM -> telegram++;
@@ -132,16 +140,49 @@ public class CustomerService {
         return new BulkReminderResult(debtors, telegram, sms, none);
     }
 
-    /** Running balance = sum(GOODS) - sum(PAYMENT). */
-    private BigDecimal balanceOf(Long customerId) {
-        BigDecimal balance = ZERO;
-        for (CustomerTransaction tx
-                : transactions.findByCustomerIdOrderByDateDescIdDesc(customerId)) {
-            balance = tx.getType() == CustomerTxType.GOODS
-                    ? balance.add(tx.getAmount())
-                    : balance.subtract(tx.getAmount());
+    /**
+     * Running balance PER CURRENCY = sum(GOODS) - sum(PAYMENT) within each
+     * currency bucket. Never merged across currencies (Gate C Q3) — a customer
+     * can owe "500 000 so'm and $200" and the two are reported separately.
+     */
+    private Map<Currency, BigDecimal> balanceOf(Long customerId) {
+        return balancesOf(transactions.findByCustomerIdOrderByDateDescIdDesc(customerId));
+    }
+
+    /** Per-currency net balance from a ledger; one bucket per currency. */
+    private static Map<Currency, BigDecimal> balancesOf(List<CustomerTransaction> ledger) {
+        Map<Currency, BigDecimal> bal = new EnumMap<>(Currency.class);
+        for (CustomerTransaction tx : ledger) {
+            Currency cur = tx.getCurrency() == null ? Currency.UZS : tx.getCurrency();
+            BigDecimal signed = tx.getType() == CustomerTxType.GOODS
+                    ? tx.getAmount() : tx.getAmount().negate();
+            bal.merge(cur, signed, BigDecimal::add);
         }
-        return balance;
+        return bal;
+    }
+
+    private static BigDecimal bucket(Map<Currency, BigDecimal> balances, Currency c) {
+        return balances.getOrDefault(c, ZERO);
+    }
+
+    /** Reminder-friendly rendering of a per-currency debt, e.g. "500 000 so'm va $200". */
+    private static String debtText(Map<Currency, BigDecimal> balances) {
+        List<String> parts = new ArrayList<>();
+        BigDecimal uzs = bucket(balances, Currency.UZS);
+        if (uzs.signum() > 0) {
+            parts.add(MoneyFormat.uzs(uzs));
+        }
+        BigDecimal usd = bucket(balances, Currency.USD);
+        if (usd.signum() > 0) {
+            parts.add(MoneyFormat.usd(usd));
+        }
+        return String.join(" va ", parts);
+    }
+
+    /** True when the customer owes anything in any currency. */
+    private static boolean owesAnything(Map<Currency, BigDecimal> balances) {
+        return bucket(balances, Currency.UZS).signum() > 0
+                || bucket(balances, Currency.USD).signum() > 0;
     }
 
     /** Defense-in-depth: warehouse-touching sales are only allowed when a shift is open. */
@@ -155,24 +196,34 @@ public class CustomerService {
     /** All customers, each with its ledger totals and balance. */
     @Transactional(readOnly = true)
     public List<CustomerResponse> list() {
-        // Balances come from one GROUP BY (aggregateLedgerTotals) instead of
-        // loading every customer's full ledger into memory — the old
-        // transactions.findAll() pulled the entire ledger table on each call.
-        Map<Long, CustomerTransactionRepository.LedgerTotals> totals =
-                transactions.aggregateLedgerTotals(CustomerTxType.GOODS, CustomerTxType.PAYMENT)
-                        .stream()
-                        .collect(Collectors.toMap(
-                                CustomerTransactionRepository.LedgerTotals::getCustomerId,
-                                t -> t));
+        // One GROUP BY (aggregateLedgerTotals), now per (customer, currency), so
+        // balances are summed per currency and never merged (Gate C Q3). Fold the
+        // per-currency rows back per customer here rather than loading every
+        // ledger row into memory.
+        Map<Long, CustomerAgg> agg = new HashMap<>();
+        for (CustomerTransactionRepository.LedgerTotals t
+                : transactions.aggregateLedgerTotals(CustomerTxType.GOODS, CustomerTxType.PAYMENT)) {
+            BigDecimal goods = t.getGoods() != null ? t.getGoods() : ZERO;
+            BigDecimal paid = t.getPaid() != null ? t.getPaid() : ZERO;
+            Currency cur = t.getCurrency() == null ? Currency.UZS : t.getCurrency();
+            CustomerAgg a = agg.computeIfAbsent(t.getCustomerId(), k -> new CustomerAgg());
+            a.count += (int) t.getTxCount();
+            a.balances.merge(cur, goods.subtract(paid), BigDecimal::add);
+        }
         return customers.findAllByOrderByNameAsc().stream()
                 .map(c -> {
-                    var t = totals.get(c.getId());
-                    BigDecimal goods = t != null && t.getGoods() != null ? t.getGoods() : ZERO;
-                    BigDecimal paid = t != null && t.getPaid() != null ? t.getPaid() : ZERO;
-                    int count = t != null ? (int) t.getTxCount() : 0;
-                    return Mappers.customer(c, goods, paid, count);
+                    CustomerAgg a = agg.getOrDefault(c.getId(), new CustomerAgg());
+                    return Mappers.customer(c,
+                            bucket(a.balances, Currency.UZS), bucket(a.balances, Currency.USD),
+                            a.count);
                 })
                 .toList();
+    }
+
+    /** Mutable per-customer fold of the per-currency aggregate rows. */
+    private static final class CustomerAgg {
+        int count = 0;
+        final Map<Currency, BigDecimal> balances = new EnumMap<>(Currency.class);
     }
 
     /** A customer with the full ledger (goods given + payments received). */
@@ -270,6 +321,7 @@ public class CustomerService {
         tx.setDate(request.date() != null ? request.date() : LocalDate.now());
         tx.setType(request.type());
         tx.setAmount(request.amount());
+        tx.setCurrency(request.currency() != null ? request.currency() : Currency.UZS);
         tx.setNote(blankToNull(request.note()));
         if (request.type() == CustomerTxType.GOODS) {
             tx.setDescription(sellFromWarehouse(customer, request));
@@ -304,6 +356,7 @@ public class CustomerService {
             tx.setDate(request.date() != null ? request.date() : LocalDate.now());
             tx.setType(request.type());
             tx.setAmount(request.amount());
+            tx.setCurrency(request.currency() != null ? request.currency() : Currency.UZS);
             tx.setNote(blankToNull(request.note()));
             if (request.type() == CustomerTxType.GOODS) {
                 tx.setDescription(sellFromWarehouse(customer, request));
@@ -334,6 +387,9 @@ public class CustomerService {
             tx.setDate(request.date());
         }
         tx.setAmount(request.amount());
+        if (request.currency() != null) {
+            tx.setCurrency(request.currency());
+        }
         tx.setDescription(blankToNull(request.description()));
         tx.setNote(blankToNull(request.note()));
         transactions.save(tx);
@@ -378,16 +434,9 @@ public class CustomerService {
 
     private static CustomerResponse toResponse(Customer customer,
                                                List<CustomerTransaction> ledger) {
-        BigDecimal goods = ZERO;
-        BigDecimal paid = ZERO;
-        for (CustomerTransaction tx : ledger) {
-            if (tx.getType() == CustomerTxType.GOODS) {
-                goods = goods.add(tx.getAmount());
-            } else {
-                paid = paid.add(tx.getAmount());
-            }
-        }
-        return Mappers.customer(customer, goods, paid, ledger.size());
+        Map<Currency, BigDecimal> balances = balancesOf(ledger);
+        return Mappers.customer(customer,
+                bucket(balances, Currency.UZS), bucket(balances, Currency.USD), ledger.size());
     }
 
     private static void apply(Customer customer, CustomerRequest request) {

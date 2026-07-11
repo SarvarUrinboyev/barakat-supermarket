@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import uz.barakat.market.auth.ApiKeyService;
@@ -41,6 +42,14 @@ import uz.barakat.market.service.webhook.WebhookSubscriptionService;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// Isolated in-memory DB: this class asserts on recentDeliveries(20), a top-N
+// window that other @SpringBootTest classes sharing the default datasource
+// could push this delivery out of — the intermittent suite-order flake. An
+// own DB makes the webhook dispatch state deterministic.
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:api_integration_it;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE",
+        "app.demo-seed.enabled=false"
+})
 class ApiIntegrationFlowTest {
 
     @Autowired MockMvc mvc;

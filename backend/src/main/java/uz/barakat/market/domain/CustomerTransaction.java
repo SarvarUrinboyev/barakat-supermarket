@@ -40,6 +40,16 @@ public class CustomerTransaction extends TenantScopedEntity {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 
+    /**
+     * Currency of {@code amount}. The customer balance is summed PER currency,
+     * never merged (Gate C Q3). A credit sale's debt is denominated in the
+     * sale's canonical unit (so'm); legacy rows backfilled USD. Per-item / USD
+     * debt denomination is Gate D policy.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private Currency currency = Currency.UZS;
+
     @Column(length = 500)
     private String note;
 

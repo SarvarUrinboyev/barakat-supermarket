@@ -3,8 +3,11 @@ package uz.barakat.market.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -334,6 +337,15 @@ public class ProductService {
         List<ProductImporter.ImportRow> rows = importer.parse(file);
         List<String> errors = new ArrayList<>();
         int imported = 0;
+        // Name identity for barcode-less rows (mirrors requireNoDuplicate's name
+        // branch): one tenant-scoped query up front instead of one exists-query
+        // per row — on a 6000-row file that is 1 round-trip, not 6000. Names
+        // compare normalized (trimmed, inner whitespace collapsed, case-folded),
+        // and every saved row joins the set so duplicates WITHIN the file are
+        // caught the same way as clashes against the shop's existing rows.
+        Set<String> takenNames = products.findAllByOrderByNameAsc().stream()
+                .map(p -> normalizedName(p.getName()))
+                .collect(Collectors.toCollection(HashSet::new));
         for (ProductImporter.ImportRow row : rows) {
             if (row.error() != null) {
                 errors.add("Qator " + row.line() + ": " + row.error());
@@ -348,22 +360,32 @@ public class ProductService {
             product.setSalePrice(row.salePrice());
             product.setQuantity(row.quantity());
             product.setLowStockThreshold(row.lowStockThreshold());
+            // Optional "Valyuta" column; defaults to UZS in the parser.
+            product.setCurrency(row.currency() != null
+                    ? row.currency() : uz.barakat.market.domain.Currency.UZS);
             if (row.category() != null) {
                 product.setCategoryId(categoryService.resolveOrCreate(row.category()));
             }
-            // Run the SAME duplicate guard the create endpoint uses, so a bulk
-            // import can't slip in a product (by name or barcode) that a manual
-            // create would reject. A clash — whether against an existing row or
-            // an earlier row in this same file (the pending insert is flushed
-            // before the exists-check query) — is reported as a row-level error
-            // instead of aborting the whole import.
-            try {
-                requireNoDuplicate(product, null);
-            } catch (BadRequestException dup) {
-                errors.add("Qator " + row.line() + ": " + dup.getMessage());
+            // Same duplicate rule as the create endpoint: the barcode is the
+            // identity when present; only barcode-less rows fall back to the
+            // name. A clash — against an existing row or an earlier row in this
+            // same file — is a row-level error, never a whole-import abort.
+            if (product.getBarcode() == null
+                    && takenNames.contains(normalizedName(product.getName()))) {
+                errors.add("Qator " + row.line()
+                        + ": Bu nomli mahsulot allaqachon mavjud: " + product.getName());
                 continue;
             }
+            if (product.getBarcode() != null) {
+                try {
+                    requireNoDuplicate(product, null);
+                } catch (BadRequestException dup) {
+                    errors.add("Qator " + row.line() + ": " + dup.getMessage());
+                    continue;
+                }
+            }
             products.save(product);
+            takenNames.add(normalizedName(product.getName()));
             if (row.quantity() > 0) {
                 logMovement(product, row.quantity(), row.quantity(),
                         StockReason.INITIAL, "Import (fayldan)");
@@ -393,6 +415,9 @@ public class ProductService {
                 request.lowStockThreshold() != null ? request.lowStockThreshold() : 0);
         product.setMxikCode(blankToNull(request.mxikCode()));
         product.setVatRate(request.vatRate());
+        // Native currency of the entered prices; default so'm, USD is explicit.
+        product.setCurrency(request.currency() != null
+                ? request.currency() : uz.barakat.market.domain.Currency.UZS);
         String unit = blankToNull(request.unit());
         product.setUnit(unit != null ? unit : "dona");
         product.setExpiryDate(request.expiryDate());
@@ -432,6 +457,16 @@ public class ProductService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.strip();
+    }
+
+    /**
+     * Canonical form of a product name for duplicate comparison: trimmed,
+     * runs of inner whitespace collapsed, case-folded. Matches (and widens,
+     * by the whitespace rule) what {@code existsByNameIgnoreCase} compared.
+     */
+    private static String normalizedName(String name) {
+        return name == null ? ""
+                : name.strip().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     private Product find(Long id) {

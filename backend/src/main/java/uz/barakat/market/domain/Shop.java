@@ -3,6 +3,7 @@ package uz.barakat.market.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -52,4 +53,13 @@ public class Shop extends BaseEntity {
 
     @Column(name = "receipt_footer", length = 300)
     private String receiptFooter;
+
+    /**
+     * Shop's USD→UZS rate (kurs), owner-editable from the POS header widget.
+     * Null = not configured: the POS then blocks checkout of any USD-priced
+     * line rather than guessing a rate. Used to fold USD lines into the
+     * so'm-canonical sale total and pinned onto each such sale line.
+     */
+    @Column(name = "usd_rate", precision = 12, scale = 2)
+    private BigDecimal usdRate;
 }

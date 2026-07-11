@@ -3,6 +3,7 @@ package uz.barakat.market.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import uz.barakat.market.domain.Currency;
 
 /**
  * API view of an order. {@code status} is derived: {@code TODAY},
@@ -15,6 +16,8 @@ public record OrderResponse(
         String name,
         String supplier,
         BigDecimal amount,
+        /** Currency of {@code amount} (drives "$" vs "so'm"). */
+        Currency currency,
         boolean completed,
         LocalDateTime completedAt,
         String note,

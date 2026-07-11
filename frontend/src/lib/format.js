@@ -1,4 +1,10 @@
-// Display formatting helpers. The shop trades in US dollars.
+// Display formatting helpers.
+//
+// Currency model (Gate C): so'm (UZS) is the default display currency; a value
+// is shown in USD only when its record explicitly carries USD (goods received
+// in dollars). `formatMoney(amount, currency)` is the SINGLE dispatch point —
+// price-render sites pass the value plus its currency and never hardcode a
+// symbol. `usd()` is retained only for the few genuinely dollar-only spots.
 
 /** 1234.5 -> "1 234.50", 899 -> "899" (space-grouped, cents shown only if present). */
 export function money(value) {
@@ -14,17 +20,23 @@ export function money(value) {
   return (negative ? '-' : '') + text;
 }
 
-/** 1234.5 -> "$1 234.50" */
+/** 1234.5 -> "$1 234.50" (explicitly-dollar spots only; prefer formatMoney). */
 export function usd(value) {
   return '$' + money(value);
 }
 
-/** Currency-aware money: "$1 234" for USD, "1 234 567 so'm" for UZS. */
+/**
+ * Currency-aware money — the app's single money formatter.
+ *  • USD  -> "$1 350"      (2 decimals only when fractional, via money())
+ *  • UZS  -> "262 570 291 so'm" (space-grouped, no decimals)
+ * Default when currency is null/undefined/unknown is UZS (so'm) — R1: so'm is
+ * the default everywhere; USD must be an explicit currency on the record.
+ */
 export function formatMoney(amount, currency) {
-  if (currency === 'UZS') {
-    return money(Math.round(Number(amount || 0))) + " so'm";
+  if (currency === 'USD') {
+    return '$' + money(amount);
   }
-  return '$' + money(amount);
+  return money(Math.round(Number(amount || 0))) + " so'm";
 }
 
 /** Converts an amount between USD and UZS using the USD->UZS rate. */

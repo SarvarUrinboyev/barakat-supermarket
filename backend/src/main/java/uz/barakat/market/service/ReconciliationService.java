@@ -112,7 +112,7 @@ public class ReconciliationService {
                         status = "MATCHED";
                         matched++;
                         matchedUsd = matchedUsd.add(nz(op.getAmount()));
-                        if (c != null && c.balance() != null && c.balance().signum() < 0) {
+                        if (c != null && c.balanceUzs() != null && c.balanceUzs().signum() < 0) {
                             note = "Mijoz balansi manfiy — ortiqcha to'lov bo'lishi mumkin";
                         }
                     } else {

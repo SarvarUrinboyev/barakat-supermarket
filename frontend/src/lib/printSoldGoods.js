@@ -2,7 +2,7 @@
 // The report is rendered as a standalone A4 document inside a hidden iframe,
 // so the app's own print stylesheet (the 80mm receipt) never interferes.
 
-import { formatDate, formatDateTime, todayIso, usd } from './format.js';
+import { formatDate, formatDateTime, formatMoney, todayIso } from './format.js';
 
 /** Escapes text for safe insertion into the report HTML. */
 function esc(value) {
@@ -51,10 +51,10 @@ export function printSoldGoods(report, t) {
         <td>${esc(formatDateTime(line.soldAt))}</td>
         <td>${esc(line.productName)}</td>
         <td class="num">${esc(line.quantity)}</td>
-        <td class="num">${esc(usd(line.unitPrice))}</td>
-        <td class="num">${esc(usd(line.unitCost))}</td>
-        <td class="num">${esc(usd(line.lineRevenue))}</td>
-        <td class="num">${esc(usd(line.lineProfit))}</td>
+        <td class="num">${esc(formatMoney(line.unitPrice, report.currency))}</td>
+        <td class="num">${esc(formatMoney(line.unitCost, report.currency))}</td>
+        <td class="num">${esc(formatMoney(line.lineRevenue, report.currency))}</td>
+        <td class="num">${esc(formatMoney(line.lineProfit, report.currency))}</td>
         <td>${esc(line.note || '')}</td>
       </tr>`).join('');
 
@@ -108,8 +108,8 @@ export function printSoldGoods(report, t) {
         <td class="num">${esc(report.totalUnits)}</td>
         <td></td>
         <td></td>
-        <td class="num">${esc(usd(report.totalRevenue))}</td>
-        <td class="num">${esc(usd(report.totalProfit))}</td>
+        <td class="num">${esc(formatMoney(report.totalRevenue, report.currency))}</td>
+        <td class="num">${esc(formatMoney(report.totalProfit, report.currency))}</td>
         <td></td>
       </tr>
     </tfoot>

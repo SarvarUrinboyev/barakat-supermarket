@@ -100,7 +100,7 @@ public class AiChatService {
             @Value("${ai.providers:gemini,nvidia-deepseek,nvidia-kimi,openrouter}") String chainOrder,
             // Per-provider keys + models. All optional; unset = skipped.
             @Value("${ai.gemini.key:${GEMINI_API_KEY:}}") String geminiKey,
-            @Value("${ai.gemini.model:gemini-2.0-flash-exp}") String geminiModel,
+            @Value("${ai.gemini.model:gemini-2.5-flash}") String geminiModel,
             @Value("${ai.nvidia.deepseek.key:${NVIDIA_DEEPSEEK_KEY:}}") String nvDeepseekKey,
             @Value("${ai.nvidia.deepseek.model:deepseek-ai/deepseek-v4-flash}") String nvDeepseekModel,
             @Value("${ai.nvidia.kimi.key:${NVIDIA_KIMI_KEY:}}") String nvKimiKey,
@@ -176,10 +176,18 @@ public class AiChatService {
         String system = SYSTEM_PROMPT
                 + "\n\nBUGUNGI SANA: " + LocalDate.now() + "\n\n"
                 + tools.catalog()
-                + "\nQO'SHIMCHA ma'lumot kerak bo'lsa, FAQAT bitta qatorda shunday yoz:\n"
+                + "\n\nMUHIM QOIDA: do'kon ma'lumoti (savdo, ombor, qoldiq, foyda, "
+                + "qarz, mijoz, xarajat, buyurtma, yetkazib beruvchi...) haqidagi "
+                + "HAR QANDAY savolga AVVAL mos TOOL chaqir. Tool chaqirish uchun "
+                + "FAQAT bitta qatorda, boshqa hech narsasiz shunday yoz:\n"
                 + "TOOL <nom> {\"arg\":\"qiymat\"}\n"
-                + "Boshqa hech narsa yozma. Ma'lumot yetarli bo'lsa — to'g'ridan-to'g'ri "
-                + "yakuniy javobni yoz (TOOL'siz). Sanalar YYYY-MM-DD ko'rinishida."
+                + "Hech qachon tool chaqirmasdan \"ma'lumot topilmadi\" DEMA. Kerakli "
+                + "ma'lumot [natija] sifatida kelgach, yakuniy javobni yoz (TOOL'siz). "
+                + "Sanalar YYYY-MM-DD ko'rinishida.\n"
+                + "MISOL:\nSavol: Ombor qiymati qancha?\nJavob: TOOL inventoryValue {}\n"
+                + "MISOL:\nSavol: Bugun savdo qancha?\n"
+                + "Javob: TOOL salesInRange {\"from\":\"" + LocalDate.now()
+                + "\",\"to\":\"" + LocalDate.now() + "\"}"
                 + "\n\nAMALLAR (action): agar foydalanuvchiga aniq amal foydali bo'lsa, "
                 + "yakuniy javob OXIRIDA har birini alohida qatorda shunday yoz "
                 + "(ilova ularni tugmaga aylantiradi, sen O'ZING bajarma):\n"
@@ -187,6 +195,7 @@ public class AiChatService {
                 + "ACTION DISCOUNT | <mahsulot nomi> | <foiz>\n"
                 + "ACTION PRICE | <mahsulot nomi> | <foiz>\n"
                 + "ACTION NOTIFY | <mijoz nomi> |\n"
+                + "ACTION NOTIFY_ALL | overdue | <necha kundan beri kechikkan>\n"
                 + "Faqat asboblardan kelgan HAQIQIY nom yoz. Amal kerak bo'lmasa, ACTION yozma.";
 
         StringBuilder ctx = new StringBuilder();

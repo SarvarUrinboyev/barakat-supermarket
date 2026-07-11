@@ -2,6 +2,8 @@ package uz.barakat.market.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,6 +35,11 @@ public class Order extends TenantScopedEntity {
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount = BigDecimal.ZERO;
+
+    /** Currency of {@code amount} (Gate C). Default so'm; USD is explicit. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private Currency currency = Currency.UZS;
 
     @Column(nullable = false)
     private boolean completed = false;

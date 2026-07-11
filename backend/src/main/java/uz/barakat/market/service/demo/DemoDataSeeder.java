@@ -176,9 +176,13 @@ public class DemoDataSeeder implements ApplicationRunner {
     }
 
     private void upsertShop(long id, long accountId, String name, boolean main) {
+        // usd_rate = 1: the demo is USD-canonical ("do not rescale", matching
+        // its USD expense), so its USD-priced products check out and post to the
+        // ledger at 1:1 — keeping the seeded P&L the raw figures the test asserts
+        // instead of a kurs-converted value.
         jdbc.update(
-                "INSERT INTO shops (id, account_id, name, is_main, created_at) "
-                + "SELECT ?, ?, ?, ?, now() "
+                "INSERT INTO shops (id, account_id, name, is_main, usd_rate, created_at) "
+                + "SELECT ?, ?, ?, ?, 1, now() "
                 + "WHERE NOT EXISTS (SELECT 1 FROM shops WHERE id = ?)",
                 id, accountId, name, main, id);
     }
@@ -329,6 +333,11 @@ public class DemoDataSeeder implements ApplicationRunner {
         p.setQuantity(qty);
         p.setLowStockThreshold(lowStock);
         p.setUnit(unit);
+        // USD = "do not rescale" (see the demo expense + the shop's usd_rate=1):
+        // keeps the seeded raw price figures 1:1 through the som-canonical POS
+        // and the USD-canonical ledger, so the demo P&L stays internally
+        // consistent post-Gate-C.
+        p.setCurrency(Currency.USD);
         return new P(products.save(p).getId());
     }
 

@@ -52,7 +52,7 @@ export function ImportModal({ onClose, onDone }) {
     >
       <p className="muted" style={{ marginBottom: 12 }}>
         {t('Excel (.xlsx) yoki CSV fayl yuklang. Ustunlar:')}{' '}
-        <b>{t('Nomi, IMEI 1, IMEI 2, Kelish narxi, Sotilish narxi, Miqdor, Toifa')}</b>.
+        <b>{t('Nomi, Shtrix kod, IMEI 1, IMEI 2, Kelish narxi, Sotilish narxi, Miqdor, Toifa')}</b>.
       </p>
       <button
         type="button"

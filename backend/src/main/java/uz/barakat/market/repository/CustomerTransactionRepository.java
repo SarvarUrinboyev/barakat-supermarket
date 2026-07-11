@@ -29,18 +29,24 @@ public interface CustomerTransactionRepository
      */
     @Query("""
             SELECT t.customerId AS customerId,
+                   t.currency AS currency,
                    SUM(CASE WHEN t.type = :goods THEN t.amount ELSE 0 END) AS goods,
                    SUM(CASE WHEN t.type = :payment THEN t.amount ELSE 0 END) AS paid,
                    COUNT(t) AS txCount
             FROM CustomerTransaction t
-            GROUP BY t.customerId
+            GROUP BY t.customerId, t.currency
             """)
     List<LedgerTotals> aggregateLedgerTotals(@Param("goods") CustomerTxType goods,
                                              @Param("payment") CustomerTxType payment);
 
-    /** Projection for {@link #aggregateLedgerTotals}. */
+    /**
+     * Projection for {@link #aggregateLedgerTotals} — one row PER (customer,
+     * currency) so balances are summed per currency and never merged (Gate C).
+     */
     interface LedgerTotals {
         Long getCustomerId();
+
+        uz.barakat.market.domain.Currency getCurrency();
 
         BigDecimal getGoods();
 

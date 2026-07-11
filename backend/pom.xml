@@ -164,6 +164,20 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Real PostgreSQL for engine-specific SQL that H2 can't fully mimic
+             (e.g. the Gate C EXT-1 relabel: regexp_replace flags, correlated
+             UPDATE ... EXISTS). Prod is Postgres, so such SQL must be proven on
+             it. Version managed by the Spring Boot parent BOM. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -179,6 +193,23 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <!-- Run the integration tests (*IT) in the SAME `mvn test` phase as
+                 the unit tests. Surefire's defaults only match *Test/*Tests, so
+                 without this the @SpringBootTest ITs (POS currency, ledger,
+                 Q3 balance, relabel-on-Postgres, …) silently never ran on CI —
+                 they only executed locally when named explicitly via -Dtest.
+                 Adding *IT here makes `mvn test` gate them everywhere. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*IT.java</include>
+                    </includes>
                 </configuration>
             </plugin>
         </plugins>

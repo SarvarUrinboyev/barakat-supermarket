@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { PaymentApi } from '../api/endpoints.js';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { money, usd } from '../lib/format.js';
+import { formatMoney, money } from '../lib/format.js';
 
 /**
  * "Mavjud pul mablag'lari" — net per-method totals (incoming − outgoing)
@@ -90,7 +90,7 @@ function TreasuryCard({ tone, icon, label, sub, uzs, usd: usdAmt }) {
         )}
         {hasUSD && (
           <span className={`tc-line mono ${usdAmt < 0 ? 'amount-neg' : ''}`}>
-            {usd(usdAmt)} <span className="tc-cur">USD</span>
+            {formatMoney(usdAmt, 'USD')} <span className="tc-cur">USD</span>
           </span>
         )}
       </div>
@@ -113,7 +113,7 @@ function DualNet({ uzs, usd: usdAmt }) {
       {hasUZS && hasUSD && <span className="t-net-sep"> · </span>}
       {hasUSD && (
         <b className={usdAmt < 0 ? 'amount-neg' : 'amount-pos'}>
-          {usdAmt > 0 ? '+' : ''}{usd(usdAmt)}
+          {usdAmt > 0 ? '+' : ''}{formatMoney(usdAmt, 'USD')}
         </b>
       )}
     </>

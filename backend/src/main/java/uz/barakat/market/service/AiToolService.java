@@ -13,6 +13,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uz.barakat.market.domain.CustomerTxType;
 import uz.barakat.market.domain.Product;
 import uz.barakat.market.dto.CustomerResponse;
@@ -50,6 +51,13 @@ import uz.barakat.market.repository.SaleRepository;
  * </ul>
  */
 @Service
+// Read-only tx per tool call: the TenantFilterAspect enables the Hibernate
+// tenant filter on the CURRENT session, which only exists inside a
+// transaction (open-in-view=false). Without this, each repository call ran
+// in its own filterless session and the TenantScopedEntity @PostLoad guard
+// (correctly) killed the query with NotFoundException — every filter-reliant
+// tool (inventoryValue, productInfo, lowStock…) answered "topilmadi".
+@Transactional(readOnly = true)
 public class AiToolService {
 
     private static final Logger log = LoggerFactory.getLogger(AiToolService.class);
@@ -225,11 +233,11 @@ public class AiToolService {
     private String customerDebt() {
         List<CustomerResponse> all = customers.list();
         List<CustomerResponse> debtorList = all.stream()
-                .filter(c -> c.balance() != null && c.balance().signum() > 0)
-                .sorted(Comparator.comparing(CustomerResponse::balance).reversed())
+                .filter(c -> c.balanceUzs() != null && c.balanceUzs().signum() > 0)
+                .sorted(Comparator.comparing(CustomerResponse::balanceUzs).reversed())
                 .toList();
         BigDecimal total = debtorList.stream()
-                .map(CustomerResponse::balance).reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(CustomerResponse::balanceUzs).reduce(BigDecimal.ZERO, BigDecimal::add);
         if (debtorList.isEmpty()) {
             return "Mijozlarda qarz yo'q (hammasi to'lagan).";
         }
@@ -237,7 +245,7 @@ public class AiToolService {
                 "Mijozlar bizga jami %s USD qarz (%d ta qarzdor). Eng kattalari:\n",
                 money(total), debtorList.size()));
         debtorList.stream().limit(10).forEach(c -> sb.append("  - ").append(c.name())
-                .append(": ").append(money(c.balance())).append(" USD\n"));
+                .append(": ").append(money(c.balanceUzs())).append(" USD\n"));
         return sb.toString();
     }
 
@@ -250,18 +258,15 @@ public class AiToolService {
                 .findFirst().orElse(null);
         if (hit == null) return "'" + name + "' nomli mijoz topilmadi";
         return String.format(Locale.ROOT,
-                "Mijoz: %s | tel: %s | balans: %s USD (%s) | berilgan: %s | to'langan: %s | "
-                + "ball: %d | daraja: %s",
-                hit.name(), nz(hit.phone()), money(hit.balance()),
-                hit.balance() != null && hit.balance().signum() > 0 ? "qarzdor"
-                        : hit.balance() != null && hit.balance().signum() < 0 ? "haqdor" : "tenglik",
-                money(hit.goodsTotal()), money(hit.paidTotal()),
+                "Mijoz: %s | tel: %s | qarz: %s so'm / %s USD | ball: %d | daraja: %s",
+                hit.name(), nz(hit.phone()),
+                money(hit.balanceUzs()), money(hit.balanceUsd()),
                 hit.pointsBalance(), nz(hit.tier()));
     }
 
     private String customerCount() {
         List<CustomerResponse> all = customers.list();
-        BigDecimal net = all.stream().map(CustomerResponse::balance)
+        BigDecimal net = all.stream().map(CustomerResponse::balanceUzs)
                 .filter(b -> b != null).reduce(BigDecimal.ZERO, BigDecimal::add);
         return String.format(Locale.ROOT,
                 "Jami %d ta mijoz. Umumiy balans (qarz - haq): %s USD",
@@ -316,7 +321,7 @@ public class AiToolService {
         // and customerDebt), NOT the separate customer_debts table which is
         // unused in practice and would report 0 while the ledger shows debt.
         BigDecimal customerOwes = customers.list().stream()
-                .map(CustomerResponse::balance)
+                .map(CustomerResponse::balanceUzs)
                 .filter(b -> b != null && b.signum() > 0)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return String.format(Locale.ROOT,
@@ -556,7 +561,7 @@ public class AiToolService {
     /** Debtors ranked by how long since their last payment. */
     private String overdueDebtors(int minDays) {
         var debtors = customers.list().stream()
-                .filter(c -> c.balance() != null && c.balance().signum() > 0)
+                .filter(c -> c.balanceUzs() != null && c.balanceUzs().signum() > 0)
                 .toList();
         if (debtors.isEmpty()) return "Qarzdor mijoz yo'q — hamma to'lagan.";
         Map<Long, LocalDate> lastPay = new HashMap<>();
@@ -583,7 +588,7 @@ public class AiToolService {
         StringBuilder sb = new StringBuilder(
                 "Qarzni eng ko'p kechiktirgan mijozlar (oxirgi to'lovdan beri):\n");
         ranked.stream().limit(10).forEach(r -> sb.append("  - ").append(r.c().name())
-                .append(": ").append(money(r.c().balance())).append(" USD qarz, ")
+                .append(": ").append(money(r.c().balanceUzs())).append(" so'm qarz, ")
                 .append(r.lastPay() == null ? "hech to'lamagan" : r.days() + " kun oldin to'lagan")
                 .append(r.c().phone() != null && !r.c().phone().isBlank()
                         ? " (tel: " + r.c().phone() + ")" : "")

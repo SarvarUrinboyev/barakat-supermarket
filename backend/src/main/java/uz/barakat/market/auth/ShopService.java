@@ -1,6 +1,7 @@
 package uz.barakat.market.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,11 @@ public class ShopService {
     public record ShopResponse(Long id, String name, boolean main,
                                 String address, String contactPhone,
                                 String printerName, String cashRegisterNo,
-                                String receiptFooter) {
+                                String receiptFooter, BigDecimal usdRate) {
+    }
+
+    /** Quick kurs edit from the POS header widget. Null clears (blocks USD sales). */
+    public record UsdRateRequest(BigDecimal usdRate) {
     }
 
     public record CreateShopRequest(
@@ -134,10 +139,24 @@ public class ShopService {
         return s;
     }
 
+    /**
+     * Set (or clear, when null) the shop's USD→UZS kurs. A non-null rate must
+     * be positive. Clearing it makes the POS block USD-line checkouts again.
+     */
+    public ShopResponse setUsdRate(Long accountId, Long id, BigDecimal rate) {
+        Shop s = requireOwned(accountId, id);
+        if (rate != null && rate.signum() <= 0) {
+            throw new BadRequestException("Kurs musbat bo'lishi kerak");
+        }
+        s.setUsdRate(rate);
+        return toResponse(shops.save(s));
+    }
+
     private static ShopResponse toResponse(Shop s) {
         return new ShopResponse(s.getId(), s.getName(), s.isMain(),
                 s.getAddress(), s.getContactPhone(),
-                s.getPrinterName(), s.getCashRegisterNo(), s.getReceiptFooter());
+                s.getPrinterName(), s.getCashRegisterNo(), s.getReceiptFooter(),
+                s.getUsdRate());
     }
 
     private static String blankToNull(String value) {

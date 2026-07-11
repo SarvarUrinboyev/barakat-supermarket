@@ -52,8 +52,8 @@ public final class Mappers {
 
     public static OrderResponse order(Order o, LocalDate today) {
         return new OrderResponse(o.getId(), o.getOrderDate(), o.getDeliveryDate(), o.getName(),
-                o.getSupplier(), o.getAmount(), o.isCompleted(), o.getCompletedAt(), o.getNote(),
-                orderStatus(o, today));
+                o.getSupplier(), o.getAmount(), o.getCurrency(), o.isCompleted(),
+                o.getCompletedAt(), o.getNote(), orderStatus(o, today));
     }
 
     /** Derived bucket for an order: COMPLETED / TODAY / OVERDUE / UPCOMING. */
@@ -120,7 +120,7 @@ public final class Mappers {
                 p.getCategoryId(), categoryName, p.getDescription(), p.getLowStockThreshold(),
                 margin, stockValue, stockStatus(p),
                 p.getMxikCode(), p.getVatRate(), p.getUnit(), p.getExpiryDate(),
-                p.isRequiresImei(), p.getCreatedAt());
+                p.isRequiresImei(), p.getCreatedAt(), p.getCurrency());
     }
 
     /** Derived stock bucket: OUT (0) / LOW (at or below threshold) / IN_STOCK. */
@@ -140,16 +140,16 @@ public final class Mappers {
     }
 
     /**
-     * API view of a customer. {@code goodsTotal} / {@code paidTotal} are the
-     * ledger sums; the balance is their difference (positive => owes us).
+     * API view of a customer. The balance is reported per currency
+     * ({@code balanceUzs} / {@code balanceUsd}); there is no merged total.
      */
-    public static CustomerResponse customer(Customer c, BigDecimal goodsTotal,
-                                            BigDecimal paidTotal, int transactionCount) {
+    public static CustomerResponse customer(Customer c, BigDecimal balanceUzs,
+                                            BigDecimal balanceUsd, int transactionCount) {
         String tier = customerTier(c.getPointsTotalEarned());
         boolean bdayMonth = c.getBirthday() != null
                 && c.getBirthday().getMonthValue() == java.time.LocalDate.now().getMonthValue();
         return new CustomerResponse(c.getId(), c.getName(), c.getPhone(), c.getAddress(),
-                c.getNote(), goodsTotal, paidTotal, goodsTotal.subtract(paidTotal),
+                c.getNote(), balanceUzs, balanceUsd,
                 transactionCount, c.getCreatedAt(),
                 c.getPointsBalance(), c.getPointsTotalEarned(),
                 c.getBirthday(), tier, tierDiscountPercent(tier), bdayMonth,
@@ -174,7 +174,7 @@ public final class Mappers {
 
     public static CustomerTransactionResponse customerTransaction(CustomerTransaction t) {
         return new CustomerTransactionResponse(t.getId(), t.getDate(), t.getType(),
-                t.getDescription(), t.getAmount(), t.getNote(), t.getCreatedAt());
+                t.getDescription(), t.getAmount(), t.getCurrency(), t.getNote(), t.getCreatedAt());
     }
 
     public static ManagementCostResponse managementCost(ManagementCost c) {

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import uz.barakat.market.domain.Currency;
 
 /**
  * Create / update payload for a warehouse product. {@code quantity} is the
@@ -36,5 +37,10 @@ public record ProductRequest(
         String unit,
         LocalDate expiryDate,
         /** Mark smartphones / electronics so the POS captures each unit's IMEI. */
-        boolean requiresImei) {
+        boolean requiresImei,
+        /**
+         * Native currency of the prices in this request. Null defaults to UZS
+         * (so'm) — USD must be an explicit choice (goods received in dollars).
+         */
+        Currency currency) {
 }

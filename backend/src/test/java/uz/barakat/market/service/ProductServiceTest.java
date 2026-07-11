@@ -59,7 +59,7 @@ class ProductServiceTest {
         return new ProductRequest(
                 "Coca-Cola 0.5L", null, null, null,
                 new BigDecimal("1.00"), new BigDecimal("2.00"),
-                quantity, null, null, null, null, null, null, null, null, false);
+                quantity, null, null, null, null, null, null, null, null, false, null);
     }
 
     @Test
@@ -112,7 +112,7 @@ class ProductServiceTest {
     private static ProductRequest withBarcode(String name, String barcode) {
         return new ProductRequest(name, barcode, null, null,
                 new BigDecimal("1.00"), new BigDecimal("2.00"),
-                1, null, null, null, null, null, null, null, null, false);
+                1, null, null, null, null, null, null, null, null, false, null);
     }
 
     @Test

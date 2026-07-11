@@ -7,7 +7,7 @@ import { Modal } from './Modal.jsx';
 import { useToast } from './Toast.jsx';
 import { CurrencyToggle } from './ui.jsx';
 import { useStickyState } from '../hooks/useStickyState.js';
-import { money, usd } from '../lib/format.js';
+import { formatMoney, money } from '../lib/format.js';
 
 // Sentinel category value: "create the catalogue's suggested category on save".
 const NEW_CATEGORY = '__suggested__';
@@ -97,7 +97,7 @@ export function ScanModal({ categories, onClose, onChanged }) {
     const n = Number(v);
     if (!usdRate || !Number.isFinite(n) || n <= 0) return null;
     return curr === 'UZS'
-      ? `≈ ${usd(uzsToUsd(n))}`
+      ? `≈ ${formatMoney(uzsToUsd(n), 'USD')}`
       : `≈ ${money(Math.round(n * usdRate))} so'm`;
   };
 

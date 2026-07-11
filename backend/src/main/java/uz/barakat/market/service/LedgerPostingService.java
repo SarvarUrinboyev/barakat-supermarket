@@ -157,17 +157,32 @@ public class LedgerPostingService {
         }
         Map<String, GlAccount> acc = chart.byCode();
 
-        BigDecimal subtotal = nz(sale.getSubtotalUzs());   // gross, USD-valued
-        BigDecimal total = nz(sale.getTotalUzs());         // net after discounts
+        // Sales are stored so'm-canonical (Gate C); the ledger is USD-canonical
+        // like every expense/payment posting (toUsd calls below). Resolve ONE
+        // rate for the whole sale (pinned-at-sale -> live CBU -> flagged
+        // fallback) and convert revenue, COGS and the cash it shares with
+        // expenses at it, so they all land in ONE unit and the double entry
+        // stays balanced. Legacy rows (currency USD) resolve to null = no-op,
+        // preserving their historical postings exactly.
+        MoneyConverter.RateResolution rr = resolveSaleRate(sale);
+        BigDecimal subtotal = ledgerUsd(nz(sale.getSubtotalUzs()), rr);
+        BigDecimal total = ledgerUsd(nz(sale.getTotalUzs()), rr);
         BigDecimal discount = subtotal.subtract(total).max(ZERO);
-        BigDecimal cogs = ZERO;
+        BigDecimal cogsSom = ZERO;
         for (SaleItem it : sale.getItems()) {
-            cogs = cogs.add(costOf(it.getCostAtSaleUzs(), it.getProductId())
+            cogsSom = cogsSom.add(costOf(it.getCostAtSaleUzs(), it.getProductId())
                     .multiply(BigDecimal.valueOf(it.getQuantity())));
         }
+        BigDecimal cogs = ledgerUsd(cogsSom, rr);
 
         JournalEntry e = newEntry(sale.getShopId(), date, JournalSource.SALE, ref,
                 "Sotuv #" + sale.getId());
+        // Record the conversion rate + its provenance (AM-7); FALLBACK entries
+        // are findable for re-rating (AM-8) via findByRateSource.
+        if (rr != null) {
+            e.setUsdRate(rr.rate());
+            e.setRateSource(rr.source());
+        }
         debit(e, acc, cashAccountFor(sale.getPaymentMethod()), total, "Tushum");
         debit(e, acc, SALES_DISCOUNT, discount, "Chegirma");
         credit(e, acc, SALES, subtotal, "Savdo tushumi");
@@ -416,6 +431,31 @@ public class LedgerPostingService {
      */
     private BigDecimal costOf(BigDecimal snapshot, Long productId) {
         return snapshot != null ? snapshot : unitCost(productId);
+    }
+
+    /**
+     * The rate (and its provenance) to value a sale in the ledger's USD unit:
+     * the rate pinned at sell time when present (so a past sale's booked profit
+     * never drifts), else the live CBU rate, else the flagged fallback. Returns
+     * null for legacy USD-valued sales, which need no conversion.
+     */
+    private MoneyConverter.RateResolution resolveSaleRate(Sale sale) {
+        if (sale.getCurrency() == Currency.USD) {
+            return null;
+        }
+        if (sale.getUsdRateAtSale() != null && sale.getUsdRateAtSale().signum() > 0) {
+            return new MoneyConverter.RateResolution(
+                    sale.getUsdRateAtSale(), MoneyConverter.RateSource.PINNED);
+        }
+        return converter.resolveRate();
+    }
+
+    /** A so'm amount in USD at the resolved rate; a null resolution = no-op (USD sale). */
+    private static BigDecimal ledgerUsd(BigDecimal som, MoneyConverter.RateResolution rr) {
+        if (rr == null) {
+            return som;
+        }
+        return som.divide(rr.rate(), 2, java.math.RoundingMode.HALF_UP);
     }
 
     private BigDecimal unitCost(Long productId) {

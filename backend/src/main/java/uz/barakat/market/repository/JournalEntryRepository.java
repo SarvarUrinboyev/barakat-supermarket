@@ -6,11 +6,18 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import uz.barakat.market.domain.JournalEntry;
 import uz.barakat.market.domain.JournalSource;
+import uz.barakat.market.service.MoneyConverter.RateSource;
 
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long> {
 
     List<JournalEntry> findByEntryDateBetweenOrderByEntryDateDescIdDesc(
             LocalDate from, LocalDate to);
+
+    /**
+     * The re-rating worklist (AM-8): entries posted with the offline fallback
+     * rate, so an operator can correct them once a real rate is known.
+     */
+    List<JournalEntry> findByRateSourceOrderByEntryDateDescIdDesc(RateSource rateSource);
 
     /** Idempotency guard for auto-posting: has this source row already posted? */
     boolean existsBySourceAndSourceRef(JournalSource source, String sourceRef);

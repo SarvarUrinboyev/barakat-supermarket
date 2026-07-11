@@ -2,6 +2,8 @@ package uz.barakat.market.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -66,6 +68,16 @@ public class Product extends TenantScopedEntity {
     /** VAT (QQS) rate as a percentage, e.g. 12.00; null when not set. */
     @Column(name = "vat_rate", precision = 5, scale = 2)
     private BigDecimal vatRate;
+
+    /**
+     * Native currency of {@code purchasePrice} / {@code salePrice}. Default
+     * UZS (so'm) — a product received in USD (imported smartphones etc.)
+     * carries USD and displays "$" everywhere including the POS. Prices are
+     * stored in this currency; no dual storage, no stored conversions.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private Currency currency = Currency.UZS;
 
     /** Unit of measure ("dona", "kg", "litr", ...). Defaults to pieces. */
     @Column(nullable = false, length = 24)

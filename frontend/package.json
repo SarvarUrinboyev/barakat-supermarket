@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "test": "vitest run",
+    "preview": "vite preview",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",
@@ -19,9 +22,11 @@
     "react-router-dom": "^6.30.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.11",
-    "vite-plugin-javascript-obfuscator": "^3.1.0"
+    "vite-plugin-javascript-obfuscator": "^3.1.0",
+    "vitest": "^2.1.9"
   },
   "comments": {
     "overrides": "exceljs@4.4.0 is the latest upstream release but pins vulnerable tmp/uuid transitives with no fixed exceljs available; force the patched versions (API-compatible — exceljs calls uuid.v4() and tmp only at runtime). jspdf-autotable was removed because it was unused in src/."

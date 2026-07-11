@@ -16,6 +16,7 @@ import uz.barakat.market.domain.Currency;
 import uz.barakat.market.domain.Sale;
 import uz.barakat.market.domain.SaleItem;
 import uz.barakat.market.domain.Product;
+import uz.barakat.market.domain.Shop;
 import uz.barakat.market.dto.AccountingDtos.BalanceSheetResponse;
 import uz.barakat.market.dto.AccountingDtos.ClosePeriodRequest;
 import uz.barakat.market.dto.AccountingDtos.JournalEntryRequest;
@@ -57,7 +58,11 @@ class AccountingFlowTest {
      */
     @Test
     void accountingCoreEndToEnd() {
-        Long shopId = shops.findAll().stream().findFirst().orElseThrow().getId();
+        Shop shop = shops.findAll().stream().findFirst().orElseThrow();
+        Long shopId = shop.getId();
+        // kurs 1:1 so the USD product maps 1:1 to the ledger's canonical unit.
+        shop.setUsdRate(java.math.BigDecimal.ONE);
+        shops.save(shop);
         TenantContext.setShopId(shopId);
 
         Product p = new Product();
@@ -65,11 +70,15 @@ class AccountingFlowTest {
         p.setPurchasePrice(new BigDecimal("10"));   // cost (USD)
         p.setSalePrice(new BigDecimal("15"));        // sale price (USD)
         p.setQuantity(100);
+        p.setCurrency(Currency.USD);   // dollar-denominated: ledger no-op conversion
         p = products.save(p);
 
         // A cash sale of 2 units: subtotal 30, no discount, COGS 20.
         Sale sale = new Sale();
         sale.setPaymentMethod("NAQD");
+        // Dollar-denominated sale, hand-built (bypasses the POS): mark it USD so
+        // the ledger posts it as-is (its canonical unit) rather than converting.
+        sale.setCurrency(Currency.USD);
         sale.setSubtotalUzs(new BigDecimal("30"));
         sale.setTotalUzs(new BigDecimal("30"));
         SaleItem item = new SaleItem();

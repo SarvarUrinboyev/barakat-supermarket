@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import uz.barakat.market.domain.Currency;
 import uz.barakat.market.exception.BadRequestException;
 
 /** Parses a CSV or XLSX file into product rows for the bulk import. */
@@ -26,7 +27,7 @@ public class ProductImporter {
     public record ImportRow(
             int line, String name, String barcode, String imei1, String imei2,
             BigDecimal purchasePrice, BigDecimal salePrice, int quantity,
-            int lowStockThreshold, String category, String error) {
+            int lowStockThreshold, String category, Currency currency, String error) {
     }
 
     /** Header keyword (normalised) -> logical column name. */
@@ -42,6 +43,7 @@ public class ProductImporter {
         alias("qty", "miqdor", "soni", "qoldiq", "quantity", "qty", "dona");
         alias("threshold", "chegara", "past stok", "past stok chegarasi", "threshold");
         alias("category", "toifa", "kategoriya", "category");
+        alias("currency", "valyuta", "valuta", "currency", "pul birligi");
     }
 
     private static void alias(String column, String... keywords) {
@@ -102,7 +104,8 @@ public class ProductImporter {
                         cellNumber(cellAt(row, cols.get("sale"))),
                         cellNumber(cellAt(row, cols.get("qty"))),
                         cellNumber(cellAt(row, cols.get("threshold"))),
-                        cellString(cellAt(row, cols.get("category")))));
+                        cellString(cellAt(row, cols.get("category"))),
+                        cellString(cellAt(row, cols.get("currency")))));
             }
         }
         return rows;
@@ -147,7 +150,8 @@ public class ProductImporter {
                     parseNumber(field(fields, cols.get("sale"))),
                     parseNumber(field(fields, cols.get("qty"))),
                     parseNumber(field(fields, cols.get("threshold"))),
-                    field(fields, cols.get("category"))));
+                    field(fields, cols.get("category")),
+                    field(fields, cols.get("currency"))));
         }
         return rows;
     }
@@ -156,13 +160,32 @@ public class ProductImporter {
 
     private static ImportRow buildRow(int line, String name, String barcode, String imei1,
                                       String imei2, double purchase, double sale, double qty,
-                                      double threshold, String category) {
-        return new ImportRow(line, name.strip(),
+                                      double threshold, String category, String currency) {
+        // Collapse runs of internal whitespace so "Cola  0,5 L" and "Cola 0,5 L"
+        // land in the warehouse as one canonical name (spreadsheets exported from
+        // other POS systems routinely carry double spaces).
+        return new ImportRow(line, name.strip().replaceAll("\\s+", " "),
                 blankToNull(barcode), blankToNull(imei1), blankToNull(imei2),
                 money(purchase), money(sale),
                 (int) Math.max(0, Math.round(qty)),
                 (int) Math.max(0, Math.round(threshold)),
-                blankToNull(category), null);
+                blankToNull(category), parseCurrency(currency), null);
+    }
+
+    /**
+     * Optional "Valyuta" column → currency. Absent / blank / anything not
+     * clearly dollars defaults to UZS (so'm), matching the app-wide default;
+     * "USD"/"usd"/"$"/"dollar"/"доллар" mean the row's prices are dollars.
+     */
+    private static Currency parseCurrency(String raw) {
+        if (raw == null) {
+            return Currency.UZS;
+        }
+        String v = raw.strip().toLowerCase();
+        if (v.contains("usd") || v.contains("$") || v.contains("dollar") || v.contains("долл")) {
+            return Currency.USD;
+        }
+        return Currency.UZS;
     }
 
     private static void requireNameColumn(Map<String, Integer> cols) {

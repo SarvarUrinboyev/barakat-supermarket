@@ -1,0 +1,12 @@
+# /etc/systemd/system/savdopro-watch.service
+# One-shot uptime check; driven by savdopro-watch.timer (every 2 min).
+[Unit]
+Description=SavdoPRO uptime watcher (Telegram alert on state change)
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/savdopro/watch.env
+ExecStart=/opt/barakat/monitoring/watch.sh
+# Trivial footprint; never let a hung curl linger.
+TimeoutStartSec=60

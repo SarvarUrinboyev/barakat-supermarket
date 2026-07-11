@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import uz.barakat.market.domain.Currency;
 import uz.barakat.market.domain.CustomerTxType;
 
 /**
@@ -22,7 +23,9 @@ public record CustomerTransactionRequest(
         @Positive(message = "Summa musbat bo'lishi kerak") BigDecimal amount,
         Long productId,
         Integer quantity,
-        String note) {
+        String note,
+        /** Currency of {@code amount}; null defaults to UZS (so'm). */
+        Currency currency) {
 
     /**
      * For a GOODS line the product and a positive quantity are mandatory

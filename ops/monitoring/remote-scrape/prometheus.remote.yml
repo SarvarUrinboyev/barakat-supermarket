@@ -1,0 +1,21 @@
+# Prometheus config for a SEPARATE monitoring box scraping SavdoPRO remotely
+# over public HTTPS + a Bearer scrape token (METRICS_SCRAPE_TOKEN on the
+# backend). Mount the token at /etc/prometheus/scrape-token (chmod 644 so the
+# container's uid 65534 can read it).
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: savdopro-backend
+    scheme: https
+    metrics_path: /actuator/prometheus
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/scrape-token
+    static_configs:
+      - targets: ["167-172-164-214.nip.io"]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
