@@ -164,6 +164,20 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Real PostgreSQL for engine-specific SQL that H2 can't fully mimic
+             (e.g. the Gate C EXT-1 relabel: regexp_replace flags, correlated
+             UPDATE ... EXISTS). Prod is Postgres, so such SQL must be proven on
+             it. Version managed by the Spring Boot parent BOM. -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
