@@ -81,6 +81,14 @@ async function uploadFile(path, file) {
   const token = getToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+    // Tenant scoping, same rule as the JSON client and downloadAuthed: without
+    // X-Shop-Id the backend silently falls back to the account's MAIN shop, so
+    // an upload made while a sub-shop is selected would check duplicates against
+    // — and write rows into — a shop the user isn't even looking at.
+    const shopId = localStorage.getItem('savdopro.activeShopId');
+    if (shopId) {
+      headers['X-Shop-Id'] = shopId;
+    }
   }
   const response = await fetch('/api' + path, { method: 'POST', body: form, headers });
   const text = await response.text();
