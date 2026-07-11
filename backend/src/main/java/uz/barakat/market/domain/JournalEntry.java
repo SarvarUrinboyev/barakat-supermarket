@@ -53,6 +53,19 @@ public class JournalEntry extends TenantScopedEntity {
     @Column(name = "reversed_entry_id")
     private Long reversedEntryId;
 
+    /**
+     * The USD→UZS rate used to convert this entry's source amount into the
+     * ledger's USD unit; null when no conversion was needed. Paired with
+     * {@link #rateSource} so the posting is reproducible (AM-7).
+     */
+    @Column(name = "usd_rate", precision = 12, scale = 2)
+    private java.math.BigDecimal usdRate;
+
+    /** Where {@link #usdRate} came from: PINNED / CBU / FALLBACK (AM-7/8). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rate_source", length = 10)
+    private uz.barakat.market.service.MoneyConverter.RateSource rateSource;
+
     @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true,
             fetch = FetchType.EAGER)
     private List<JournalLine> lines = new ArrayList<>();

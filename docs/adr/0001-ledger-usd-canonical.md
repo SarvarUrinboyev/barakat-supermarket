@@ -30,6 +30,29 @@ Flipping the ledger to so'm would mean un-converting expenses/payments AND
 reworking that frontend contract — a strictly larger change with no correctness
 gain. Keeping USD-canonical preserves the existing display pipeline.
 
+## Rate resolution, persistence and fallback policy (AM-7/8)
+
+Every sale posting resolves ONE rate via a fixed chain and **records both the
+rate and its source** on the journal entry (`gl_journal_entry.usd_rate`,
+`rate_source`), so the conversion is reproducible and auditable:
+
+1. **PINNED** — the kurs frozen on the sale at sell time (`sales.usd_rate_at_sale`).
+   Used whenever present, so a past sale's booked profit never drifts.
+2. **CBU** — the live Central-Bank rate, when a sale pinned none (pure-so'm sale)
+   and the feed is reachable.
+3. **FALLBACK** — a documented constant (`MoneyConverter.FALLBACK_USD_UZS = 12700`)
+   used ONLY when the CBU feed is unreachable. Such an entry is **flagged**
+   `rate_source = FALLBACK` and surfaces on a re-rating worklist
+   (`JournalEntryRepository.findByRateSource(FALLBACK)`, indexed) — a posting made
+   at the offline constant is treated as provisional inaccuracy to be corrected,
+   never silently trusted. Posting still succeeds (no silent *failure*), but it
+   is not silently *accurate* either — the flag is the audit hook.
+
+`MoneyConverter.resolveRate()` returns `{rate, source}`; legacy USD-valued sales
+resolve to null (no conversion, no rate recorded). Tested by
+`MoneyConverterTest` (CBU vs FALLBACK tagging) and `LedgerRateProvenanceIT`
+(PINNED/CBU/FALLBACK stamped on the entry; FALLBACK hits the worklist).
+
 ## Consequences
 
 - No sale can fail to post for lack of a shop kurs: the rate-resolution chain
@@ -37,6 +60,8 @@ gain. Keeping USD-canonical preserves the existing display pipeline.
   `PosCurrencyIT.noKursUzsSalePostsToLedgerWithoutSilentFailure`). A **USD line**
   still hard-requires a configured kurs at checkout (D6 block rule) — that guard
   is about pricing accuracy, not ledger posting.
+- Fallback-rated entries are never silently final: they carry the `FALLBACK` tag
+  and appear on the re-rating worklist until an operator corrects them.
 - Pure-so'm sales are valued at the rate in effect **at posting time**, not
   pinned; report figures can drift slightly with the CBU rate between sell and
   view. Acceptable for a so'm-operating shop; if exact historical so'm valuation
