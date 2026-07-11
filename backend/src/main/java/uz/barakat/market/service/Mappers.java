@@ -144,12 +144,13 @@ public final class Mappers {
      * ledger sums; the balance is their difference (positive => owes us).
      */
     public static CustomerResponse customer(Customer c, BigDecimal goodsTotal,
-                                            BigDecimal paidTotal, int transactionCount) {
+                                            BigDecimal paidTotal, BigDecimal balanceUzs,
+                                            BigDecimal balanceUsd, int transactionCount) {
         String tier = customerTier(c.getPointsTotalEarned());
         boolean bdayMonth = c.getBirthday() != null
                 && c.getBirthday().getMonthValue() == java.time.LocalDate.now().getMonthValue();
         return new CustomerResponse(c.getId(), c.getName(), c.getPhone(), c.getAddress(),
-                c.getNote(), goodsTotal, paidTotal, goodsTotal.subtract(paidTotal),
+                c.getNote(), goodsTotal, paidTotal, balanceUzs, balanceUsd,
                 transactionCount, c.getCreatedAt(),
                 c.getPointsBalance(), c.getPointsTotalEarned(),
                 c.getBirthday(), tier, tierDiscountPercent(tier), bdayMonth,

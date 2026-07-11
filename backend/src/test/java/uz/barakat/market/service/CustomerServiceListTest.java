@@ -74,7 +74,8 @@ class CustomerServiceListTest {
         CustomerResponse r = rowFor(cid);
         assertThat(r.goodsTotal()).isEqualByComparingTo("150");
         assertThat(r.paidTotal()).isEqualByComparingTo("60");
-        assertThat(r.balance()).isEqualByComparingTo("90"); // 150 - 60
+        assertThat(r.balanceUzs()).isEqualByComparingTo("90"); // 150 - 60, all so'm
+        assertThat(r.balanceUsd()).isEqualByComparingTo("0");
         assertThat(r.transactionCount()).isEqualTo(3);
     }
 
@@ -88,7 +89,8 @@ class CustomerServiceListTest {
         CustomerResponse r = rowFor(cid);
         assertThat(r.goodsTotal()).isEqualByComparingTo("0");
         assertThat(r.paidTotal()).isEqualByComparingTo("0");
-        assertThat(r.balance()).isEqualByComparingTo("0");
+        assertThat(r.balanceUzs()).isEqualByComparingTo("0");
+        assertThat(r.balanceUsd()).isEqualByComparingTo("0");
         assertThat(r.transactionCount()).isZero();
     }
 }

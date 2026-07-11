@@ -92,10 +92,14 @@ export function ProgressBar({ percent }) {
  * for a plain number.
  */
 export function MetricCard({
-  tone, icon, label, value, sub, currency = true, currencyCode, tag, filled,
+  tone, icon, label, value, sub, currency = true, currencyCode, displayText, tag, filled,
 }) {
   let display;
-  if (currencyCode) {
+  if (displayText != null) {
+    // Caller supplies a pre-formatted value (e.g. a per-currency split
+    // "500 000 so'm + $200" that no single currencyCode can express).
+    display = displayText;
+  } else if (currencyCode) {
     display = formatMoney(value, currencyCode);
   } else if (currency) {
     display = usd(value);

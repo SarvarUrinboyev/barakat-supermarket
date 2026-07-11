@@ -94,7 +94,7 @@ export function Debt() {
           const [summary, customers] = data;
           // Build virtual "Bizdan qarz" entries from customers that currently owe us.
           const customerDebts = (customers || [])
-            .filter((c) => Number(c.balance) > 0.009)
+            .filter((c) => Number(c.balanceUzs) > 0.009)
             .map((c) => ({
               id: `cust-${c.id}`,
               customerId: c.id,
@@ -102,9 +102,9 @@ export function Debt() {
               date: null,
               customerName: c.name,
               productName: c.phone || null,
-              originalAmount: c.balance,
+              originalAmount: c.balanceUzs,
               paidAmount: 0,
-              remainingAmount: c.balance,
+              remainingAmount: c.balanceUzs,
               paidPercent: 0,
               paid: false,
               note: c.address || null,

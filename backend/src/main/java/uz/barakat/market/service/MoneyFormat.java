@@ -27,4 +27,11 @@ public final class MoneyFormat {
     public static String usd(BigDecimal value) {
         return "$" + grouped(value);
     }
+
+    /** e.g. {@code 500000} -> {@code "500 000 so'm"} (grouped, no decimals). */
+    public static String uzs(BigDecimal value) {
+        BigDecimal rounded = (value == null ? BigDecimal.ZERO : value)
+                .setScale(0, java.math.RoundingMode.HALF_UP);
+        return grouped(rounded) + " so'm";
+    }
 }

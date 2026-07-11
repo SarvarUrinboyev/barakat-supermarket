@@ -159,9 +159,9 @@ public class CfoActionService {
         params.put("customerId", c.id());
         params.put("customerName", c.name());
         params.put("phone", c.phone());
-        params.put("balanceUsd", nz(c.balance()));
-        String detail = c.balance() != null && c.balance().signum() > 0
-                ? "$" + money(c.balance()) + " qarz" : "xabar yuborish";
+        params.put("balanceUzs", nz(c.balanceUzs()));
+        String detail = c.balanceUzs() != null && c.balanceUzs().signum() > 0
+                ? money(c.balanceUzs()) + " so'm qarz" : "xabar yuborish";
         return new CfoAction("NOTIFY", "✉️ Eslatma: " + c.name(), detail, params);
     }
 

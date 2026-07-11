@@ -285,7 +285,7 @@ function PartyPicker({ value, onChange, category }) {
           id: `cust-${c.id}`,
           name: c.name,
           meta: c.phone || '',
-          debt: Number(c.balance) > 0.009 ? Number(c.balance) : 0,
+          debt: Number(c.balanceUzs) > 0.009 ? Number(c.balanceUzs) : 0,
           source: 'CUSTOMER',
         }));
     }

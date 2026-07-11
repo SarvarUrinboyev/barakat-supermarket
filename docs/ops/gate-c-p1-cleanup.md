@@ -81,6 +81,36 @@ WHERE p.shop_id = :p1;
   WHERE product_id IN (SELECT id FROM products WHERE shop_id = :p1);
   ```
 
+## 3b. EXT-1 — correct customer-ledger rows the OLD code wrote as so'm
+
+The pre-Gate-C code already wrote raw sale totals into `customer_transactions`
+(no currency column then). Any QARZGA sale of an imported (som-semantic) product
+since import day wrote a so'm number that V40 backfilled to `USD` — wrong. Find
+and correct them (run after V40):
+
+```sql
+-- Count/list the suspect rows: GOODS ledger lines since import day linked to a
+-- POS credit sale, whose linked sale is UZS-canonical (i.e. a so'm sale).
+SELECT ct.id, ct.customer_id, ct.amount, ct.currency, ct.description
+FROM customer_transactions ct
+JOIN sales s ON s.id = CAST(regexp_replace(ct.description, '\D', '', 'g') AS BIGINT)
+WHERE ct.description LIKE 'POS qarz sotuvi #%'
+  AND ct.created_at >= DATE '2026-07-11'
+  AND s.currency = 'UZS'
+  AND ct.currency = 'USD';    -- mis-labeled by the generic backfill
+
+-- Report the count first; then relabel the confirmed rows to UZS:
+UPDATE customer_transactions ct SET currency = 'UZS'
+WHERE ct.description LIKE 'POS qarz sotuvi #%'
+  AND ct.created_at >= DATE '2026-07-11'
+  AND ct.currency = 'USD'
+  AND EXISTS (SELECT 1 FROM sales s
+              WHERE s.id = CAST(regexp_replace(ct.description, '\D', '', 'g') AS BIGINT)
+                AND s.currency = 'UZS');
+```
+Rows whose linked sale can't be resolved (deleted sale) stay USD and should be
+reviewed by hand — never guessed.
+
 ## 4. After any change — re-verify
 
 ```sql

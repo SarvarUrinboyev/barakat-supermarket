@@ -5,9 +5,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * API view of a customer with ledger totals. {@code balance} is
- * {@code goodsTotal - paidTotal}: a positive balance means the customer
- * owes the shop, a negative balance is credit the shop holds for them.
+ * API view of a customer with ledger totals. The balance is reported PER
+ * CURRENCY ({@code balanceUzs}, {@code balanceUsd}) and never merged: a
+ * positive bucket means the customer owes the shop in that currency, a
+ * negative bucket is credit the shop holds. {@code goodsTotal}/{@code paidTotal}
+ * are informational running totals only — the authoritative debt is the
+ * per-currency balance (Gate C Q3).
  */
 public record CustomerResponse(
         Long id,
@@ -17,7 +20,8 @@ public record CustomerResponse(
         String note,
         BigDecimal goodsTotal,
         BigDecimal paidTotal,
-        BigDecimal balance,
+        BigDecimal balanceUzs,
+        BigDecimal balanceUsd,
         int transactionCount,
         LocalDateTime createdAt,
         long pointsBalance,

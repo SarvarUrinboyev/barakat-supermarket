@@ -32,7 +32,7 @@ function Detail({ data, reload }) {
 
   const customer = data.customer;
   const transactions = data.transactions;
-  const info = balanceInfo(customer.balance);
+  const info = balanceInfo(customer.balanceUzs, customer.balanceUsd);
   const balanceTone = info.tone === 'muted' ? 'blue' : info.tone;
   const goodsCount = transactions.filter((t) => t.type === 'GOODS').length;
 
@@ -110,10 +110,10 @@ function Detail({ data, reload }) {
 
       <div className="metrics section">
         <MetricCard tone="amber" icon="📦" label={tr('Berilgan tovarlar')} value={customer.goodsTotal}
-                    sub={`${goodsCount} ${tr('ta tovar')}`} />
-        <MetricCard tone="green" icon="💵" label={tr("To'langan")} value={customer.paidTotal} />
+                    currencyCode="UZS" sub={`${goodsCount} ${tr('ta tovar')}`} />
+        <MetricCard tone="green" icon="💵" label={tr("To'langan")} value={customer.paidTotal} currencyCode="UZS" />
         <MetricCard tone={balanceTone} icon={info.tone === 'green' ? '💚' : '📒'}
-                    label={tr(info.label)} value={info.amount} />
+                    label={tr(info.label)} displayText={info.display} />
       </div>
 
       {/* Phase 4.4 loyalty pill — only renders for customers who've

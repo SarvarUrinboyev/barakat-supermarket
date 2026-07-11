@@ -7,22 +7,36 @@ import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, MetricCard, PageHeader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { usd } from '../lib/format.js';
+import { formatMoney } from '../lib/format.js';
 
 /**
- * Interprets a customer balance (goodsTotal - paidTotal):
- * positive => the customer owes the shop, negative => the shop holds
- * credit for them. Shared with the customer-detail page.
+ * Interprets a customer's PER-CURRENCY balance (Gate C Q3): each currency
+ * bucket is goods - payments in that currency, never merged. A positive bucket
+ * means the customer owes the shop; negative means the shop holds credit. The
+ * `display` renders every non-zero bucket, e.g. "500 000 so'm + $200".
+ * Shared with the customer-detail page.
  */
-export function balanceInfo(balance) {
-  const n = Number(balance || 0);
-  if (n > 0.009) {
-    return { label: 'Mijoz qarzi', tone: 'red', amount: n, badge: 'badge-qarzga' };
+export function balanceInfo(balanceUzs, balanceUsd) {
+  const u = Number(balanceUzs || 0);
+  const d = Number(balanceUsd || 0);
+  const owes = u > 0.009 || d > 0.009;
+  const holdsCredit = !owes && (u < -0.009 || d < -0.009);
+  const parts = [];
+  if (Math.abs(u) > 0.009) parts.push(formatMoney(Math.abs(u), 'UZS'));
+  if (Math.abs(d) > 0.009) parts.push(formatMoney(Math.abs(d), 'USD'));
+  const display = parts.length ? parts.join(' + ') : formatMoney(0, 'UZS');
+  if (owes) {
+    return { label: 'Mijoz qarzi', tone: 'red', display, badge: 'badge-qarzga', owes: true };
   }
-  if (n < -0.009) {
-    return { label: 'Bizda qolgan balans', tone: 'green', amount: -n, badge: 'badge-naqd' };
+  if (holdsCredit) {
+    return { label: 'Bizda qolgan balans', tone: 'green', display, badge: 'badge-naqd', owes: false };
   }
-  return { label: 'Hisob teng', tone: 'muted', amount: 0, badge: 'badge-muted' };
+  return { label: 'Hisob teng', tone: 'muted', display: formatMoney(0, 'UZS'), badge: 'badge-muted', owes: false };
+}
+
+/** True when the customer owes in any currency bucket. */
+export function customerOwes(c) {
+  return Number(c.balanceUzs || 0) > 0.009 || Number(c.balanceUsd || 0) > 0.009;
 }
 
 export function Customers() {
@@ -37,7 +51,7 @@ export function Customers() {
   const customers = data || [];
 
   const debtorCount = useMemo(
-    () => customers.filter((c) => Number(c.balance) > 0).length,
+    () => customers.filter(customerOwes).length,
     [customers],
   );
 
@@ -75,10 +89,12 @@ export function Customers() {
   }, [customers, search]);
 
   const summary = useMemo(() => {
+    // So'm buckets only (Barakat operates in so'm; a separate USD receivable
+    // card is B5 aggregate work). Per-currency balances are never merged.
     let receivable = 0;
     let credit = 0;
     for (const c of customers) {
-      const b = Number(c.balance);
+      const b = Number(c.balanceUzs || 0);
       if (b > 0) {
         receivable += b;
       } else if (b < 0) {
@@ -126,8 +142,8 @@ export function Customers() {
       <div className="metrics section">
         <MetricCard tone="blue" icon="👥" label={t('Jami mijozlar')} value={summary.count}
                     currency={false} />
-        <MetricCard tone="red" icon="📒" label={t('Mijozlar qarzi')} value={summary.receivable} />
-        <MetricCard tone="green" icon="💵" label={t('Bizdagi balans')} value={summary.credit} />
+        <MetricCard tone="red" icon="📒" label={t('Mijozlar qarzi')} value={summary.receivable} currencyCode="UZS" />
+        <MetricCard tone="green" icon="💵" label={t('Bizdagi balans')} value={summary.credit} currencyCode="UZS" />
       </div>
 
       <div className="card card-pad section">
@@ -174,7 +190,7 @@ export function Customers() {
                 </thead>
                 <tbody>
                   {filtered.map((c) => {
-                    const info = balanceInfo(c.balance);
+                    const info = balanceInfo(c.balanceUzs, c.balanceUsd);
                     return (
                       <tr
                         key={c.id}
@@ -192,7 +208,7 @@ export function Customers() {
                             : <span className="faint">—</span>}
                         </td>
                         <td className="num">
-                          {info.amount === 0 ? (
+                          {info.tone === 'muted' ? (
                             <span className="balance-pill zero">
                               <span className="bp-dot" />
                               {t('Teng')}
@@ -201,13 +217,13 @@ export function Customers() {
                             <span className="balance-pill owed">
                               <span className="bp-ico" aria-hidden>▼</span>
                               <span className="bp-label">{t('Qarz')}</span>
-                              <b className="mono">{usd(info.amount)}</b>
+                              <b className="mono">{info.display}</b>
                             </span>
                           ) : (
                             <span className="balance-pill credit">
                               <span className="bp-ico" aria-hidden>▲</span>
                               <span className="bp-label">{t('Balans')}</span>
-                              <b className="mono">{usd(info.amount)}</b>
+                              <b className="mono">{info.display}</b>
                             </span>
                           )}
                         </td>

@@ -69,6 +69,20 @@ resolve to null (no conversion, no rate recorded). Tested by
 - **A future so'm-canonical ledger is a separate gate**, justified only if
   fiscal/reporting requirements demand native-so'm books.
 
+## Customer credit ledger — per-currency, denominated at the sale's unit (Gate C Q3)
+
+`customer_transactions` is tagged with a `currency` (V40) and a customer's
+balance is summed PER CURRENCY, never merged — a customer can owe "500 000 so'm
++ $200" and the two buckets are reported separately (`CustomerResponse.balanceUzs`
+/ `balanceUsd`). **Interim denomination rule:** a QARZGA credit sale's debt is
+denominated in the SALE's canonical unit (so'm), even when the cart contains USD
+items — so the debt never floats with the kurs. Per-item / USD debt
+denomination, and cross-currency settlement (which bucket a payment pays down,
+payoff at kurs), are **Gate D** policy. Existing rows backfill to USD (the
+pre-Gate-C unit); prod rows the old code wrote as so'm since import day are
+corrected out-of-band by the runbook (EXT-1). Proven by
+`CustomerCurrencyBalanceIT` (reproduce the merged "$63 550", then the split).
+
 ## Alternatives rejected
 
 - **Sales posted raw (pre-Gate-C behavior):** overstated revenue ≈ ×kurs once

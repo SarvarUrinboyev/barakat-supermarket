@@ -356,6 +356,9 @@ public class PosService {
         tx.setDate(LocalDate.now());
         tx.setType(CustomerTxType.GOODS);
         tx.setAmount(nz(saved.getTotalUzs()));
+        // Q3: the credit debt is denominated in the sale's canonical unit
+        // (so'm), so it never merges with a customer's USD-era ledger rows.
+        tx.setCurrency(saved.getCurrency());
         tx.setDescription("POS qarz sotuvi #" + saved.getId());
         customerTx.save(tx);
     }
