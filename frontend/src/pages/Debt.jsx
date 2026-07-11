@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CustomerApi, DebtApi } from '../api/endpoints.js';
+import { customerDebtRows } from '../lib/customerBalance.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useT } from '../context/Settings.jsx';
@@ -92,25 +93,22 @@ export function Debt() {
       <Loader loading={loading} error={error} onRetry={reload}>
         {data && (() => {
           const [summary, customers] = data;
-          // Build virtual "Bizdan qarz" entries from customers that currently owe us.
-          const customerDebts = (customers || [])
-            .filter((c) => Number(c.balanceUzs) > 0.009)
-            .map((c) => ({
-              id: `cust-${c.id}`,
-              customerId: c.id,
-              source: 'CUSTOMER',
-              date: null,
-              customerName: c.name,
-              productName: c.phone || null,
-              originalAmount: c.balanceUzs,
-              paidAmount: 0,
-              remainingAmount: c.balanceUzs,
-              paidPercent: 0,
-              paid: false,
-              note: c.address || null,
-            }));
+          // Build virtual "Bizdan qarz" entries from customers that owe us in
+          // ANY currency bucket (a USD-only debtor must not vanish, Gate C Q3).
+          // Each row carries a per-currency split display.
+          const customerDebts = customerDebtRows(customers).map((r) => ({
+            ...r,
+            date: null,
+            originalAmount: r.balanceUzs,
+            paidAmount: 0,
+            remainingAmount: r.balanceUzs,
+            paidPercent: 0,
+            paid: false,
+          }));
+          // Hero total is the so'm bucket only (no kurs merge); USD debts show
+          // per-row in the split display.
           const customerDebtsTotal = customerDebts
-            .reduce((acc, d) => acc + Number(d.remainingAmount), 0);
+            .reduce((acc, d) => acc + Number(d.balanceUzs), 0);
           const allReceivables = [...customerDebts, ...summary.customerDebts];
           const totalReceivable = Number(summary.customerDebtTotal) + customerDebtsTotal;
           return (
@@ -364,7 +362,7 @@ function DebtCard({ side, debt, setModal, quickPay, onOpenCustomer }) {
       <div className="dc-progress">
         <div className="dc-progress-meta mono">
           <span>{t("To'langan qism")}: {pct}%</span>
-          <span>{t('Qoldiq')}: <b>{usd(debt.remainingAmount)}</b></span>
+          <span>{t('Qoldiq')}: <b>{debt.remainingDisplay || usd(debt.remainingAmount)}</b></span>
         </div>
         <div className={`dc-progress-bar ${closed ? 'closed' : cfg.tone}`}>
           <span style={{ width: `${pct}%` }} />
@@ -374,7 +372,7 @@ function DebtCard({ side, debt, setModal, quickPay, onOpenCustomer }) {
       <div className="dc-foot">
         <div>
           <span className="dc-foot-label">{t('Umumiy summa')}</span>
-          <span className="dc-foot-val muted mono">{usd(debt.originalAmount)}</span>
+          <span className="dc-foot-val muted mono">{debt.remainingDisplay || usd(debt.originalAmount)}</span>
         </div>
         <div className="right">
           <span className="dc-foot-label">{t("To'langan")}</span>

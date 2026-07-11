@@ -258,12 +258,9 @@ public class AiToolService {
                 .findFirst().orElse(null);
         if (hit == null) return "'" + name + "' nomli mijoz topilmadi";
         return String.format(Locale.ROOT,
-                "Mijoz: %s | tel: %s | balans: %s USD (%s) | berilgan: %s | to'langan: %s | "
-                + "ball: %d | daraja: %s",
-                hit.name(), nz(hit.phone()), money(hit.balanceUzs()),
-                hit.balanceUzs() != null && hit.balanceUzs().signum() > 0 ? "qarzdor"
-                        : hit.balanceUzs() != null && hit.balanceUzs().signum() < 0 ? "haqdor" : "tenglik",
-                money(hit.goodsTotal()), money(hit.paidTotal()),
+                "Mijoz: %s | tel: %s | qarz: %s so'm / %s USD | ball: %d | daraja: %s",
+                hit.name(), nz(hit.phone()),
+                money(hit.balanceUzs()), money(hit.balanceUsd()),
                 hit.pointsBalance(), nz(hit.tier()));
     }
 

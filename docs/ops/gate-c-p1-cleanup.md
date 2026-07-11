@@ -88,28 +88,40 @@ The pre-Gate-C code already wrote raw sale totals into `customer_transactions`
 since import day wrote a so'm number that V40 backfilled to `USD` — wrong. Find
 and correct them (run after V40):
 
-```sql
--- Count/list the suspect rows: GOODS ledger lines since import day linked to a
--- POS credit sale, whose linked sale is UZS-canonical (i.e. a so'm sale).
-SELECT ct.id, ct.customer_id, ct.amount, ct.currency, ct.description
-FROM customer_transactions ct
-JOIN sales s ON s.id = CAST(regexp_replace(ct.description, '\D', '', 'g') AS BIGINT)
-WHERE ct.description LIKE 'POS qarz sotuvi #%'
-  AND ct.created_at >= DATE '2026-07-11'
-  AND s.currency = 'UZS'
-  AND ct.currency = 'USD';    -- mis-labeled by the generic backfill
+Only a **pure-so'm** credit sale is safe to relabel. A pre-Gate-C **mixed** cart
+(some USD-priced, some so'm-priced lines) stored one blended total — neither
+label is honest, so those go to a review worklist, never guessed.
 
--- Report the count first; then relabel the confirmed rows to UZS:
+```sql
+-- RELABEL: only credit-sale rows whose linked sale is UZS AND has NO USD line.
 UPDATE customer_transactions ct SET currency = 'UZS'
 WHERE ct.description LIKE 'POS qarz sotuvi #%'
   AND ct.created_at >= DATE '2026-07-11'
   AND ct.currency = 'USD'
-  AND EXISTS (SELECT 1 FROM sales s
-              WHERE s.id = CAST(regexp_replace(ct.description, '\D', '', 'g') AS BIGINT)
-                AND s.currency = 'UZS');
+  AND EXISTS (
+        SELECT 1 FROM sales s
+        WHERE s.id = CAST(regexp_replace(ct.description, '[^0-9]', '', 'g') AS BIGINT)
+          AND s.currency = 'UZS'
+          AND NOT EXISTS (SELECT 1 FROM sale_items si
+                          WHERE si.sale_id = s.id AND si.currency = 'USD'));
+
+-- WORKLIST: everything the relabel deliberately skipped — mixed-currency sales
+-- (a USD line present) or an unresolvable / deleted sale. Review by hand.
+SELECT ct.id, ct.customer_id, ct.amount, ct.description
+FROM customer_transactions ct
+WHERE ct.description LIKE 'POS qarz sotuvi #%'
+  AND ct.created_at >= DATE '2026-07-11'
+  AND ct.currency = 'USD'
+  AND NOT EXISTS (
+        SELECT 1 FROM sales s
+        WHERE s.id = CAST(regexp_replace(ct.description, '[^0-9]', '', 'g') AS BIGINT)
+          AND s.currency = 'UZS'
+          AND NOT EXISTS (SELECT 1 FROM sale_items si
+                          WHERE si.sale_id = s.id AND si.currency = 'USD'));
 ```
-Rows whose linked sale can't be resolved (deleted sale) stay USD and should be
-reviewed by hand — never guessed.
+The relabel and the worklist are exact complements (over the same candidate set),
+so every suspect row is either corrected or surfaced — none silently left wrong.
+Rehearsed by `CustomerLedgerRelabelIT`.
 
 ## 4. After any change — re-verify
 

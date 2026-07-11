@@ -93,17 +93,22 @@ class CustomerCurrencyBalanceIT {
                 BigDecimal.ZERO, BigDecimal.ZERO, "QARZGA", customerId, null, null), "tester");
         TenantContext.clear();
 
-        // --- REPRODUCE: the naive single-sum merges the two currencies ---
+        // --- REPRODUCE (test-internal arithmetic): the naive single-sum that
+        // the old code produced merged the two currencies into a meaningless
+        // number. It must no longer be reachable from any live DTO field. ---
+        final BigDecimal naiveMerge = new BigDecimal("50").add(new BigDecimal("63500")); // 63550
+        assertThat(naiveMerge).isEqualByComparingTo("63550");
+
         TenantContext.setShopId(shopId);
         CustomerResponse resp = customerService.list().stream()
                 .filter(r -> r.id().equals(customerId)).findFirst().orElseThrow();
-        // goodsTotal is the informational raw running total — it DOES still
-        // merge, which is exactly why it must never be used as the debt figure.
-        assertThat(resp.goodsTotal()).isEqualByComparingTo("63550");
 
-        // --- FIX: the authoritative balance is split per currency ---
+        // --- FIX: the authoritative balance is split per currency, and NO field
+        // reproduces the merged figure (goodsTotal/paidTotal were removed). ---
         assertThat(resp.balanceUsd()).isEqualByComparingTo("50");
         assertThat(resp.balanceUzs()).isEqualByComparingTo("63500");
+        assertThat(resp.balanceUzs()).isNotEqualByComparingTo(naiveMerge);
+        assertThat(resp.balanceUsd()).isNotEqualByComparingTo(naiveMerge);
 
         // The new credit row itself is tagged so'm, not left implicit.
         assertThat(transactions.findByCustomerIdOrderByDateDescIdDesc(customerId))

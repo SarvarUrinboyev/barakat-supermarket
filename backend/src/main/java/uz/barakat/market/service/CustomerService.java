@@ -207,15 +207,13 @@ public class CustomerService {
             BigDecimal paid = t.getPaid() != null ? t.getPaid() : ZERO;
             Currency cur = t.getCurrency() == null ? Currency.UZS : t.getCurrency();
             CustomerAgg a = agg.computeIfAbsent(t.getCustomerId(), k -> new CustomerAgg());
-            a.goods = a.goods.add(goods);
-            a.paid = a.paid.add(paid);
             a.count += (int) t.getTxCount();
             a.balances.merge(cur, goods.subtract(paid), BigDecimal::add);
         }
         return customers.findAllByOrderByNameAsc().stream()
                 .map(c -> {
                     CustomerAgg a = agg.getOrDefault(c.getId(), new CustomerAgg());
-                    return Mappers.customer(c, a.goods, a.paid,
+                    return Mappers.customer(c,
                             bucket(a.balances, Currency.UZS), bucket(a.balances, Currency.USD),
                             a.count);
                 })
@@ -224,8 +222,6 @@ public class CustomerService {
 
     /** Mutable per-customer fold of the per-currency aggregate rows. */
     private static final class CustomerAgg {
-        BigDecimal goods = ZERO;
-        BigDecimal paid = ZERO;
         int count = 0;
         final Map<Currency, BigDecimal> balances = new EnumMap<>(Currency.class);
     }
@@ -438,17 +434,8 @@ public class CustomerService {
 
     private static CustomerResponse toResponse(Customer customer,
                                                List<CustomerTransaction> ledger) {
-        BigDecimal goods = ZERO;
-        BigDecimal paid = ZERO;
-        for (CustomerTransaction tx : ledger) {
-            if (tx.getType() == CustomerTxType.GOODS) {
-                goods = goods.add(tx.getAmount());
-            } else {
-                paid = paid.add(tx.getAmount());
-            }
-        }
         Map<Currency, BigDecimal> balances = balancesOf(ledger);
-        return Mappers.customer(customer, goods, paid,
+        return Mappers.customer(customer,
                 bucket(balances, Currency.UZS), bucket(balances, Currency.USD), ledger.size());
     }
 

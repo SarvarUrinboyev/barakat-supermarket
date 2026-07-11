@@ -109,9 +109,11 @@ function Detail({ data, reload }) {
       </div>
 
       <div className="metrics section">
-        <MetricCard tone="amber" icon="📦" label={tr('Berilgan tovarlar')} value={customer.goodsTotal}
-                    currencyCode="UZS" sub={`${goodsCount} ${tr('ta tovar')}`} />
-        <MetricCard tone="green" icon="💵" label={tr("To'langan")} value={customer.paidTotal} currencyCode="UZS" />
+        {/* Merged cross-currency goods/paid totals were removed (Gate C Q3);
+            the per-day breakdown below shows amounts, and the balance is split
+            per currency here. */}
+        <MetricCard tone="amber" icon="📦" label={tr('Berilgan tovarlar')} value={goodsCount}
+                    currency={false} sub={tr('ta tovar')} />
         <MetricCard tone={balanceTone} icon={info.tone === 'green' ? '💚' : '📒'}
                     label={tr(info.label)} displayText={info.display} />
       </div>

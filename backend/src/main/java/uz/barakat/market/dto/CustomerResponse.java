@@ -5,12 +5,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * API view of a customer with ledger totals. The balance is reported PER
- * CURRENCY ({@code balanceUzs}, {@code balanceUsd}) and never merged: a
- * positive bucket means the customer owes the shop in that currency, a
- * negative bucket is credit the shop holds. {@code goodsTotal}/{@code paidTotal}
- * are informational running totals only — the authoritative debt is the
- * per-currency balance (Gate C Q3).
+ * API view of a customer. The balance is reported PER CURRENCY
+ * ({@code balanceUzs}, {@code balanceUsd}) and never merged: a positive bucket
+ * means the customer owes the shop in that currency, a negative bucket is credit
+ * the shop holds (Gate C Q3). There is deliberately NO cross-currency total
+ * field — a merged goods/paid sum would re-introduce the exact figure the
+ * per-currency balance replaced. Per-currency running totals, where needed, are
+ * computed from the ledger lines on the detail view.
  */
 public record CustomerResponse(
         Long id,
@@ -18,8 +19,6 @@ public record CustomerResponse(
         String phone,
         String address,
         String note,
-        BigDecimal goodsTotal,
-        BigDecimal paidTotal,
         BigDecimal balanceUzs,
         BigDecimal balanceUsd,
         int transactionCount,

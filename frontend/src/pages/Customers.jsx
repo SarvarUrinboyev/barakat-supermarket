@@ -8,6 +8,9 @@ import { EmptyState, Loader, MetricCard, PageHeader } from '../components/ui.jsx
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { formatMoney } from '../lib/format.js';
+import { balanceDisplay, customerOwes } from '../lib/customerBalance.js';
+
+export { customerOwes };
 
 /**
  * Interprets a customer's PER-CURRENCY balance (Gate C Q3): each currency
@@ -21,10 +24,7 @@ export function balanceInfo(balanceUzs, balanceUsd) {
   const d = Number(balanceUsd || 0);
   const owes = u > 0.009 || d > 0.009;
   const holdsCredit = !owes && (u < -0.009 || d < -0.009);
-  const parts = [];
-  if (Math.abs(u) > 0.009) parts.push(formatMoney(Math.abs(u), 'UZS'));
-  if (Math.abs(d) > 0.009) parts.push(formatMoney(Math.abs(d), 'USD'));
-  const display = parts.length ? parts.join(' + ') : formatMoney(0, 'UZS');
+  const display = balanceDisplay(u, d);
   if (owes) {
     return { label: 'Mijoz qarzi', tone: 'red', display, badge: 'badge-qarzga', owes: true };
   }
@@ -32,11 +32,6 @@ export function balanceInfo(balanceUzs, balanceUsd) {
     return { label: 'Bizda qolgan balans', tone: 'green', display, badge: 'badge-naqd', owes: false };
   }
   return { label: 'Hisob teng', tone: 'muted', display: formatMoney(0, 'UZS'), badge: 'badge-muted', owes: false };
-}
-
-/** True when the customer owes in any currency bucket. */
-export function customerOwes(c) {
-  return Number(c.balanceUzs || 0) > 0.009 || Number(c.balanceUsd || 0) > 0.009;
 }
 
 export function Customers() {

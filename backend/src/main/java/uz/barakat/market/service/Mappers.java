@@ -140,17 +140,16 @@ public final class Mappers {
     }
 
     /**
-     * API view of a customer. {@code goodsTotal} / {@code paidTotal} are the
-     * ledger sums; the balance is their difference (positive => owes us).
+     * API view of a customer. The balance is reported per currency
+     * ({@code balanceUzs} / {@code balanceUsd}); there is no merged total.
      */
-    public static CustomerResponse customer(Customer c, BigDecimal goodsTotal,
-                                            BigDecimal paidTotal, BigDecimal balanceUzs,
+    public static CustomerResponse customer(Customer c, BigDecimal balanceUzs,
                                             BigDecimal balanceUsd, int transactionCount) {
         String tier = customerTier(c.getPointsTotalEarned());
         boolean bdayMonth = c.getBirthday() != null
                 && c.getBirthday().getMonthValue() == java.time.LocalDate.now().getMonthValue();
         return new CustomerResponse(c.getId(), c.getName(), c.getPhone(), c.getAddress(),
-                c.getNote(), goodsTotal, paidTotal, balanceUzs, balanceUsd,
+                c.getNote(), balanceUzs, balanceUsd,
                 transactionCount, c.getCreatedAt(),
                 c.getPointsBalance(), c.getPointsTotalEarned(),
                 c.getBirthday(), tier, tierDiscountPercent(tier), bdayMonth,

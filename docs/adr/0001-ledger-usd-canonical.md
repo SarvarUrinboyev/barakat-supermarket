@@ -83,6 +83,26 @@ pre-Gate-C unit); prod rows the old code wrote as so'm since import day are
 corrected out-of-band by the runbook (EXT-1). Proven by
 `CustomerCurrencyBalanceIT` (reproduce the merged "$63 550", then the split).
 
+## Deploy ordering (why the customer-ledger relabel is an ops step, not Flyway)
+
+The generic V40 backfill labels every existing `customer_transactions` row USD.
+Correcting the rows the old code wrote as so'm depends on `products.currency` and
+`sales.currency`/`sale_items.currency` being *correct*, which is only true after
+the P1 ops disposal/relabel has run — so the customer-ledger relabel cannot live
+in the Flyway chain (it would run before P1 on a restored prod dump, and on every
+fresh/test DB where it is meaningless). Mandatory order on deploy night:
+
+1. **V38–V40** (Flyway, automatic) — schema + generic backfills.
+2. **P1 disposal / relabel** (ops runbook §3) — fix `products.currency` for the
+   script-import shop.
+3. **EXT-1 customer-ledger relabel** (ops runbook §3b) — now that products/sales
+   are correct, relabel pure-so'm credit debts; mixed sales go to the worklist.
+4. **Verification** (§4) — re-check per-shop / per-currency counts.
+5. **Resume traffic.**
+
+The EXT-1 SQL is rehearsed by `CustomerLedgerRelabelIT` so it is not first
+executed, untested, on prod.
+
 ## Alternatives rejected
 
 - **Sales posted raw (pre-Gate-C behavior):** overstated revenue ≈ ×kurs once
