@@ -85,6 +85,21 @@ Settings → Branches → add rule for `main`:
 Push policy: feature branches push continuously (CI on every push); `main` =
 releases only.
 
+## Branch & merge constraints
+
+- **`ops/cicd-pipeline` is graph-entangled with Gate C.** It was branched off the
+  Gate C feature HEAD, so it carries all Gate C commits. Working-tree separation
+  is clean (ops touches only `.github/` + `ops/`), but **merge separation is
+  not**: merging `ops/cicd-pipeline` to `main` would drag Gate C in with it.
+  Therefore **merge order is Gate C → `main` first (or both together)**. If an
+  urgent ops-only change must reach `main` before Gate C ships, cherry-pick the
+  ops commit onto a fresh `main`-based branch — no rework, just a stated order.
+- **Superseded local WIP:** the pre-Gate-C host-migration edits to `deploy.yml`
+  (hard-coded `167.172.164.214` → new host) are **superseded** by this workflow's
+  secrets-based `DEPLOY_HOST`/`DEPLOY_USER` design. That local, uncommitted diff
+  should be discarded/archived so it stops surfacing as mystery state in
+  `git status`; nothing in it is needed.
+
 ## Server prerequisites (one-time, during the SSH-restored window)
 
 The release-symlink model needs a small, documented setup — recorded here so the
