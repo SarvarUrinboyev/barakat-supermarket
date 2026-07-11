@@ -7,7 +7,7 @@ import { CurrencyToggle, Loader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useStickyState } from '../hooks/useStickyState.js';
-import { formatDateTime, money, usd } from '../lib/format.js';
+import { formatDateTime, formatMoney, money } from '../lib/format.js';
 
 const REASONS = [
   { value: 'DELIVERY', label: 'Yangi yetkazib berish' },
@@ -130,7 +130,7 @@ function Editor({ isNew, product, categories, movements, rate, reloadAll }) {
     const n = Number(v);
     if (!usdRate || !Number.isFinite(n) || n <= 0) return null;
     return curr === 'UZS'
-      ? `≈ ${usd(uzsToUsd(n))}`
+      ? `≈ ${formatMoney(uzsToUsd(n), 'USD')}`
       : `≈ ${money(Math.round(n * usdRate))} so'm`;
   };
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? '');

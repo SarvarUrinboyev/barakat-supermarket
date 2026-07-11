@@ -10,7 +10,7 @@ import { EmptyState, Loader, MetricCard } from '../components/ui.jsx';
 import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { money, usd } from '../lib/format.js';
+import { money, formatMoney } from '../lib/format.js';
 
 const STATUS_LABEL = { IN_STOCK: 'Mavjud', LOW: 'Kam qoldi', OUT: 'Tugagan' };
 const STATUS_BADGE = { IN_STOCK: 'badge-naqd', LOW: 'badge-karta', OUT: 'badge-qarzga' };
@@ -247,7 +247,7 @@ export function Warehouse() {
                     >
                       <td className="name-cell">{p.name}<ExpiryBadge date={p.expiryDate} /></td>
                       <td className="faint mono">{p.imei1 || '—'}</td>
-                      <td className="num">{usd(p.salePrice)}</td>
+                      <td className="num">{formatMoney(p.salePrice, p.currency)}</td>
                       <td
                         className="num"
                         style={{

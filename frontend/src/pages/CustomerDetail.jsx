@@ -8,7 +8,7 @@ import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, MetricCard } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatDate, todayIso, usd } from '../lib/format.js';
+import { formatDate, formatMoney, todayIso, usd } from '../lib/format.js';
 import { balanceInfo, CustomerFormModal } from './Customers.jsx';
 
 /** Customer detail: contact info, balance and the goods / payment ledger. */
@@ -639,7 +639,7 @@ function GiveGoodsModal({ customer, onSubmit, onPreview, onClose }) {
           customer,
           date,
           items: chosen.map((p) => ({
-            description: `${p.name} × ${qtyOf(p)} @ ${usd(p.salePrice)}`,
+            description: `${p.name} × ${qtyOf(p)} @ ${formatMoney(p.salePrice, p.currency)}`,
             amount: Number(p.salePrice) * qtyOf(p),
           })),
           paid: 0, // on-credit by default
@@ -722,7 +722,7 @@ function GiveGoodsModal({ customer, onSubmit, onPreview, onClose }) {
                 {t('Qoldiq')}: {p.quantity}
               </span>
               <span className="mono" style={{ minWidth: 64, textAlign: 'right' }}>
-                {usd(p.salePrice)}
+                {formatMoney(p.salePrice, p.currency)}
               </span>
               <input
                 className="input qty-input"
