@@ -62,4 +62,8 @@ public class EvidenceItem extends TenantScopedEntity {
 
     @Column(name = "content_hash", nullable = false, length = 64)
     private String contentHash;
+
+    /** Identifies the canonical field set protected by {@link #contentHash}. */
+    @Column(name = "hash_version", nullable = false, length = 32)
+    private String hashVersion;
 }

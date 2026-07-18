@@ -162,9 +162,6 @@ public class SavdoGraphService {
         inputs.put("unit", product.getUnit());
         inputs.put("currency", product.getCurrency());
         String inputData = json(inputs);
-        String hashMaterial = String.join("|", String.valueOf(shopId), String.valueOf(run.getId()),
-                String.valueOf(product.getId()), CALCULATION_ID, CALCULATION_VERSION, inputData);
-
         EvidenceItem evidence = new EvidenceItem();
         evidence.setShopId(shopId);
         evidence.setAnalysisRunId(run.getId());
@@ -179,7 +176,8 @@ public class SavdoGraphService {
         evidence.setCalculatedResult(BigDecimal.valueOf(recommendation));
         evidence.setUnit(product.getUnit());
         evidence.setCurrency(product.getCurrency());
-        evidence.setContentHash(sha256(hashMaterial));
+        evidence.setHashVersion(EvidenceContentHasher.HASH_VERSION);
+        evidence.setContentHash(EvidenceContentHasher.hash(evidence));
         return toResponse(evidenceItems.save(evidence));
     }
 
@@ -348,7 +346,8 @@ public class SavdoGraphService {
             if (item.getEvidenceType() == EvidenceType.REORDER_QUANTITY
                     && CALCULATION_ID.equals(item.getCalculationId())
                     && CALCULATION_VERSION.equals(item.getCalculationVersion())
-                    && item.getCalculatedResult() != null) {
+                    && item.getCalculatedResult() != null
+                    && EvidenceContentHasher.isCanonicalAndValid(item)) {
                 if (matched != null) {
                     throw new BadRequestException("Taklif uchun aynan bitta qayta-buyurtma miqdori dalili kerak");
                 }
@@ -357,7 +356,7 @@ public class SavdoGraphService {
         }
         if (matched == null) {
             throw new BadRequestException(
-                    "Tasdiqlanmagan sonli da'vo rad etildi: server-hisoblangan immutable EvidenceItem talab qilinadi");
+                    "Tasdiqlanmagan sonli da'vo rad etildi: canonical hashli server-hisoblangan immutable EvidenceItem talab qilinadi");
         }
         return matched;
     }
@@ -430,6 +429,7 @@ public class SavdoGraphService {
         }
     }
 
+    /** Hashes non-EvidenceItem snapshots (analysis input and evidence-set provenance). */
     private static String sha256(String value) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
@@ -457,7 +457,7 @@ public class SavdoGraphService {
         return new EvidenceResponse(item.getId(), item.getAnalysisRunId(), item.getProductId(), item.getEvidenceType(),
                 item.getSourceType(), item.getPeriodFrom(), item.getPeriodTo(), item.getCalculationId(),
                 item.getCalculationVersion(), item.getInputData(), item.getCalculatedResult(), item.getUnit(),
-                item.getCurrency(), item.getContentHash(), item.getCreatedAt());
+                item.getCurrency(), item.getContentHash(), item.getHashVersion(), item.getCreatedAt());
     }
 
     private static ProposalResponse toResponse(DecisionProposal proposal) {

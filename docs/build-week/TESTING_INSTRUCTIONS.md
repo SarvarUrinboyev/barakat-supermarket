@@ -205,7 +205,54 @@ an allow-list; and a forced PO failure rolls back final decision/success-ledger
 state. It does not contact an AI provider, supplier, payment system, or a
 production database.
 
-For PostgreSQL parity once Docker is available, use only the isolated local
-staging composition described above, then re-run this focused suite against that
-test database. This repository has no separate Flyway Maven goal; the Spring test
-context is the local Flyway migrate/validate evidence.
+## B1.1 persistence hardening
+
+Run the B1.1 backend regression set on H2:
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -q '-Dtest=SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,ProviderExplanationPayloadMapperTest,EvidenceContentHasherTest,AppendOnlyRepositoryContractTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+```
+
+This verifies canonical evidence-hash coverage, V43/V44 H2 migration boot,
+application-route immutability, cross-tenant proposal/evidence rejection, and
+the static PostgreSQL trigger/constraint contract. H2 does **not** prove the
+PostgreSQL triggers; record `POSTGRES_PARITY=DEFERRED` unless a disposable local
+PostgreSQL run proves them.
+
+For License Server permission registration:
+
+```powershell
+Set-Location .\license-server
+.\mvnw.cmd -q '-Dtest=PermissionServiceTest' test
+```
+
+Do not start an existing Windows PostgreSQL service or reuse an application
+database just to satisfy this gate. PostgreSQL parity requires Docker or a
+separately confirmed disposable localhost database, never a production name,
+credential, or host.
+
+For PostgreSQL migration parity once Docker is available, create a fresh,
+disposable local database; do not reuse a compose service or an application
+database. The controller regression above remains explicitly H2-backed, so use
+the context-smoke test to apply Flyway under the PostgreSQL environment and
+inspect the installed trigger names:
+
+```powershell
+$env:SG_B11_POSTGRES_PASSWORD = [guid]::NewGuid().ToString('N')
+docker run --name savdograph-b11-pg --rm -d -p 55432:5432 `
+  -e POSTGRES_DB=savdograph_b11 -e POSTGRES_USER=savdograph_b11 `
+  -e POSTGRES_PASSWORD=$env:SG_B11_POSTGRES_PASSWORD postgres:16-alpine
+$env:SPRING_DATASOURCE_URL = 'jdbc:postgresql://localhost:55432/savdograph_b11'
+$env:SPRING_DATASOURCE_USERNAME = 'savdograph_b11'
+$env:SPRING_DATASOURCE_PASSWORD = $env:SG_B11_POSTGRES_PASSWORD
+Set-Location .\backend
+.\mvnw.cmd -q '-Dtest=ApplicationContextSmokeTest' test
+docker exec savdograph-b11-pg psql -U savdograph_b11 -d savdograph_b11 -Atc "SELECT tgname FROM pg_trigger WHERE NOT tgisinternal AND tgname LIKE 'trg_sg_%' ORDER BY tgname"
+docker stop savdograph-b11-pg
+Remove-Item Env:SG_B11_POSTGRES_PASSWORD,Env:SPRING_DATASOURCE_URL,Env:SPRING_DATASOURCE_USERNAME,Env:SPRING_DATASOURCE_PASSWORD
+```
+
+Record the actual migration and trigger-runtime result separately; source/static
+tests and trigger-name inspection alone do not prove rejected `UPDATE`/`DELETE`
+behavior.

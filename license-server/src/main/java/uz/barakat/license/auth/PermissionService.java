@@ -36,11 +36,11 @@ public class PermissionService {
             // Backend operational resources (one per controller family)
             "REPORTS", "PRODUCTS", "ORDERS", "DEBTS", "SALES", "PAYMENTS",
             "CUSTOMERS", "SUPPLIERS", "EXPENSES", "MANAGEMENT", "TRANSFERS",
-            "SHIFTS", "SHOPS", "PROMOS");
+            "SHIFTS", "SHOPS", "PROMOS", "SAVDOGRAPH", "SAVDOGRAPH_LEDGER");
     // ADMIN is an owner-level action above WRITE, for destructive/sensitive
     // operations that an ordinary writer (cashier) must not perform — e.g.
     // erasing shift history.
-    static final Set<String> KNOWN_ACTIONS = Set.of("READ", "WRITE", "ADMIN");
+    static final Set<String> KNOWN_ACTIONS = Set.of("READ", "WRITE", "ADMIN", "DECIDE");
 
     private final AppUserRepository users;
 
@@ -135,7 +135,11 @@ public class PermissionService {
                     "TRANSFERS:READ", "TRANSFERS:WRITE",
                     "SHIFTS:READ", "SHIFTS:WRITE", "SHIFTS:ADMIN",
                     "SHOPS:READ", "SHOPS:WRITE",
-                    "PROMOS:READ", "PROMOS:WRITE");
+                    "PROMOS:READ", "PROMOS:WRITE",
+                    // B1.1: both resource names/actions are registered here,
+                    // so the JWT permission model can actually mint B1's gates.
+                    "SAVDOGRAPH:READ", "SAVDOGRAPH:WRITE", "SAVDOGRAPH:DECIDE",
+                    "SAVDOGRAPH_LEDGER:READ");
             // Cashier / shop staff — front-of-shop operations only: ring up
             // sales, take payments, manage customers and their debts, run a
             // shift. No catalogue edits, cost/profit figures, supplier or

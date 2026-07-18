@@ -50,6 +50,8 @@ class PermissionServiceTest {
         assertTrue(service.has(owner, "SALES:WRITE"));
         assertTrue(service.has(owner, "MANAGEMENT:WRITE"));
         assertTrue(service.has(owner, "SHIFTS:ADMIN"));   // may clear shift history
+        assertTrue(service.has(owner, "SAVDOGRAPH:DECIDE"));
+        assertTrue(service.has(owner, "SAVDOGRAPH_LEDGER:READ"));
         // But NOT platform-level account administration (SUPER_ADMIN only).
         assertFalse(service.has(owner, "ACCOUNTS:WRITE"));
     }
@@ -89,12 +91,12 @@ class PermissionServiceTest {
         owner.setId(42L);
         when(users.findById(42L)).thenReturn(Optional.of(owner));
 
-        service.setPermissions(42L, "  products:write , USERS:read,  ");
+        service.setPermissions(42L, "  products:write , SAVDOGRAPH:decide,  ");
 
         ArgumentCaptor<AppUser> captor = ArgumentCaptor.forClass(AppUser.class);
         verify(users).save(captor.capture());
         AppUser saved = captor.getValue();
-        assertEquals("PRODUCTS:WRITE,USERS:READ", saved.getPermissions());
+        assertEquals("PRODUCTS:WRITE,SAVDOGRAPH:DECIDE", saved.getPermissions());
     }
 
     @Test

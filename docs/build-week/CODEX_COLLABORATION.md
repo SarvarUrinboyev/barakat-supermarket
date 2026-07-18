@@ -154,3 +154,24 @@ an `IDEMPOTENT` ledger event and return the original result; opposite decisions
 return a `409` conflict. An approval constructs an existing `PurchaseOrderService`
 request only from server-resolved product/supplier data, checks the result is
 `DRAFT`, and rolls back the decision/result trace if that operation fails.
+
+## B1.1 persistence and financial-semantics gate
+
+`V43` adds `EvidenceItem.hashVersion`: old rows are `B1_LEGACY`; the service
+creates and accepts for new proposals only `B1_CANONICAL_V1`, whose content hash
+covers every calculation-defining evidence field. `V44` is a Java Flyway
+migration: PostgreSQL receives append-only triggers for evidence, final
+decisions, and action-ledger rows plus tenant-reference triggers for evidence,
+proposals, proposal/evidence links, and decisions. H2 deliberately executes no
+PostgreSQL trigger DDL but records the same migration version.
+
+`PermissionService` in the License Server is the permission vocabulary source
+for JWT minting. B1.1 registers `SAVDOGRAPH`, `SAVDOGRAPH_LEDGER`, and
+`DECIDE`; ACCOUNT_OWNER receives read/write/decide/ledger-read defaults. An
+override may be granted but cannot bypass the backend's exact `ACCOUNT_OWNER`
+decision check.
+
+`B2_FINANCIAL_SEMANTICS.md` is binding for B2: only a source-backed Gross
+Profit Brief is eligible when inputs are proven; net profit is prohibited.
+`POSTGRES_PARITY=DEFERRED` until a disposable local PostgreSQL database applies
+V42–V44 and proves the triggers at runtime.

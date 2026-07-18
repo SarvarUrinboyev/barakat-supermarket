@@ -1,8 +1,10 @@
 package uz.barakat.market.savdograph;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -217,6 +219,14 @@ class SavdoGraphControllerIT {
                         .header("Authorization", ownerA).header("X-Shop-Id", b.shopId()))
                 .andExpect(status().isForbidden());
 
+        long runA = createRun(a, ownerA);
+        mvc.perform(post("/api/savdograph/proposals")
+                        .header("Authorization", ownerA).header("X-Shop-Id", a.shopId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("analysisRunId", runA,
+                                "supplierId", a.supplierId(), "evidenceIds", List.of(proposalB.evidenceId())))))
+                .andExpect(status().isNotFound());
+
         MvcResult ledgerResult = mvc.perform(get("/api/savdograph/action-ledger")
                         .header("Authorization", ownerA).header("X-Shop-Id", a.shopId()))
                 .andExpect(status().isOk()).andReturn();
@@ -253,10 +263,34 @@ class SavdoGraphControllerIT {
         EvidenceItem attempt = evidenceItems.findById(evidenceId).orElseThrow();
         BigDecimal original = attempt.getCalculatedResult();
         attempt.setCalculatedResult(BigDecimal.valueOf(999));
-        evidenceItems.saveAndFlush(attempt);
+        evidenceItems.save(attempt);
         EvidenceItem reloaded = evidenceItems.findById(evidenceId).orElseThrow();
         assertThat(reloaded.getCalculatedResult()).isEqualByComparingTo(original);
         TenantContext.clear();
+
+        mvc.perform(put("/api/savdograph/evidence-items/{id}", evidenceId)
+                        .header("Authorization", ownerA).header("X-Shop-Id", a.shopId()))
+                .andExpect(status().isMethodNotAllowed());
+        mvc.perform(delete("/api/savdograph/evidence-items/{id}", evidenceId)
+                        .header("Authorization", ownerA).header("X-Shop-Id", a.shopId()))
+                .andExpect(status().isMethodNotAllowed());
+        mvc.perform(put("/api/savdograph/action-ledger")
+                        .header("Authorization", ownerA).header("X-Shop-Id", a.shopId()))
+                .andExpect(status().isMethodNotAllowed());
+        mvc.perform(delete("/api/savdograph/action-ledger")
+                        .header("Authorization", ownerA).header("X-Shop-Id", a.shopId()))
+                .andExpect(status().isMethodNotAllowed());
+        mvc.perform(put("/api/savdograph/proposals/{id}/approve", evidenceId)
+                        .header("Authorization", ownerA).header("X-Shop-Id", a.shopId()))
+                .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void h2TestProfileRecordsBothB11MigrationVersions() {
+        Integer migrationCount = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM flyway_schema_history WHERE version IN ('43', '44') AND success = TRUE",
+                Integer.class);
+        assertThat(migrationCount).isEqualTo(2);
     }
 
     private ProposalIds createProposal(Fixture fixture, String token) throws Exception {
@@ -286,7 +320,9 @@ class SavdoGraphControllerIT {
                         .header("Authorization", token).header("X-Shop-Id", fixture.shopId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of("analysisRunId", runId, "productId", fixture.productId()))))
-                .andExpect(status().isCreated()).andReturn();
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.hashVersion").value("B1_CANONICAL_V1"))
+                .andReturn();
         return body(result).path("id").asLong();
     }
 

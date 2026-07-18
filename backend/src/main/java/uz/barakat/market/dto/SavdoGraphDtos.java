@@ -69,6 +69,7 @@ public final class SavdoGraphDtos {
             String unit,
             Currency currency,
             String contentHash,
+            String hashVersion,
             LocalDateTime createdAt) {
     }
 

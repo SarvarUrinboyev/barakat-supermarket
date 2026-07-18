@@ -5,6 +5,29 @@ submission. It does not relabel historical SavdoPRO/Barakat work as new.
 
 ## Unreleased — 2026-07-18
 
+### B1.1 persistence and financial-semantics gate
+
+- Added `V43` evidence hash-version metadata and a canonical B1.1 evidence
+  hasher. Existing B1 evidence is explicitly `B1_LEGACY`; only newly created
+  `B1_CANONICAL_V1` evidence with a valid full-payload hash can support a new
+  proposal.
+- Added `V44` PostgreSQL-only Flyway enforcement: immutable evidence,
+  decision, and ledger UPDATE/DELETE triggers; tenant-reference triggers; and
+  B1 enum/value checks. H2 records the Java migration as an intentional no-op.
+- Registered `SAVDOGRAPH`, `SAVDOGRAPH_LEDGER`, and `DECIDE` in the License
+  Server permission vocabulary and ACCOUNT_OWNER defaults.
+- Added `B2_FINANCIAL_SEMANTICS.md`, the source-backed contract that permits a
+  Gross Profit Brief only when currency and cost provenance are sufficient.
+- `POSTGRES_PARITY=DEFERRED`: Docker is unavailable, `postgresql-x64-18` is
+  stopped, no local PostgreSQL CLI/listener is available, and no application
+  database was touched.
+- B1.1 focused H2 regression passed (`11/11`):
+  `mvnw.cmd -q '-Dtest=SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,ProviderExplanationPayloadMapperTest,EvidenceContentHasherTest,AppendOnlyRepositoryContractTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test`.
+  The clean full backend rerun passed (`319/319`, zero failures/errors), after
+  an earlier unrelated asynchronous webhook assertion; its isolated rerun also
+  passed. License Server permissions passed (`157/157`), and both backend and
+  License Server `mvnw.cmd -q -DskipTests package` builds passed.
+
 ### Added
 
 - Established the Build Week provenance baseline at
