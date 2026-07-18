@@ -197,6 +197,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/shifts/**", "/api/balance/**", "/api/terminal/**").access(perm("SHIFTS", "WRITE"))
                         // Local data-mutation audit trail — read-only, owner/finance.
                         .requestMatchers("/api/audit/**").access(perm("AUDIT", "READ"))
+                        // SavdoGraph B1 uses dedicated least-privilege permissions.
+                        // Its service records a denied decision attempt before it rejects
+                        // a non-owner who otherwise has the DECIDE permission.
+                        .requestMatchers(HttpMethod.GET, "/api/savdograph/action-ledger/**")
+                        .access(perm("SAVDOGRAPH_LEDGER", "READ"))
+                        .requestMatchers(HttpMethod.POST, "/api/savdograph/proposals/*/approve",
+                                "/api/savdograph/proposals/*/reject")
+                        .access(perm("SAVDOGRAPH", "DECIDE"))
+                        .requestMatchers(HttpMethod.GET, "/api/savdograph/**").access(perm("SAVDOGRAPH", "READ"))
+                        .requestMatchers("/api/savdograph/**").access(perm("SAVDOGRAPH", "WRITE"))
                         // Acknowledging an anomaly is an owner mutation — must precede the
                         // read-only /api/ai rule below (first match wins), else REPORTS:READ
                         // alone (e.g. a cashier) could clear an alert.

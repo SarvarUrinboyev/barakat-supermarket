@@ -129,3 +129,28 @@ An increment is done only when its source, migration and test changes are on the
 Build Week branch; all relevant checks have exact results; the tenant/permission
 and no-spend constraints have negative tests; the evidence card shows its source
 and limitations; and the changelog clearly marks it as new Build Week work.
+
+## B1 implemented backend contract
+
+`V42__savdograph_foundation.sql` introduces the B1 persistence boundary. Every
+new primary record carries `shop_id`, uses the existing Hibernate tenant filters
+and `TenantScopedEntity` direct-ID guard, and is reached only through the active
+request scope. The recorded server role is the existing `ACCOUNT_OWNER` role;
+`SUPER_ADMIN` and `SHOP_USER` are not treated as a substitute owner for a
+SavdoGraph decision.
+
+| Endpoint | Permission | B1 behavior |
+|---|---|---|
+| `POST /api/savdograph/analysis-runs` | `SAVDOGRAPH:WRITE` | Records `REORDER_LOW_STOCK` period/input/version metadata. |
+| `GET /api/savdograph/analysis-runs/**`, `GET /api/savdograph/evidence-items/**`, `GET /api/savdograph/proposals/**` | `SAVDOGRAPH:READ` | Returns only active-shop data. |
+| `POST /api/savdograph/evidence-items/reorder-quantity` | `SAVDOGRAPH:WRITE` | Calculates the low-stock-gap quantity on the server and stores immutable evidence. |
+| `POST /api/savdograph/proposals` | `SAVDOGRAPH:WRITE` | Requires the immutable server calculation and derives product/quantity from it. |
+| `POST /api/savdograph/proposals/{id}/approve|reject` | `SAVDOGRAPH:DECIDE` plus `ACCOUNT_OWNER` | Appends one final decision or an auditable denied/idempotent/conflict outcome. |
+| `GET /api/savdograph/action-ledger` | `SAVDOGRAPH_LEDGER:READ` | Reads the immutable local decision trace. |
+
+The `proposal_id` database uniqueness constraint plus a pessimistic proposal
+lock makes concurrent/repeated decisions deterministic. Equivalent retries add
+an `IDEMPOTENT` ledger event and return the original result; opposite decisions
+return a `409` conflict. An approval constructs an existing `PurchaseOrderService`
+request only from server-resolved product/supplier data, checks the result is
+`DRAFT`, and rolls back the decision/result trace if that operation fails.

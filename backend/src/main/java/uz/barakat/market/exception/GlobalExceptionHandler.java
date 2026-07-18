@@ -35,6 +35,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return entity(HttpStatus.BAD_REQUEST, ex.getMessage(), req.getRequestURI(), null);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException ex, HttpServletRequest req) {
+        return entity(HttpStatus.FORBIDDEN, ex.getMessage(), req.getRequestURI(), null);
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiError> handleConflict(ConflictException ex, HttpServletRequest req) {
+        return entity(HttpStatus.CONFLICT, ex.getMessage(), req.getRequestURI(), null);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex,
                                                           HttpServletRequest req) {

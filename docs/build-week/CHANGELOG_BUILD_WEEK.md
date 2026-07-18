@@ -18,6 +18,27 @@ submission. It does not relabel historical SavdoPRO/Barakat work as new.
 - Added `TESTING_INSTRUCTIONS.md` and `DEMO_SCRIPT.md` for reproducible,
   non-production validation and demo behavior.
 
+### B1 backend foundation implemented
+
+- Added `V42__savdograph_foundation.sql` with tenant-scoped analysis runs,
+  immutable evidence items, reorder proposals, immutable proposal decisions,
+  proposal-to-evidence links, and append-only action-ledger events.
+- Added typed `/api/savdograph/**` contracts for analysis/evidence/proposal
+  creation and reads, owner approval/rejection, and action-ledger reads. The
+  only B1 numeric recommendation is a server-calculated low-stock-gap reorder
+  quantity; the proposal endpoint accepts no client-provided numeric quantity.
+- Added a provider payload allow-list that contains calculation metadata, period,
+  unit/currency, result, evidence ID and content hash only. It makes no provider
+  call and excludes contacts, addresses, payment data, credentials, tenant/store
+  IDs, product IDs, and free text.
+- Added database-locked idempotent owner decisions. `ACCOUNT_OWNER` approval can
+  create exactly one existing `PurchaseOrder` in `DRAFT`; it does not invoke
+  ordering, receiving, payment, supplier notification, delivery, inventory, or
+  selling-price paths.
+- Added focused B1 HTTP/persistence tests for A/B isolation, direct-ID denial,
+  owner-only decisions, idempotency/conflict, immutable evidence, draft-only PO,
+  ledger outcomes, provider minimization, and transaction rollback.
+
 ### Audited, not implemented
 
 - Existing POS, inventory, forecast/reorder, supplier, purchase-order, generic
@@ -31,6 +52,16 @@ submission. It does not relabel historical SavdoPRO/Barakat work as new.
   production database, production infrastructure or customer data was changed.
 
 ### Validation record
+
+- B1 focused suite passed (`7/7`):
+  `mvnw.cmd -q '-Dtest=SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,ProviderExplanationPayloadMapperTest' test`.
+- Full backend suite passed on its second clean run (`315/315`), after an
+  earlier full-suite run exposed one unrelated asynchronous webhook assertion;
+  `ApiIntegrationFlowTest` also passed when rerun in isolation. No webhook code
+  was changed for B1.
+- `mvnw.cmd -q -DskipTests package` passed. The test profile migrated and
+  validated `V42` against H2 in PostgreSQL compatibility mode. PostgreSQL/Docker
+  parity remains unverified until the local Docker daemon is available.
 
 - Current-HEAD sanitized secret-pattern scan found no high-confidence private
   key, GitHub, OpenAI, AWS, Google, Slack or JWT token-prefix match.

@@ -186,3 +186,26 @@ For every command, record:
 
 Do not mark a Build Week release ready until every applicable row has a fresh,
 recorded result or an explicit, user-accepted blocker.
+
+## B1 focused backend foundation
+
+Run the focused B1 suite on the test-profile H2 database:
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -q '-Dtest=SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,ProviderExplanationPayloadMapperTest' test
+```
+
+It proves the `V42` migration/context can boot on H2; tenant A cannot read or
+decide tenant B's analysis/evidence/proposal records; non-owners are denied and
+that attempt is ledgered; owner approval creates one `PurchaseOrder` in `DRAFT`;
+same-decision retries are idempotent; opposite decisions conflict; no supported
+quantity can bypass immutable server-calculated evidence; the provider mapper is
+an allow-list; and a forced PO failure rolls back final decision/success-ledger
+state. It does not contact an AI provider, supplier, payment system, or a
+production database.
+
+For PostgreSQL parity once Docker is available, use only the isolated local
+staging composition described above, then re-run this focused suite against that
+test database. This repository has no separate Flyway Maven goal; the Spring test
+context is the local Flyway migrate/validate evidence.
