@@ -13,6 +13,7 @@ import {
   displayBackendValue,
   evidenceIdList,
   hasPermission,
+  isReviewPendingStatus,
   isSimulationEligible,
   normalisePermissions,
   parseEvidenceReferences,
@@ -107,6 +108,8 @@ describe('human decision and ledger safety', () => {
   it('53 rejects a reason above the backend 500-character bound', () => expect(() => buildDecisionRequest('x'.repeat(501), 'stable-key')).toThrow(TypeError));
   it('54 rejects a missing idempotency key', () => expect(() => buildDecisionRequest('', '')).toThrow(TypeError));
   it('55 creates a bounded decision key tied to proposal and decision', () => { const key = createDecisionKey(77, 'approve'); expect(key).toContain('sg-77-approve-'); expect(key.length).toBeLessThanOrEqual(120); });
+  it('55a treats the backend PROPOSED state as awaiting owner review', () => expect(isReviewPendingStatus('PROPOSED')).toBe(true));
+  it('55b labels backend DRAFT_CREATED as approved without changing its value', () => expect(statusLabel('DRAFT_CREATED', 'EN')).toBe('Approved'));
   it('56 parses JSON evidence references', () => expect(parseEvidenceReferences('[4,5]')).toEqual([4, 5]));
   it('57 parses bounded numeric references from legacy text', () => expect(parseEvidenceReferences('evidence: 8, 9')).toEqual([8, 9]));
   it('58 ignores invalid evidence references', () => expect(parseEvidenceReferences('none')).toEqual([]));

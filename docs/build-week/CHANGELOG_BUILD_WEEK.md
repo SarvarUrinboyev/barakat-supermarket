@@ -179,3 +179,68 @@ included in this branch.
   Vite build passed; focused B3.5/B1 backend regression passed `17/17`.
 - Browser execution is deferred because Playwright Chromium is not installed;
   `LIVE_OPENAI_SMOKE=DEFERRED`; `POSTGRES_PARITY=DEFERRED`.
+
+### B5.0 release readiness and approval map
+
+- Revalidated the exact B4 descendant from a clean precondition: frontend
+  104/104, production build, zero production dependency vulnerabilities,
+  focused backend 17/17, final full backend 377/377, and backend package.
+- Retained two honest warnings: the known H2 in-memory backup startup error and
+  an initial full-suite webhook timing failure that passed in isolation and on
+  the complete second run.
+- Recorded the current package artifact, size, and SHA-256 without uploading or
+  deploying it.
+- Repeated high-confidence current-tree secret, private-key, PostgreSQL
+  credential, production-bundle, provider-internal, and hidden-reasoning scans;
+  no live credential or production frontend exposure was found.
+- Discovered installed Chrome 150 and added test-only Playwright support for the
+  existing Chrome channel, a managed loopback mock server, permanent Demo Data
+  mode, exact B5 viewports, console/page-error checks, keyboard behavior, and
+  pass-only screenshots. No browser was installed.
+- Fixed the mocked route harness so Vite modules under `src/api` are not returned
+  as JSON. The real browser then exposed a product defect: supplier loading
+  stays pending, blocking supplier selection and the proposal/approval/ledger
+  portion of the B4 journey. Product code was not changed in B5.0 and no pass
+  screenshot is claimed.
+- Confirmed all five OpenAI environment variables are absent without reading
+  values. Source contract remains GPT-5.6 server-side, `store=false`, strict
+  schemas, max five sequential tool calls, and evidence-grounded audit output.
+  No provider request or cost was incurred.
+- Confirmed Docker engine is unavailable, PostgreSQL 18 binaries are installed,
+  the Windows service is stopped, and no local listener exists. Prepared an
+  approval-gated independent temporary-cluster method; no service/database was
+  started and H2 was not relabeled as PostgreSQL parity.
+- Added release readiness, submission checklist, final video script, screenshot
+  shot list, isolated demo topology, judge-account plan, and twelve explicit
+  approval gates.
+- Identified current seed gaps: no visible refund and no tenant-owned demo
+  supplier. A narrow seed-only B5 artifact is required; no production data may
+  be copied.
+- No push, PR, deploy, migration, account creation, traffic change, video
+  upload, `/feedback`, or final submission occurred.
+- Current verdict: `B5_1_SAFE_TO_START=NO`.
+
+### B5.1 final demo blocker remediation
+
+- Added a guarded, idempotent SavdoGraph demo artifact with one real synthetic
+  refund, transaction-time cost provenance, contact-free supplier, simulation,
+  proposal, owner approval/replay, rejection, exactly one DRAFT, and ledger proof.
+- Replaced supplier-loading state coupling with a one-shot request coordinator;
+  duplicate in-flight/repeated loads are suppressed and failure/empty states settle.
+- Aligned frontend labels with backend `PROPOSED` and `DRAFT_CREATED` values
+  without changing the backend state machine.
+- Reproduced the global 390px topbar overflow at 390/643 and fixed it with
+  narrow responsive CSS: shrinkable identity/shop controls, tablet reductions,
+  mobile two-row grid, ellipsis, tighter gaps, and 44px targets.
+- Added executable Chrome geometry coverage for long shop names, accessibility,
+  keyboard controls, sidebar behavior, bounded resize events, desktop/tablet/mobile
+  containment, and SavdoGraph route width.
+- Converted the mocked journey into four independent complete viewport gates;
+  all passed at 1440, 1024, 768, and 390 with zero console/page errors.
+- Captured eight pass-only anonymized screenshots after all viewport gates.
+- Final local validation: frontend 112/112, backend 377/377, audit zero,
+  source/bundle/changed-file scans zero, builds and `git diff --check` passed.
+- No production/deploy file, autonomous action, push, deployment, migration,
+  provider request, public upload, or submission was added/performed.
+- Deferred gates remain `LIVE_OPENAI_SMOKE=DEFERRED` and
+  `POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`.

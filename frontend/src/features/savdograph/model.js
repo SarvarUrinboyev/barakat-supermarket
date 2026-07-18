@@ -174,9 +174,14 @@ export function statusLabel(status, locale = 'UZ') {
   const labels = {
     ANSWERED: 'answered', NEEDS_CLARIFICATION: 'needsClarification', INSUFFICIENT_DATA: 'insufficientData',
     UNSUPPORTED: 'unsupported', PROVIDER_UNAVAILABLE: 'providerUnavailable', REFUSED: 'refused', ERROR: 'error',
-    GROUNDEDNESS_VALIDATION_FAILED: 'groundednessFailure', PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected',
+    GROUNDEDNESS_VALIDATION_FAILED: 'groundednessFailure', PENDING: 'pending', PROPOSED: 'pending',
+    APPROVED: 'approved', DRAFT_CREATED: 'approved', REJECTED: 'rejected',
   };
   return sgText(locale, labels[String(status || '').toUpperCase()] || 'error');
+}
+
+export function isReviewPendingStatus(status) {
+  return ['PROPOSED', 'PENDING'].includes(String(status || '').toUpperCase());
 }
 
 export function displayBackendValue(value, locale = 'UZ') {

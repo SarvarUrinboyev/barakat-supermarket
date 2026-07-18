@@ -8,6 +8,9 @@
 //   E2E_LICENSE_URL     license server origin   (default http://localhost:19090)
 //   DEMO_SEED_PASSWORD  demo_owner's password   (default DemoStaging2026)
 import { defineConfig } from '@playwright/test';
+const savdoGraphMockMode = process.env.E2E_SAVDOGRAPH_MOCK === '1';
+const savdoGraphMockUrl = 'http://127.0.0.1:4174';
+
 
 export default defineConfig({
   testDir: './e2e',
@@ -19,8 +22,15 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  webServer: savdoGraphMockMode ? {
+    command: 'npm run dev -- --host 127.0.0.1 --port 4174',
+    url: savdoGraphMockUrl,
+    reuseExistingServer: false,
+    env: { ...process.env, VITE_DEMO_DATA: 'true' },
+  } : undefined,
   use: {
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:28086',
+    baseURL: savdoGraphMockMode ? savdoGraphMockUrl : (process.env.E2E_BASE_URL || 'http://localhost:28086'),
+    channel: process.env.E2E_BROWSER_CHANNEL || undefined,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     // A system proxy (corp/VPN/AV) can swallow loopback:high-port requests

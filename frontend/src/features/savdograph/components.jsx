@@ -4,6 +4,7 @@ import {
   classificationMeta,
   displayBackendValue,
   evidenceIdList,
+  isReviewPendingStatus,
   parseEvidenceReferences,
   safeStructuredInputs,
   sgText,
@@ -181,6 +182,26 @@ export function SimulationResult({ simulation, productName, locale = 'UZ', onOpe
   );
 }
 
+export function SupplierBridgeControls({
+  locale = 'UZ', suppliers = [], supplierId = '', supplierLoading = false,
+  proposalLoading = false, onSupplierChange, onCreateProposal,
+}) {
+  return (
+    <div className="sg-bridge-bar">
+      <label className="sg-field">
+        <span>{sgText(locale, 'supplier')}</span>
+        <select className="select" value={supplierId} onChange={onSupplierChange} disabled={supplierLoading}>
+          <option value="">{supplierLoading ? sgText(locale, 'loading') : sgText(locale, 'chooseSupplier')}</option>
+          {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
+        </select>
+      </label>
+      <button type="button" className="btn btn-accent" onClick={onCreateProposal} disabled={!supplierId || proposalLoading}>
+        {proposalLoading ? sgText(locale, 'loading') : sgText(locale, 'createProposal')}
+      </button>
+    </div>
+  );
+}
+
 export function ProposalCard({ proposal, decision, canDecide, locale = 'UZ', onOpenEvidence, onDecision }) {
   if (!proposal) return <div className="sg-empty"><span aria-hidden="true">\u2299</span><p>{sgText(locale, 'noProposal')}</p></div>;
   const status = decision?.proposalStatus || proposal.proposalStatus || proposal.status;
@@ -206,7 +227,7 @@ export function ProposalCard({ proposal, decision, canDecide, locale = 'UZ', onO
         <TextList title={sgText(locale, 'limitations')} items={proposal.limitations} />
       </div>
       <EvidenceLinks evidenceIds={proposal.evidenceIds} locale={locale} onOpen={onOpenEvidence} />
-      {canDecide && String(status).toUpperCase() === 'PENDING' && (
+      {canDecide && isReviewPendingStatus(status) && (
         <div className="sg-decision-actions">
           <button type="button" className="btn btn-green" onClick={() => onDecision?.('approve')}>{sgText(locale, 'approveProposal')}</button>
           <button type="button" className="btn btn-red" onClick={() => onDecision?.('reject')}>{sgText(locale, 'rejectProposal')}</button>

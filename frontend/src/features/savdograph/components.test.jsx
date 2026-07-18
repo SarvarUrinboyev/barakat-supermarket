@@ -10,6 +10,7 @@ import {
   LedgerTimeline,
   ProposalCard,
   SimulationResult,
+  SupplierBridgeControls,
 } from './components.jsx';
 
 const render = (node) => renderToStaticMarkup(node);
@@ -94,10 +95,29 @@ describe('SavdoGraph result rendering', () => {
     expect(html).toContain('Tied-up capital');
     expect(html).toContain('Not available');
   });
+  it('keeps supplier selection disabled only while suppliers are loading', () => {
+    const loading = render(<SupplierBridgeControls locale="EN" supplierLoading onSupplierChange={() => {}} />);
+    expect(loading).toMatch(/<select[^>]*disabled=""/);
+
+    const loaded = render(<SupplierBridgeControls locale="EN" suppliers={[{ id: 31, name: 'Demo Supplier' }]} onSupplierChange={() => {}} />);
+    expect(loaded).toContain('Demo Supplier');
+    expect(loaded).not.toMatch(/<select[^>]*disabled=""/);
+
+    const empty = render(<SupplierBridgeControls locale="EN" suppliers={[]} onSupplierChange={() => {}} />);
+    expect(empty).not.toMatch(/<select[^>]*disabled=""/);
+  });
+
+  it('enables proposal creation only after a valid supplier is selected', () => {
+    const missing = render(<SupplierBridgeControls locale="EN" supplierId="" onSupplierChange={() => {}} />);
+    expect(missing).toMatch(/<button[^>]*disabled=""[^>]*>Create proposal for review/);
+
+    const selected = render(<SupplierBridgeControls locale="EN" supplierId="31" onSupplierChange={() => {}} />);
+    expect(selected).not.toMatch(/<button[^>]*disabled=""[^>]*>Create proposal for review/);
+  });
 });
 
 describe('SavdoGraph human review and immutable history', () => {
-  const proposal = { proposalId: 41, proposalStatus: 'PENDING', productDisplayName: 'Tea', supplierDisplayName: 'Supplier A', reorderQuantity: 6, classification: 'ESTIMATED', evidenceIds: [9], assumptions: ['Seven-day horizon'], risks: ['Demand can change'] };
+  const proposal = { proposalId: 41, proposalStatus: 'PROPOSED', productDisplayName: 'Tea', supplierDisplayName: 'Supplier A', reorderQuantity: 6, classification: 'ESTIMATED', evidenceIds: [9], assumptions: ['Seven-day horizon'], risks: ['Demand can change'] };
 
   it('hides decision controls without owner authority', () => {
     const html = render(<ProposalCard locale="EN" proposal={proposal} canDecide={false} />);

@@ -16,7 +16,7 @@ class DemoDataSeederGuardTest {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles(profiles);
         // Only env + the flag participate in enabled(); the rest are unused here.
-        return new DemoDataSeeder(env, null, prop, null, null, null, null, null, null, null, null);
+        return new DemoDataSeeder(env, null, prop, null, null, null, null, null, null, null, null, null);
     }
 
     @Test

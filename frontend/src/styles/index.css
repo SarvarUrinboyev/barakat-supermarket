@@ -4134,6 +4134,62 @@ textarea.input { resize: vertical; min-height: 110px; font-family: inherit; }
   .app-shell.sidebar-collapsed .main { margin-left: 0; }
 }
 
+/* Keep the global app identity and actions usable as the desktop shell narrows. */
+@media (max-width: 900px) {
+  .topbar {
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0 20px;
+  }
+  .breadcrumb { min-width: 0; flex: 1; }
+  .bc-base, .bc-sep { display: none; }
+  .bc-page {
+    max-width: 100%; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .shop-switcher { min-width: 0; max-width: min(240px, 35vw); margin-right: 0; }
+  .shop-switcher-button { max-width: 100%; min-width: 0; }
+  .shop-switcher-button .ss-name { min-width: 0; }
+  .topbar .right { flex-shrink: 0; gap: 10px; }
+  .topbar .date { display: none; }
+}
+
+/* Mobile uses the same controls in two contained rows instead of clipping them. */
+@media (max-width: 720px) {
+  .topbar {
+    height: auto;
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "menu identity actions"
+      "shop shop shop";
+    align-items: center;
+    justify-content: normal;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .nav-toggle {
+    grid-area: menu;
+    width: 44px; height: 44px; margin-right: 0;
+  }
+  .breadcrumb { grid-area: identity; }
+  .shop-switcher {
+    grid-area: shop;
+    width: 100%; max-width: none;
+  }
+  .shop-switcher-button {
+    width: 100%; min-height: 44px;
+  }
+  .shop-switcher-button .ss-name {
+    max-width: none; min-width: 0; flex: 1;
+  }
+  .shop-switcher-menu { right: 0; left: 0; min-width: 0; }
+  .topbar .right { grid-area: actions; justify-self: end; gap: 8px; }
+  .topbar .lang-select { min-height: 44px; }
+  .topbar .icon-btn { min-width: 44px; min-height: 44px; }
+}
+
 /* a11y polish: focus ring on the drawer close, and honour reduced-motion */
 .sidebar-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {

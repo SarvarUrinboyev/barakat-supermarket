@@ -390,3 +390,166 @@ It requires a separate local Vite server. The B4 machine has no Playwright
 Chromium executable, so `BROWSER_VERIFICATION=DEFERRED`. Do not download a
 browser or access staging/production without the B5 approval gate.
 `LIVE_OPENAI_SMOKE=DEFERRED`; `POSTGRES_PARITY=DEFERRED`.
+
+## B5.0 release-readiness validation - 2026-07-18/19
+
+B5.0 reran the release gates without installing software, starting services,
+contacting OpenAI, connecting to a database/server, pushing, or deploying.
+
+### Verified commands and results
+
+Frontend from `frontend`:
+
+```powershell
+npm test -- --reporter=dot
+npm run build
+npm audit --omit=dev
+```
+
+Results:
+
+- Vitest: 6 files, 104/104 tests, exit 0.
+- Vite production build: 524 modules, exit 0. The pre-existing 938.60 kB
+  `ExportButton` chunk warning remains.
+- Production dependency audit: 0 vulnerabilities, exit 0.
+
+Backend from `backend`:
+
+```powershell
+.\mvnw.cmd '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphControllerIT' test
+.\mvnw.cmd -q test
+.\mvnw.cmd -DskipTests package
+```
+
+Results:
+
+- focused bridge/decision slice: 17/17, exit 0;
+- first full run: 376/377 with one
+  `ApiIntegrationFlowTest.webhookEnqueueAndDispatchMarksDelivered` failure;
+- isolated rerun of that test: 1/1, exit 0;
+- complete final rerun: 377/377, zero failures/errors/skips, exit 0;
+- package: exit 0; current JAR SHA-256 is recorded in
+  `B5_RELEASE_READINESS.md`.
+
+The first-run webhook failure is a retained flaky-test risk. H2 startup also
+continues to log the known non-fatal in-memory backup error. Neither warning was
+hidden or cleared with unrelated product changes.
+
+License Server tests/package were not rerun because B3 through B4 changed no
+License Server permission model or files.
+
+### Existing Chrome mocked journey
+
+No Playwright browser installation is required on this machine. Chrome 150 is
+available through channel `chrome`. The B5 mocked command is:
+
+```powershell
+Set-Location .\frontend
+$env:E2E_SAVDOGRAPH_MOCK = '1'
+$env:E2E_BROWSER_CHANNEL = 'chrome'
+.\node_modules\.bin\playwright.cmd test e2e/savdograph.mock.spec.js
+```
+
+The Playwright config owns a loopback Vite server at `127.0.0.1:4174`, sets
+`VITE_DEMO_DATA=true`, and keeps every business API mocked. The test checks
+`1440x900`, `1024x768`, `768x1024`, and `390x844`; Demo label; overflow;
+console/page errors; and Escape/focus-return behavior. Screenshots are written
+only after all functional and responsive assertions pass.
+
+Current result is `BROWSER_VERIFICATION=BLOCKED_PRODUCT_DEFECT`. The journey
+reaches reorder simulation, but the supplier select remains disabled because
+the supplier-loading effect depends on and mutates `supplierLoading`; cleanup
+invalidates the in-flight result. Do not capture submission screenshots or
+claim proposal/approval/ledger browser proof until this product defect is fixed
+and the same command passes end to end.
+
+### OpenAI readiness check
+
+Do not inspect or print values. Check presence only:
+
+```powershell
+$names = @(
+  'OPENAI_API_KEY',
+  'OPENAI_MODEL',
+  'OPENAI_REASONING_EFFORT',
+  'OPENAI_MAX_OUTPUT_TOKENS',
+  'OPENAI_TIMEOUT_SECONDS'
+)
+foreach ($name in $names) {
+  $present = -not [string]::IsNullOrWhiteSpace(
+    [Environment]::GetEnvironmentVariable($name))
+  "$name=$(if ($present) { 'PRESENT' } else { 'ABSENT' })"
+}
+```
+
+All five were absent during B5.0. `LIVE_OPENAI_SMOKE_READY=NO`; no provider
+request was sent. A future smoke requires explicit credential-use/cost approval
+and a server-side-only key in an isolated demo environment.
+
+### PostgreSQL readiness check
+
+Docker engine is unavailable. PostgreSQL 18 client/server/init binaries are
+installed, while the `postgresql-x64-18` Windows service is Manual/Stopped and
+no listener exists on 5432, 5433, or 55432. The service was not started.
+
+`POSTGRES_PARITY_READY=YES` means an independent temporary cluster can be
+created under a validated `C:\tmp\savdograph-b5-pg` path using installed
+`initdb`/`pg_ctl`, without using the Windows service cluster. Runtime parity is
+still `BLOCKED_NEEDS_APPROVAL` and `NOT_STARTED`. It must apply V1-V46, inspect
+V44/V45/V46, prove append-only and uniqueness behavior with synthetic rows,
+then stop and remove only the validated temporary cluster. H2 never counts as
+this proof.
+
+### Final B5.0 status
+
+- `LIVE_OPENAI_SMOKE_READY=NO`
+- `POSTGRES_PARITY_READY=YES` (method ready; result not run)
+- `BROWSER_VERIFICATION=BLOCKED_PRODUCT_DEFECT`
+- `B5_1_SAFE_TO_START=NO`
+
+See `B5_RELEASE_READINESS.md` for exact timestamps, artifact hash, security
+scan results, deployment topology, demo seed gaps, and the approval table.
+
+## B5.1 final responsive and release validation - 2026-07-19
+
+Use JDK 21 by prepending `$env:JAVA_HOME\bin` for backend commands. The exact
+fresh gates were:
+
+```powershell
+Set-Location .\frontend
+$env:E2E_SAVDOGRAPH_MOCK = '1'
+$env:E2E_BROWSER_CHANNEL = 'chrome'
+.\node_modules\.bin\playwright.cmd test e2e\topbar.responsive.spec.js
+.\node_modules\.bin\playwright.cmd test e2e\savdograph.mock.spec.js
+.\node_modules\.bin\vitest.cmd run src\features\savdograph --reporter=dot
+npm test -- --reporter=dot
+npm run build
+npm audit --omit=dev
+
+Set-Location ..\backend
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+.\mvnw.cmd '-Dtest=DemoDataSeederGuardTest,DemoDataSeederIT' test
+.\mvnw.cmd '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphProposalBridgeRollbackIT,SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,SavdoGraphB2ControllerIT,SavdoGraphB3ControllerIT,OpenAiResponsesStoreCopilotProviderTest,StoreCopilotGroundingValidatorTest,StoreCopilotServiceTest,AppendOnlyRepositoryContractTest,EvidenceContentHasherTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+.\mvnw.cmd -q test
+.\mvnw.cmd -q -DskipTests package
+```
+
+Results:
+
+- focused responsive Chrome: 1/1 passed with executable geometry at 1440/1024/768/390;
+- full mocked Chrome: 5/5 passed; screenshots gated after four independent journeys;
+- geometry: 1440/1440, 1024/1024, 768/768, and 390/390
+  (`clientWidth/document scrollWidth/body scrollWidth` all equal);
+- browser errors: console 0 and page 0 at every viewport;
+- focused SavdoGraph: 99/99; full frontend: 112/112;
+- build: 525 modules, exit 0; audit: 0 vulnerabilities;
+- seed: 6/6; affected B1/B2/B3/B3.5: 68/68;
+- full backend: 377/377, zero failures/errors/skips; package: exit 0, JAR SHA-256 `2dc2bd3c395381cecb00a89f6c2244b2f348c7c94a40cbc4a1b2523193ea652d`;
+- frontend source, production bundle, and changed-file high-confidence scans: zero;
+- `git diff --check`: exit 0.
+
+The initial sandboxed Vitest startup attempts hit Windows `spawn EPERM` before
+loading tests; the same commands passed outside that process sandbox. H2's
+non-persistent backup-startup warning is retained and does not count as
+PostgreSQL parity. Keep `LIVE_OPENAI_SMOKE=DEFERRED` and
+`POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`.

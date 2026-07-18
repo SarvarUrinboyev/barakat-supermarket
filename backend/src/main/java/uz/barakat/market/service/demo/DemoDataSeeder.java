@@ -22,13 +22,19 @@ import uz.barakat.market.domain.CustomerTransaction;
 import uz.barakat.market.domain.CustomerTxType;
 import uz.barakat.market.domain.PaymentType;
 import uz.barakat.market.domain.Product;
+import uz.barakat.market.domain.Supplier;
 import uz.barakat.market.dto.ExpenseRequest;
 import uz.barakat.market.dto.PosDtos.CartItem;
 import uz.barakat.market.dto.PosDtos.CheckoutRequest;
+import uz.barakat.market.dto.PosDtos.RefundItemRequest;
+import uz.barakat.market.dto.PosDtos.RefundRequest;
+import uz.barakat.market.dto.PosDtos.SaleItemResponse;
+import uz.barakat.market.dto.PosDtos.SaleResponse;
 import uz.barakat.market.repository.CategoryRepository;
 import uz.barakat.market.repository.CustomerRepository;
 import uz.barakat.market.repository.CustomerTransactionRepository;
 import uz.barakat.market.repository.ProductRepository;
+import uz.barakat.market.repository.SupplierRepository;
 import uz.barakat.market.service.ExpenseService;
 import uz.barakat.market.service.LedgerBackfillService;
 import uz.barakat.market.service.PosService;
@@ -50,9 +56,10 @@ import uz.barakat.market.service.TransferService.TransferRequest;
  * <h2>Idempotency</h2>
  * All demo tenants live in a reserved high id band (accounts 90001/90002,
  * shops 90101/90102/90201) inserted with an explicit-id {@code INSERT …
- * WHERE NOT EXISTS} guard. If demo account A (90001) already exists the
- * whole run is skipped, so a restart never duplicates rows and never
- * touches real (non-demo) tenants.
+ * WHERE NOT EXISTS} guard. The SavdoGraph journey artifact has independent
+ * product, supplier, checkout, and refund guards so an existing reserved demo
+ * tenant can be upgraded without duplicates. Its exact account/shop ownership
+ * is verified before any write, so real (non-demo) tenants are never touched.
  *
  * <h2>Why it calls the real services</h2>
  * Sales go through {@link PosService#checkout} and expenses through
@@ -73,6 +80,9 @@ public class DemoDataSeeder implements ApplicationRunner {
     static final long SHOP_A_MAIN = 90_101L;   // Barokat Demo — Markaziy
     static final long SHOP_A_BRANCH = 90_102L; // Barokat Demo — Filial
     static final long SHOP_B_MAIN = 90_201L;   // Raqobatchi Demo Do'kon
+    static final String SAVDOGRAPH_PRODUCT_BARCODE = "4780001090001";
+    static final String SAVDOGRAPH_CHECKOUT_REF = "demo-savdograph-b5-1-v1";
+    static final String SAVDOGRAPH_SUPPLIER_NAME = "Demo Supplier";
 
     private final Environment env;
     private final JdbcTemplate jdbc;
@@ -85,13 +95,14 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final ExpenseService expenses;
     private final TransferService transfers;
     private final LedgerBackfillService ledgerBackfill;
+    private final SupplierRepository suppliers;
 
     public DemoDataSeeder(Environment env, JdbcTemplate jdbc,
                           @Value("${app.demo-seed.enabled:false}") boolean propEnabled,
                           ProductRepository products, CategoryRepository categories,
                           CustomerRepository customers, CustomerTransactionRepository customerTx,
                           PosService pos, ExpenseService expenses, TransferService transfers,
-                          LedgerBackfillService ledgerBackfill) {
+                          LedgerBackfillService ledgerBackfill, SupplierRepository suppliers) {
         this.env = env;
         this.jdbc = jdbc;
         this.propEnabled = propEnabled;
@@ -103,6 +114,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         this.expenses = expenses;
         this.transfers = transfers;
         this.ledgerBackfill = ledgerBackfill;
+        this.suppliers = suppliers;
     }
 
     @Override
@@ -121,14 +133,23 @@ public class DemoDataSeeder implements ApplicationRunner {
         }
     }
 
-    /** Idempotency guard: seed the demo tenants once; a second call is a no-op. */
+    /** Idempotency guard for the base seed plus the independently guarded B5.1 artifact. */
     void seedOnce() {
         if (accountExists(ACCOUNT_A)) {
-            log.info("Demo data already present (account {}) — skipping seed.", ACCOUNT_A);
+            if (!reservedSavdoGraphScopeOwned()) {
+                log.warn("Reserved demo account {} is not the expected demo scope — refusing B5.1 seed.", ACCOUNT_A);
+                return;
+            }
+            seedSavdoGraphJourney();
+            log.info("Reserved demo data already present; SavdoGraph B5.1 artifact verified idempotently.");
             return;
         }
         log.info("ALLOW_DEMO_SEED on — seeding guarded demo/staging data …");
         seedAll();
+        if (!reservedSavdoGraphScopeOwned()) {
+            throw new IllegalStateException("Reserved SavdoGraph demo scope was not created exactly");
+        }
+        seedSavdoGraphJourney();
         log.info("Demo seed complete. Accounts A={} B={}; shops A-main={} A-branch={} B={}.",
                 ACCOUNT_A, ACCOUNT_B, SHOP_A_MAIN, SHOP_A_BRANCH, SHOP_B_MAIN);
     }
@@ -311,6 +332,83 @@ public class DemoDataSeeder implements ApplicationRunner {
         }
     }
 
+    // =============================================== SavdoGraph B5.1 artifact
+
+    private boolean reservedSavdoGraphScopeOwned() {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM accounts a JOIN shops s ON s.account_id = a.id "
+                + "WHERE a.id = ? AND a.name LIKE 'DEMO%' "
+                + "AND s.id = ? AND s.account_id = ? AND s.name LIKE 'Barokat Demo%'",
+                Integer.class, ACCOUNT_A, SHOP_A_MAIN, ACCOUNT_A);
+        return count != null && count == 1;
+    }
+
+    /**
+     * Adds only anonymized, contact-free records required by the SavdoGraph
+     * demo journey. Every lookup is constrained by the reserved demo shop.
+     */
+    private void seedSavdoGraphJourney() {
+        if (!reservedSavdoGraphScopeOwned()) {
+            throw new IllegalStateException("SavdoGraph demo seed refused outside its reserved account/shop");
+        }
+        TenantContext.setShopId(SHOP_A_MAIN);
+        try {
+            ensureDemoSupplier();
+            Long categoryId = categories.findFirstByNameIgnoreCase("Oziq-ovqat")
+                    .map(Category::getId)
+                    .orElseGet(() -> category("Oziq-ovqat"));
+            P demoProduct = products.findFirstByBarcode(SAVDOGRAPH_PRODUCT_BARCODE)
+                    .map(product -> new P(product.getId()))
+                    .orElseGet(() -> product("Demo Sut 1L", SAVDOGRAPH_PRODUCT_BARCODE,
+                            categoryId, 9_000, 12_000, 15, 5, "dona"));
+
+            SaleResponse sale = checkout(SAVDOGRAPH_CHECKOUT_REF, PaymentType.NAQD, null,
+                    line(demoProduct, 12));
+            List<SaleItemResponse> lines = sale.items().stream()
+                    .filter(item -> demoProduct.id().equals(item.productId()))
+                    .toList();
+            if (lines.size() != 1 || lines.get(0).quantity() != 12) {
+                throw new IllegalStateException("SavdoGraph demo checkout does not match its canonical product line");
+            }
+            SaleItemResponse item = lines.get(0);
+            if (item.refundedQty() == 0) {
+                pos.refund(sale.id(), new RefundRequest(
+                        List.of(new RefundItemRequest(item.id(), 1)),
+                        "Demo: one visible SavdoGraph refund"));
+            } else if (item.refundedQty() != 1) {
+                throw new IllegalStateException("SavdoGraph demo refund is outside its canonical one-unit state");
+            }
+
+            // Idempotently captures all new accounting events in the same demo scope.
+            ledgerBackfill.run();
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void ensureDemoSupplier() {
+        List<Supplier> matching = suppliers.findAllByOrderByNameAsc().stream()
+                .filter(supplier -> SAVDOGRAPH_SUPPLIER_NAME.equals(supplier.getName()))
+                .toList();
+        if (matching.size() > 1) {
+            throw new IllegalStateException("SavdoGraph demo supplier is duplicated");
+        }
+        if (matching.isEmpty()) {
+            Supplier supplier = new Supplier();
+            supplier.setName(SAVDOGRAPH_SUPPLIER_NAME);
+            suppliers.save(supplier);
+            return;
+        }
+        Supplier supplier = matching.get(0);
+        if (notBlank(supplier.getPhone()) || notBlank(supplier.getAddress()) || notBlank(supplier.getNote())) {
+            throw new IllegalStateException("SavdoGraph demo supplier must remain contact-free");
+        }
+    }
+
+    private static boolean notBlank(String value) {
+        return value != null && !value.isBlank();
+    }
+
     // ============================================================ helpers
 
     /** Lightweight holder so checkout lines can reference a created product. */
@@ -352,11 +450,15 @@ public class DemoDataSeeder implements ApplicationRunner {
         return new CartItem(product.id(), qty, BigDecimal.ZERO, null);
     }
 
-    private void checkout(PaymentType method, Long customerId, CartItem... items) {
+    private SaleResponse checkout(PaymentType method, Long customerId, CartItem... items) {
+        return checkout(null, method, customerId, items);
+    }
+
+    private SaleResponse checkout(String clientRef, PaymentType method, Long customerId, CartItem... items) {
         CheckoutRequest req = new CheckoutRequest(
                 List.of(items), BigDecimal.ZERO, BigDecimal.ZERO,
-                method.name(), customerId, "Demo savdo", null);
-        pos.checkout(req, "demo-kassir");
+                method.name(), customerId, "Demo savdo", clientRef);
+        return pos.checkout(req, "demo-kassir");
     }
 
     private void goods(Long customerId, String description, long amount) {

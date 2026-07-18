@@ -31,7 +31,9 @@ import {
   LedgerTimeline,
   ProposalCard,
   SimulationResult,
+  SupplierBridgeControls,
 } from '../features/savdograph/components.jsx';
+import { createSupplierLoader } from '../features/savdograph/supplierLoader.js';
 import '../styles/savdograph.css';
 
 function isoShift(days, from = new Date()) {
@@ -167,6 +169,8 @@ export function SavdoGraph() {
   const [evidenceDrawer, setEvidenceDrawer] = useState({ open: false, id: null, evidence: null, loading: false, error: '' });
   const [decisionDialog, setDecisionDialog] = useState({ open: false, kind: null, reason: '', pending: false, error: '' });
   const decisionKeyRef = useRef(null);
+  const supplierLoaderRef = useRef(null);
+  if (!supplierLoaderRef.current) supplierLoaderRef.current = createSupplierLoader(() => SupplierApi.list());
 
   const latestTimestamp = brief?.generatedAt || askResponse?.generatedAt || simulation?.generatedAt || proposal?.createdAt;
   const eligible = isSimulationEligible(simulation);
@@ -189,15 +193,14 @@ export function SavdoGraph() {
   useEffect(() => { loadLedger(); }, [loadLedger]);
 
   useEffect(() => {
-    if (!eligible || suppliers.length > 0 || supplierLoading || !singleStore) return;
-    let current = true;
+    const loader = supplierLoaderRef.current;
+    if (!eligible || !singleStore || loader.state !== 'idle') return;
     setSupplierLoading(true);
-    SupplierApi.list()
-      .then((result) => { if (current) setSuppliers(Array.isArray(result) ? result.map(({ id, name }) => ({ id, name })) : []); })
-      .catch((error) => { if (current) setProposalError(localizedError(error, locale)); })
-      .finally(() => { if (current) setSupplierLoading(false); });
-    return () => { current = false; };
-  }, [eligible, locale, singleStore, supplierLoading, suppliers.length]);
+    loader.load()
+      .then(setSuppliers)
+      .catch((error) => setProposalError(localizedError(error, locale)))
+      .finally(() => setSupplierLoading(false));
+  }, [eligible, locale, singleStore]);
 
   async function generateBrief(event) {
     event.preventDefault();
@@ -391,10 +394,15 @@ export function SavdoGraph() {
           {simulationError && <AsyncNotice tone="error">{simulationError}</AsyncNotice>}
           {simulationLoading ? <div className="sg-skeleton-stack" aria-label={t('loading')}><i /><i /><i /></div> : <SimulationResult simulation={simulation} productName={simulationProduct?.name} locale={locale} onOpenEvidence={openEvidence} />}
           {eligible && (
-            <div className="sg-bridge-bar">
-              <label className="sg-field"><span>{t('supplier')}</span><select className="select" value={supplierId} onChange={(event) => setSupplierId(event.target.value)} disabled={supplierLoading}><option value="">{supplierLoading ? t('loading') : t('chooseSupplier')}</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>
-              <button type="button" className="btn btn-accent" onClick={createProposal} disabled={!supplierId || proposalLoading}>{proposalLoading ? t('loading') : t('createProposal')}</button>
-            </div>
+            <SupplierBridgeControls
+              locale={locale}
+              suppliers={suppliers}
+              supplierId={supplierId}
+              supplierLoading={supplierLoading}
+              proposalLoading={proposalLoading}
+              onSupplierChange={(event) => setSupplierId(event.target.value)}
+              onCreateProposal={createProposal}
+            />
           )}
           {proposalError && <AsyncNotice tone="error">{proposalError}</AsyncNotice>}
         </Section>

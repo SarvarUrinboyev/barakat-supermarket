@@ -230,3 +230,86 @@ evidence, quantity, classification and tenant authority are not copied into the
 request. Approval/rejection is a separate dialog and is not rendered complete
 until the backend confirms it. B4 changes no backend, formula, evidence,
 provider/tool, permission, idempotency, PO, deployment or production semantics.
+
+## B5.0 release-readiness collaboration
+
+Codex performed this mission directly in the existing worktree. No additional
+subagent was started for B5.0. The release-readiness boundary was treated as a
+hard safety contract: local inspection and validation were allowed; external or
+stateful actions remained approval-gated.
+
+### Direct evidence collected
+
+- exact root, branch, HEAD, clean precondition, milestone ancestry, and absence
+  of interrupted Git operations;
+- frontend tests/build/audit and backend focused/full/package results with
+  timestamps and totals;
+- sanitized current-tree and production-bundle security scans;
+- installed browser/version and Playwright cache/configuration;
+- server environment-variable presence only, never values;
+- Docker/PostgreSQL binaries, service state, listeners, migration chain, and
+  disposable runtime options;
+- sanitized remote host, existing refs/tags, upstream status, README gaps,
+  deployment templates, guarded demo seeds, and CI gates.
+
+### Actions deliberately not taken
+
+- no push, PR, tag, merge, release, deploy, server connection, SSH-key access,
+  DNS/Nginx change, service start/restart, database creation/migration, account
+  creation, OpenAI request, browser installation, video upload, `/feedback`, or
+  Devpost submission;
+- no production data, credentials, customer/supplier contacts, or raw provider
+  payloads were read or printed;
+- no product-code fix was made after the browser exposed the supplier-loading
+  defect;
+- no pass screenshot was captured from an incomplete journey.
+
+### Browser truth finding
+
+The existing mocked test initially intercepted Vite module URLs containing
+`/api/` and returned JSON, producing a blank page. Codex narrowed the test route
+to true `/api/` paths and added a loopback server/system-Chrome configuration.
+The corrected run reached the real SavdoGraph UI and exposed the supplier effect
+bug. This distinction matters: the harness issue was fixed in test-only code;
+the product issue remains an explicit B5.1 blocker.
+
+### Approval discipline
+
+The final map keeps twelve actions separate: existing browser use, optional
+browser install, live OpenAI smoke, temporary PostgreSQL runtime, demo database,
+Git push, demo deploy, demo migration, judge account, Nginx/DNS/traffic, video
+upload, and final submission. Approval for one must never be inferred as
+approval for another.
+
+### Handoff truth
+
+Starting release baseline is full commit
+`27f1c04c9a935bd0496fb4f814f3e950f99ac634`. B5.0 release documentation and
+safe mocked-browser changes remain uncommitted because the complete local
+browser gate did not pass. The next mission must fix the narrow product defect,
+complete the seed gaps, rerun the full journey, and re-evaluate the commit gate.
+Current verdict: `B5_1_SAFE_TO_START=NO`.
+
+## B5.1 retry collaboration record
+
+The retry authorization was applied narrowly. Codex first re-verified the exact
+repository, branch, starting HEAD, and the explained B5 worktree; it did not
+reset, stash, clean, switch, or discard anything. Real Chrome measurements
+identified the global topbar, shop switcher, and right controls as the width
+owners before product CSS changed.
+
+Implementation stayed CSS-first and inside the existing shell. No auth/shop/
+theme behavior, provider contract, backend formulas, evidence semantics,
+proposal state, permission model, deployment file, or production system was
+changed. Notification/user controls were not removed; the current shell exposes
+shop, language, theme, date, sidebar, and existing account controls unchanged.
+
+Codex added a focused long-name browser regression and made the complete mocked
+decision journey run independently at every required viewport. Screenshots were
+withheld until all four journey gates passed. The final evidence is Chrome
+150.0.7871.125, equal client/scroll/body widths at every viewport, zero browser
+errors, frontend 112/112, backend 377/377, and zero high-confidence secret hits.
+
+No external authority was inferred. `LIVE_OPENAI_SMOKE=DEFERRED`;
+`POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`; push, deploy,
+migration, account, traffic, video upload, and submission remain separate gates.
