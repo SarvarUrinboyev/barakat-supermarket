@@ -295,3 +295,50 @@ Run the affected B1/B2/B3 regression set, then the full backend suite and packag
 B3 reuses the already registered `SAVDOGRAPH:READ` permission and does not change the License Server permission vocabulary, so the License Server is not touched by this increment. H2/Flyway is exercised by `SavdoGraphB3ControllerIT` and the affected/full suites. Use the existing sanitized dependency and secret checks; do not print matched secret values.
 
 `LIVE_OPENAI_SMOKE=DEFERRED` when no safe key already exists. Do not request or display a key. `POSTGRES_PARITY=DEFERRED` until a disposable PostgreSQL runtime is genuinely validated; do not start the stopped Windows PostgreSQL service.
+
+## B3.5 canonical simulation-to-review bridge
+
+Run the focused bridge slice on the test-profile H2 database:
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -q '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphProposalBridgeRollbackIT' test
+```
+
+Current focused result: `12/12`, zero failures/errors/skips. It covers exact
+B2 evidence reconstruction, `ESTIMATED` eligibility, strict supplier-only input,
+tenant isolation, tamper/missing/duplicate/cross-run/cross-unit rejection,
+positive integral quantity bounds, database-backed retry/concurrency safety,
+transaction rollback, one success ledger, no PurchaseOrder/stock/price/provider
+side effects, and existing owner-only idempotent DRAFT approval.
+
+Run the affected B1/B2/B3/B3.5 regression set:
+
+```powershell
+.\mvnw.cmd -q '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphProposalBridgeRollbackIT,SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,SavdoGraphB2ControllerIT,SavdoGraphB3ControllerIT,OpenAiResponsesStoreCopilotProviderTest,StoreCopilotGroundingValidatorTest,StoreCopilotServiceTest,AppendOnlyRepositoryContractTest,EvidenceContentHasherTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+```
+
+Then run the full backend suite and package:
+
+```powershell
+.\mvnw.cmd -q test
+.\mvnw.cmd -q -DskipTests package
+```
+
+B3.5 changes no permission vocabulary, so License Server tests are not required.
+H2/Flyway validates V46 in the focused, affected, and full suites. Record
+`POSTGRES_PARITY=DEFERRED` unless a separately approved disposable PostgreSQL
+runtime proves the migration; do not start the stopped Windows service. Keep
+`LIVE_OPENAI_SMOKE=DEFERRED`; this bridge has no provider path and needs no key.
+
+Validation record for this increment:
+
+- focused bridge: `12/12`, passed;
+- affected B1/B2/B3/B3.5: `68/68`, zero failures/errors/skips;
+- full backend: `377/377`, zero failures/errors/skips;
+- backend package: passed (`mvnw.cmd -q -DskipTests package`);
+- changed-file high-confidence secret scan: zero private-key/token/JWT-prefix matches;
+- frontend/electron sources and dependency locks: unchanged; frontend production audit passed with zero vulnerabilities; Electron retained the pre-existing `electron-updater` -> `js-yaml` chain with two moderate findings and no available fix;
+- provider/model and License Server configuration: unchanged;
+- PostgreSQL runtime: deferred; H2/Flyway V46 validated;
+- live OpenAI smoke: deferred and not applicable to this provider-free bridge.

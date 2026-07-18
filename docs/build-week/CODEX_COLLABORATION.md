@@ -188,3 +188,25 @@ The only provider-visible tools are the deterministic B2 Gross Profit Brief, bou
 Provider payloads exclude tenant IDs, raw authority, credentials, customer/employee/supplier contacts, raw personal identifiers, and hidden reasoning. Product and tool text is untrusted data. Final visible numbers must be present in the current deterministic tool result and map to current-interaction immutable evidence; Gross Profit cannot be relabeled Net Profit. Provider failures never fall back to the generic chat chain.
 
 B4 is limited to the frontend experience: render the B1/B2/B3 contracts, evidence/classification/assumption/limitation states, multilingual Ask flow, deterministic simulator, proposal human-review controls, and ledger. B4 must not add backend semantics, provider tools, permissions, autonomous actions, deployment, or production changes.
+
+## B3.5 dedicated proposal bridge boundary
+
+B4 may create a pending review proposal only through
+`POST /api/savdograph/reorder-simulations/{analysisRunId}/proposals`, protected
+by `SAVDOGRAPH:WRITE`. The strict body is `{ "supplierId": <numeric Long> }`;
+B4 must not submit product, quantity, evidence, classification, shop/tenant,
+price, cost, proposal status, or PurchaseOrder status.
+
+The backend accepts only the exact current canonical B2 reorder evidence set and
+`ESTIMATED` classification. It derives the product and positive integral
+quantity, preserves all evidence IDs, and returns `201` for creation or `200`
+for an equivalent idempotent replay. A different supplier or finalized proposal
+is a `409` conflict.
+
+The bridge ends at `DecisionProposal.PROPOSED` and one append-only
+`PROPOSAL_CREATED_FROM_REORDER_SIMULATION` event. Only the existing separate
+ACCOUNT_OWNER decision endpoint may later approve/reject; approval remains
+idempotent and creates at most one PurchaseOrder `DRAFT`. Frontend work must not
+add autonomous actions, provider tools, backend calculations, or weaker evidence
+handling. See `B3_5_PROPOSAL_BRIDGE_CONTRACT.md` for the exact contract and B4
+retry prompt.

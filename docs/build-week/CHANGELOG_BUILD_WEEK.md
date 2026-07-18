@@ -142,3 +142,24 @@ included in this branch.
 - `LIVE_OPENAI_SMOKE=DEFERRED`: no safe API key was present; no key was requested or printed.
 - `POSTGRES_PARITY=DEFERRED`: no disposable PostgreSQL runtime was validated and the stopped Windows PostgreSQL service was not started.
 - The next gate is B4 frontend experience only; it must consume the established B1/B2/B3 contracts without changing backend financial, evidence, provider, permission, or approval semantics.
+
+### B3.5 canonical simulation-to-review bridge
+
+- Added `POST /api/savdograph/reorder-simulations/{analysisRunId}/proposals`
+  under the existing `SAVDOGRAPH:WRITE` rule. Its strict request accepts only
+  the existing numeric `supplierId`; product, quantity, classification,
+  evidence and tenant authority are resolved server-side.
+- Added a dedicated validation service for a complete, current, hash-valid B2
+  `REORDER_SIMULATION` evidence set. Only explicit `ESTIMATED` scenarios with
+  positive integral quantities up to 100,000 and unchanged unit/SKU semantics
+  are eligible.
+- Added nullable proposal `sourceKind=B2_REORDER_SIMULATION` and Flyway `V46`
+  uniqueness on tenant/source-run/source-kind. An AnalysisRun row lock plus the
+  database constraint makes equivalent retries and concurrent submissions
+  create one pending proposal and one success-ledger event.
+- Preserved all 11 immutable B2 evidence IDs and the source AnalysisRun. The
+  bridge writes `PROPOSAL_CREATED_FROM_REORDER_SIMULATION`, remains `PROPOSED`,
+  and creates no PurchaseOrder or operational/provider side effect.
+- Focused bridge and rollback tests passed `12/12`. Full validation results and
+  the exact B4 retry boundary are recorded in `TESTING_INSTRUCTIONS.md` and
+  `B3_5_PROPOSAL_BRIDGE_CONTRACT.md`.

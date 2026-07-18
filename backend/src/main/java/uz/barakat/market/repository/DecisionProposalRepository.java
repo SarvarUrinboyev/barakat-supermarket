@@ -13,6 +13,8 @@ public interface DecisionProposalRepository extends JpaRepository<DecisionPropos
 
     List<DecisionProposal> findAllByOrderByIdDesc();
 
+    Optional<DecisionProposal> findByAnalysisRunIdAndSourceKind(Long analysisRunId, String sourceKind);
+
     /** Serializes decision transitions; the database unique key remains the final duplicate guard. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM DecisionProposal p WHERE p.id = :id")

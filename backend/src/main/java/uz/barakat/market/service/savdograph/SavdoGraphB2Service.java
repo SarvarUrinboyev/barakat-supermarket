@@ -62,7 +62,7 @@ public class SavdoGraphB2Service {
     private static final ZoneId BUSINESS_ZONE = ZoneId.of(TIMEZONE);
     private static final long MAX_BRIEF_DAYS = 31;
     private static final long MAX_REORDER_LOOKBACK_DAYS = 90;
-    private static final int MAX_REORDER_QUANTITY = 100_000;
+    static final int MAX_REORDER_QUANTITY = 100_000;
 
     private final SaleRepository sales;
     private final ProductRepository products;

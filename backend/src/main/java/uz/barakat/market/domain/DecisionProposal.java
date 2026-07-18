@@ -37,6 +37,10 @@ public class DecisionProposal extends TenantScopedEntity {
     @Column(name = "proposal_type", nullable = false, length = 32)
     private String proposalType;
 
+    /** Null for legacy B1 proposals; identifies the dedicated server-side bridge when present. */
+    @Column(name = "source_kind", length = 32)
+    private String sourceKind;
+
     @Column(name = "proposed_reorder_quantity", nullable = false)
     private int proposedReorderQuantity;
 
