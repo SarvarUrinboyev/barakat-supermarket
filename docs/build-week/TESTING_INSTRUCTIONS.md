@@ -217,7 +217,7 @@ Set-Location .\backend
 This verifies canonical evidence-hash coverage, V43/V44 H2 migration boot,
 application-route immutability, cross-tenant proposal/evidence rejection, and
 the static PostgreSQL trigger/constraint contract. H2 does **not** prove the
-PostgreSQL triggers; record `POSTGRES_PARITY=DEFERRED` unless a disposable local
+PostgreSQL triggers; at that stage PostgreSQL parity remained deferred unless a disposable local
 PostgreSQL run proves them.
 
 For License Server permission registration:
@@ -267,7 +267,7 @@ Set-Location .\backend
 This covers B2 formulas, cost/currency classification, rounding, zero/negative
 cases, Asia/Tashkent boundaries, canonical evidence, retrieval, tenant isolation,
 and absence of PO, inventory-movement, and price side effects. H2 applies V45.
-`POSTGRES_PARITY=DEFERRED`; do not start the stopped Windows PostgreSQL service.
+PostgreSQL parity was deferred at this stage; do not start the stopped Windows PostgreSQL service.
 B3 must retain this classification/evidence boundary and run PostgreSQL runtime
 trigger proof before any release claim.
 
@@ -294,7 +294,7 @@ Run the affected B1/B2/B3 regression set, then the full backend suite and packag
 
 B3 reuses the already registered `SAVDOGRAPH:READ` permission and does not change the License Server permission vocabulary, so the License Server is not touched by this increment. H2/Flyway is exercised by `SavdoGraphB3ControllerIT` and the affected/full suites. Use the existing sanitized dependency and secret checks; do not print matched secret values.
 
-`LIVE_OPENAI_SMOKE=DEFERRED` when no safe key already exists. Do not request or display a key. `POSTGRES_PARITY=DEFERRED` until a disposable PostgreSQL runtime is genuinely validated; do not start the stopped Windows PostgreSQL service.
+`LIVE_OPENAI_SMOKE=DEFERRED` when no safe key already exists. Do not request or display a key. PostgreSQL parity was deferred at this stage until a disposable PostgreSQL runtime is genuinely validated; do not start the stopped Windows PostgreSQL service.
 
 ## B3.5 canonical simulation-to-review bridge
 
@@ -327,7 +327,7 @@ Then run the full backend suite and package:
 
 B3.5 changes no permission vocabulary, so License Server tests are not required.
 H2/Flyway validates V46 in the focused, affected, and full suites. Record
-`POSTGRES_PARITY=DEFERRED` unless a separately approved disposable PostgreSQL
+PostgreSQL parity was deferred at this stage unless a separately approved disposable PostgreSQL
 runtime proves the migration; do not start the stopped Windows service. Keep
 `LIVE_OPENAI_SMOKE=DEFERRED`; this bridge has no provider path and needs no key.
 
@@ -389,7 +389,7 @@ npx playwright test e2e/savdograph.mock.spec.js --reporter=list
 It requires a separate local Vite server. The B4 machine has no Playwright
 Chromium executable, so `BROWSER_VERIFICATION=DEFERRED`. Do not download a
 browser or access staging/production without the B5 approval gate.
-`LIVE_OPENAI_SMOKE=DEFERRED`; `POSTGRES_PARITY=DEFERRED`.
+`LIVE_OPENAI_SMOKE=DEFERRED`; PostgreSQL parity was deferred at this stage.
 
 ## B5.0 release-readiness validation - 2026-07-18/19
 
@@ -551,5 +551,62 @@ Results:
 The initial sandboxed Vitest startup attempts hit Windows `spawn EPERM` before
 loading tests; the same commands passed outside that process sandbox. H2's
 non-persistent backup-startup warning is retained and does not count as
-PostgreSQL parity. Keep `LIVE_OPENAI_SMOKE=DEFERRED` and
-`POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`.
+PostgreSQL parity. Keep `LIVE_OPENAI_SMOKE=DEFERRED`; the B5.2A section below
+supersedes the earlier PostgreSQL pending state.
+
+## B5.2A PostgreSQL 18.1 parity - 2026-07-19
+
+This gate used only the installed PostgreSQL 18.1 CLI/runtime. A new unique
+cluster under `C:\tmp\savdograph-b52a-<unique-id>` bound to
+`127.0.0.1:55432`; the Windows service stayed Manual/Stopped. The empty
+bootstrap used localhost trust only long enough to set the random process-only
+role password, after which `pg_hba.conf` required `scram-sha-256` before any
+application data or test traffic.
+
+Sanitized parity commands:
+
+```powershell
+& '<pg18-bin>\initdb.exe' -D '<unique-temp-data>' --encoding=UTF8 --locale=C --data-checksums
+& '<pg18-bin>\pg_ctl.exe' -D '<unique-temp-data>' -l '<temp-log>' -o '...127.0.0.1...55432...' start
+& '<pg18-bin>\pg_isready.exe' -h 127.0.0.1 -p 55432
+$env:SPRING_DATASOURCE_URL = 'jdbc:postgresql://127.0.0.1:55432/<random-db>'
+$env:SPRING_DATASOURCE_USERNAME = '<random-role>'
+$env:SPRING_DATASOURCE_PASSWORD = '<process-only-random-value>'
+Set-Location .\backend
+.\mvnw.cmd -o -B --no-transfer-progress '-Dtest=ApplicationContextSmokeTest' test
+.\mvnw.cmd -o -B --no-transfer-progress '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphProposalBridgeRollbackIT,SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,SavdoGraphB2ControllerIT,SavdoGraphB3ControllerIT,OpenAiResponsesStoreCopilotProviderTest,StoreCopilotGroundingValidatorTest,StoreCopilotServiceTest,AppendOnlyRepositoryContractTest,EvidenceContentHasherTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+.\mvnw.cmd -o -q test
+.\mvnw.cmd -o -q -DskipTests package
+& '<pg18-bin>\pg_ctl.exe' -D '<unique-temp-data>' stop -m fast
+```
+
+The first command is the sanitized shape; task automation immediately applied
+the documented SCRAM transition and never printed the random value. Inspection
+used sanitized `psql` scripts against only that localhost database.
+
+Results:
+
+- actual PostgreSQL context: 1/1 passed; JDBC connection class was
+  `org.postgresql.jdbc.PgConnection`; Flyway and Hibernate schema validation passed;
+- migrations: 46/46 successful, versions V1-V46, final version 46, no gap,
+  skip, or checksum mismatch;
+- V44: legitimate inserts passed; evidence, decision, and ledger UPDATE/DELETE
+  attempts failed 6/6 with unchanged row fingerprints;
+- V46: one canonical bridge proposal passed; equivalent and conflicting
+  duplicates failed on `uq_sg_proposal_bridge_source`; rollback left no partial
+  proposal or ledger row;
+- tenant proof: four cross-shop references failed and left no rejected row;
+- approval harness: one decision, one DRAFT, replay same DRAFT, no
+  ORDERED/RECEIVED, inventory unchanged, zero supplier notifications, and
+  cross-tenant proposal hidden;
+- affected normal H2 suite: 68/68 passed; full backend: 377/377 passed;
+- package: 94,778,762 bytes, SHA-256
+  `2dc2bd3c395381cecb00a89f6c2244b2f348c7c94a40cbc4a1b2523193ea652d`.
+
+Flyway emitted a support-ceiling warning because PostgreSQL 18.1 is newer than
+its tested PostgreSQL 16 maximum; it did not prevent real V1-V46 migration,
+schema validation, trigger execution, constraints, rollback, or service proof.
+Afterward the exact cluster was fast-stopped, port closure was verified, the
+unique directory was removed, and task variables were cleared. No remote or
+production database, Windows service control, Docker, or OpenAI request was
+used. `POSTGRES_PARITY=VERIFIED`; `LIVE_OPENAI_SMOKE=DEFERRED`.

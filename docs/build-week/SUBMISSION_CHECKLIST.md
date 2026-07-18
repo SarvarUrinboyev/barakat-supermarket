@@ -16,7 +16,7 @@ with direct evidence from the exact release commit and isolated demo environment
 - [x] `VERIFIED` supplier-loading blocker fixed with focused regression coverage.
 - [x] `VERIFIED` deterministic demo refund/supplier seed gaps closed.
 - [x] `VERIFIED` complete Chrome journey passed at all four viewports.
-- [ ] `BLOCKED_NEEDS_APPROVAL` run isolated PostgreSQL V1-V46 parity proof.
+- [x] `VERIFIED` isolated PostgreSQL 18.1 V1-V46 parity proof.
 - [ ] `BLOCKED_NEEDS_APPROVAL` run one live OpenAI smoke, if selected for the demo.
 
 Do not push, deploy, publish, or submit while any required item above remains
@@ -32,7 +32,7 @@ unchecked.
 - [ ] Explain pre-existing SavdoPRO work versus Build Week commits.
 - [ ] Link exact test commands and current evidence.
 - [ ] Link demo instructions without embedding credentials.
-- [ ] List known limitations: PostgreSQL proof status, live-smoke status,
+- [ ] List known limitations: Flyway/PostgreSQL support warning, live-smoke status,
   live provider status, DRAFT-only approval, no supplier/payment execution.
 - [ ] Decide public repository versus private judge access.
 - [ ] `BLOCKED_NEEDS_APPROVAL` push the exact tested Build Week descendant.
@@ -180,10 +180,30 @@ unchecked.
 Still intentionally open:
 
 - [ ] `LIVE_OPENAI_SMOKE=DEFERRED` - requires separate credential/cost approval.
-- [ ] `POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`.
 - [ ] Push, deploy, migration, judge account, traffic, video upload, and Devpost
   submission each require their own explicit approval.
-- [ ] Record the exact B5.1 commit after the validated commit command succeeds.
+- [x] B5.1 implementation commit recorded as `2f369018836518ccbb48bbcb218eed12189715e8`.
 
 The earlier `B5_1_SAFE_TO_START=NO` line is historical B5.0 evidence. The retry
 closed its local blockers; external publication gates remain closed.
+
+## B5.2A PostgreSQL parity completion - 2026-07-19
+
+- [x] Installed PostgreSQL 18.1 binaries used; no software installed and Docker not used.
+- [x] Unique localhost-only `C:\tmp\savdograph-b52a-<unique-id>` cluster used on port 55432.
+- [x] Random role/database/credential values remained process-only and were not recorded.
+- [x] Flyway V1-V46 applied: 46 successful history rows, final version 46.
+- [x] PostgreSQL application context and Hibernate schema validation passed 1/1.
+- [x] All six evidence/decision/ledger UPDATE/DELETE attempts were rejected and rows unchanged.
+- [x] V46 duplicate/conflicting proposals were rejected by `uq_sg_proposal_bridge_source`.
+- [x] Failed proposal-plus-ledger transaction rolled back without partial rows.
+- [x] Four cross-tenant references were rejected by enabled database triggers.
+- [x] Approval produced exactly one DRAFT; replay was idempotent; no operational state or notification appeared.
+- [x] Normal affected backend 68/68, full backend 377/377, and package build passed.
+- [x] Temporary listener closed, cluster removed, process variables cleared.
+- [x] Windows PostgreSQL service remained Manual/Stopped; no remote/production/OpenAI access occurred.
+
+Current local database gate: `POSTGRES_PARITY=VERIFIED`. The temporary parity
+cluster is not a deployed demo database; the separate demo environment,
+live-provider, push, deploy, account, traffic, upload, and submission gates stay
+closed.

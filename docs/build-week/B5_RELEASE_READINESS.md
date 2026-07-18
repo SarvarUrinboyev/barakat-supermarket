@@ -220,9 +220,9 @@ Approval-gated outline:
 Creation, use, and cleanup all require explicit approval because they start a
 database runtime and create/delete database files.
 
-`POSTGRES_PARITY_READY=YES` means the isolated method and prerequisites are
-available. It does not mean parity passed. Current parity status is
-`BLOCKED_NEEDS_APPROVAL` and `NOT_STARTED`.
+`POSTGRES_PARITY_READY=YES` was the B5.0 pre-authorization finding. B5.2A later
+executed that isolated method and supersedes the earlier pending state with
+`POSTGRES_PARITY=VERIFIED`.
 
 ## Isolated demo topology
 
@@ -329,7 +329,7 @@ release commit must be the exact tested descendant, not the old baseline.
 | Existing browser | Run installed Chrome against loopback mocks | Local process and test artifacts | Already authorized by B5.0 | Executed; blocked by product defect |
 | Browser install | Install Playwright Chromium | Machine change/download | Explicit install approval | Not needed; Chrome exists |
 | Live OpenAI | One bounded demo request | Credential use and cost | Explicit credential-use/cost approval | `LIVE_OPENAI_SMOKE_READY=NO` |
-| PostgreSQL runtime | Start isolated temporary cluster | Local runtime/files | Explicit runtime approval | Prepared; not started |
+| PostgreSQL runtime | Start isolated temporary cluster | Local runtime/files | Explicit runtime approval | B5.2A executed, verified, stopped, and removed |
 | Isolated demo DB | Create role/database | Data/state creation | Explicit database approval | Planned only |
 | Push branch | Publish exact tested descendant | External Git state | Explicit push approval | No upstream; not started |
 | Deploy demo | Transfer/start demo artifact | Server state/cost | Explicit deploy approval | Planned only |
@@ -348,7 +348,7 @@ Before B5.1 can be called safe:
 2. Approve a narrow deterministic seed-only artifact for the missing refund and
    tenant-owned supplier.
 3. Re-run and pass the complete mocked Chrome journey at all four viewports.
-4. Decide whether to approve the isolated local PostgreSQL runtime proof.
+4. Isolated local PostgreSQL runtime proof completed under B5.2A approval.
 5. Keep the live OpenAI smoke, push, deploy, migrations, account, traffic,
    upload, and final submission behind their separate approvals.
 
@@ -410,8 +410,92 @@ The known H2 in-memory backup-startup warning remained non-fatal and is not
 PostgreSQL proof. Screenshots were created only after the four full browser
 journeys passed, under `docs/build-week/screenshots/b5.1/`.
 
-Current external gates remain:
-`LIVE_OPENAI_SMOKE=DEFERRED` and
-`POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`. No push, deploy,
-migration, account creation, public traffic change, upload, or submission was
-performed. The validated local commit gate is green.
+Current external gates remain `LIVE_OPENAI_SMOKE=DEFERRED`, push, demo deploy,
+demo-database creation/migration, judge account, public traffic, upload, and
+submission. The B5.1 validated local commit gate remains green.
+
+## B5.2A isolated PostgreSQL parity - 2026-07-19
+
+The approved proof used the already installed PostgreSQL 18.1 binaries in
+`C:\Program Files\PostgreSQL\18\bin`. It created a uniquely named cluster only
+under `C:\tmp\savdograph-b52a-<unique-id>`, listened only on
+`127.0.0.1:55432`, used UTF-8, `Asia/Tashkent`, data checksums, unique random
+role/database names, and process-only random credentials. The stopped
+`postgresql-x64-18` Windows service was inspected read-only and remained
+Manual/Stopped.
+
+Windows `initdb` does not accept `--pwfile=-`. The empty cluster therefore used
+localhost-only trust solely for bootstrap; before creating application data,
+the process-only password was assigned with SCRAM, `pg_hba.conf` was changed to
+`scram-sha-256`, and the cluster was reloaded. No credential was written to the
+repository, command output, release evidence, or final documentation.
+
+Sanitized runtime sequence:
+
+```powershell
+& '<pg18-bin>\initdb.exe' -D '<unique-temp-data>' --encoding=UTF8 --locale=C --data-checksums
+& '<pg18-bin>\pg_ctl.exe' -D '<unique-temp-data>' -l '<temp-log>' -o '...127.0.0.1...55432...' start
+& '<pg18-bin>\pg_isready.exe' -h 127.0.0.1 -p 55432
+$env:SPRING_DATASOURCE_URL = 'jdbc:postgresql://127.0.0.1:55432/<random-db>'
+Set-Location .\backend
+.\mvnw.cmd -o -B --no-transfer-progress '-Dtest=ApplicationContextSmokeTest' test
+& '<pg18-bin>\psql.exe' -h 127.0.0.1 -p 55432 -d '<random-db>' '<sanitized-proof-sql>'
+& '<pg18-bin>\pg_ctl.exe' -D '<unique-temp-data>' stop -m fast
+```
+
+### Migration, schema, and database inspection
+
+- Flyway validated and applied all 46 migrations, V1 through V46, on a fresh
+  PostgreSQL database; history contained 46 successful rows, no gaps, skips, or
+  checksum mismatch, and final version `46`.
+- `ApplicationContextSmokeTest` used an actual
+  `org.postgresql.jdbc.PgConnection`; Flyway completed and Hibernate schema
+  validation passed. No H2 URL appeared in this parity process.
+- All six SavdoGraph tables, foreign keys, check/unique constraints, and indexes
+  were present. V46 installed `ck_sg_proposal_source_kind` and database-backed
+  `uq_sg_proposal_bridge_source`.
+- Seven relevant non-internal triggers existed and were enabled:
+  `trg_sg_evidence_append_only`, `trg_sg_decision_append_only`,
+  `trg_sg_ledger_append_only`, `trg_sg_evidence_scope`,
+  `trg_sg_proposal_scope`, `trg_sg_proposal_evidence_scope`, and
+  `trg_sg_decision_scope`.
+- PostgreSQL types/values were exercised as `timestamp without time zone`,
+  `numeric` scale 4, JSON stored as text and cast back to `jsonb`, and canonical
+  `reorder`/`B1_CANONICAL_V1` provenance.
+
+### Runtime behavior proof
+
+- Legitimate evidence, decision, and ledger inserts succeeded. UPDATE and
+  DELETE were each rejected for all three append-only tables: six deterministic
+  failures, with original row fingerprints unchanged.
+- The first V46 `(shop, run, source kind)` proposal succeeded. Equivalent and
+  conflicting-supplier duplicates both failed on
+  `uq_sg_proposal_bridge_source`; the database retained one proposal.
+- A duplicate inside a proposal-plus-ledger transaction rolled back both rows,
+  leaving proposal/ledger counts `0/0` for that transaction.
+- Four cross-tenant reference attempts were rejected by PostgreSQL scope
+  triggers and left zero rejected rows: run/evidence, supplier/proposal,
+  evidence/proposal, and proposal/decision mismatches.
+- An application-service harness against the same PostgreSQL cluster proved one
+  decision, one `DRAFT`, replay to the same DRAFT, zero `ORDERED`/`RECEIVED`,
+  unchanged inventory, zero supplier notification, and cross-tenant proposal
+  invisibility.
+
+### Regression and cleanup
+
+The PostgreSQL context test passed `1/1`. The application-service harness
+reported `decision=1`, `draft=1`, `replay=1`, inventory unchanged, and no
+operational side effects. The normal H2-backed affected suite separately passed
+`68/68`; the full backend suite passed `377/377`; packaging produced a
+94,778,762-byte JAR with SHA-256
+`2dc2bd3c395381cecb00a89f6c2244b2f348c7c94a40cbc4a1b2523193ea652d`.
+H2 results are not counted as PostgreSQL proof.
+
+The exact temporary cluster was stopped with fast shutdown, its listener was
+verified closed, and its validated unique directory was removed. Process-only
+datasource/password variables were cleared. No remote or production database,
+Docker engine, OpenAI provider, Windows service control, deployment, push, or
+public system was contacted. Flyway warned that PostgreSQL 18.1 is newer than
+its tested PostgreSQL 16 ceiling; the warning is retained as a tooling
+limitation, while migration and runtime behavior passed on actual PostgreSQL
+18.1.

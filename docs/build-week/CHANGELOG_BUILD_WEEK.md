@@ -18,7 +18,7 @@ submission. It does not relabel historical SavdoPRO/Barakat work as new.
   Server permission vocabulary and ACCOUNT_OWNER defaults.
 - Added `B2_FINANCIAL_SEMANTICS.md`, the source-backed contract that permits a
   Gross Profit Brief only when currency and cost provenance are sufficient.
-- `POSTGRES_PARITY=DEFERRED`: Docker is unavailable, `postgresql-x64-18` is
+- PostgreSQL parity was deferred at this stage: Docker is unavailable, `postgresql-x64-18` is
   stopped, no local PostgreSQL CLI/listener is available, and no application
   database was touched.
 - B1.1 focused H2 regression passed (`11/11`):
@@ -125,7 +125,7 @@ included in this branch.
   checked-out sale items are marked `TRANSACTION_TIME`.
 - Added explicit VERIFIED/ESTIMATED/INSUFFICIENT_DATA result semantics, source
   counts, Asia/Tashkent boundaries, and no-side-effect integration coverage.
-- `POSTGRES_PARITY=DEFERRED`; H2/Flyway V45 passed, but PostgreSQL runtime
+- PostgreSQL parity was deferred at this stage; H2/Flyway V45 passed, but PostgreSQL runtime
   triggers remain unproven. B3 is limited to an evidence-validated proposal
   bridge/presentation after that parity gate.
 
@@ -140,7 +140,7 @@ included in this branch.
 - The affected B1/B2/B3 regression set passed `57/57`; the full backend suite passed `365/365` with zero failures/errors/skips; and `mvnw.cmd -q -DskipTests package` passed.
 - Configured production dependency audits: frontend passed with zero vulnerabilities; Electron retained an unrelated pre-existing `electron-updater` -> `js-yaml` chain and reported two moderate findings with no available fix. No dependency file was changed.
 - `LIVE_OPENAI_SMOKE=DEFERRED`: no safe API key was present; no key was requested or printed.
-- `POSTGRES_PARITY=DEFERRED`: no disposable PostgreSQL runtime was validated and the stopped Windows PostgreSQL service was not started.
+- PostgreSQL parity was deferred at this stage: no disposable PostgreSQL runtime was validated and the stopped Windows PostgreSQL service was not started.
 - The next gate is B4 frontend experience only; it must consume the established B1/B2/B3 contracts without changing backend financial, evidence, provider, permission, or approval semantics.
 
 ### B3.5 canonical simulation-to-review bridge
@@ -178,7 +178,7 @@ included in this branch.
 - Frontend tests passed `104/104` (`13` existing plus `91` focused); production
   Vite build passed; focused B3.5/B1 backend regression passed `17/17`.
 - Browser execution is deferred because Playwright Chromium is not installed;
-  `LIVE_OPENAI_SMOKE=DEFERRED`; `POSTGRES_PARITY=DEFERRED`.
+  `LIVE_OPENAI_SMOKE=DEFERRED`; PostgreSQL parity was deferred at this stage.
 
 ### B5.0 release readiness and approval map
 
@@ -243,4 +243,34 @@ included in this branch.
 - No production/deploy file, autonomous action, push, deployment, migration,
   provider request, public upload, or submission was added/performed.
 - Deferred gates remain `LIVE_OPENAI_SMOKE=DEFERRED` and
-  `POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`.
+  PostgreSQL parity was not started pending approval at this stage.
+
+### B5.2A isolated PostgreSQL runtime parity
+
+- Used installed PostgreSQL 18.1 binaries to create a unique, localhost-only,
+  UTF-8, checksum-enabled temporary cluster under
+  `C:\tmp\savdograph-b52a-<unique-id>`; no installation, Docker, or Windows
+  service control occurred.
+- Applied and validated all Flyway migrations V1-V46 on a fresh PostgreSQL
+  database: 46 successful history rows, final version 46, and successful
+  Hibernate schema validation over an actual PostgreSQL JDBC connection.
+- Proved all six V44 append-only UPDATE/DELETE paths reject mutations while
+  preserving inserted rows; confirmed all seven SavdoGraph triggers enabled.
+- Proved V46 database uniqueness for equivalent/conflicting proposals and full
+  rollback of a failed proposal-plus-ledger transaction.
+- Proved four database tenant-reference rejections and application-level
+  cross-tenant invisibility on actual PostgreSQL.
+- Proved one approval creates exactly one PurchaseOrder DRAFT and replay returns
+  the same DRAFT, with no ORDERED/RECEIVED state, inventory mutation, purchase
+  lot, or supplier notification.
+- Re-ran normal affected tests `68/68`, full backend `377/377`, and package;
+  artifact remained 94,778,762 bytes with SHA-256
+  `2dc2bd3c395381cecb00a89f6c2244b2f348c7c94a40cbc4a1b2523193ea652d`.
+- Fast-stopped only the unique temporary cluster, verified its port closed,
+  removed the validated directory, and cleared process-only task variables.
+  The Windows service remained Manual/Stopped and no remote/production database
+  or OpenAI provider was contacted.
+- Retained Flyway's warning that PostgreSQL 18.1 exceeds its tested PostgreSQL
+  16 ceiling; runtime migration and required PostgreSQL behavior nevertheless
+  passed. Current result: `POSTGRES_PARITY=VERIFIED`;
+  `LIVE_OPENAI_SMOKE=DEFERRED`.

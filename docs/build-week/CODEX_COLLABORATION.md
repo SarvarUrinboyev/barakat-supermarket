@@ -173,7 +173,7 @@ decision check.
 
 `B2_FINANCIAL_SEMANTICS.md` is binding for B2: only a source-backed Gross
 Profit Brief is eligible when inputs are proven; net profit is prohibited.
-`POSTGRES_PARITY=DEFERRED` until a disposable local PostgreSQL database applies V42–V44 and proves the triggers at runtime.
+PostgreSQL parity was deferred at this stage until a disposable local PostgreSQL database applies V42–V44 and proves the triggers at runtime.
 
 ## B2 deterministic backend contract
 
@@ -310,6 +310,35 @@ withheld until all four journey gates passed. The final evidence is Chrome
 150.0.7871.125, equal client/scroll/body widths at every viewport, zero browser
 errors, frontend 112/112, backend 377/377, and zero high-confidence secret hits.
 
-No external authority was inferred. `LIVE_OPENAI_SMOKE=DEFERRED`;
-`POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`; push, deploy,
-migration, account, traffic, video upload, and submission remain separate gates.
+At the close of B5.1, live OpenAI and PostgreSQL parity were still deferred;
+push, deploy, migration, account, traffic, video upload, and submission remained
+separate gates. B5.2A below supersedes only that historical PostgreSQL state.
+
+## B5.2A PostgreSQL parity collaboration record
+
+The B5.2A approval was applied only to an independent temporary PostgreSQL
+runtime. Codex re-verified the exact root, branch, clean worktree, required HEAD
+and ancestry before starting. It used installed PostgreSQL 18.1 binaries, a
+unique directory under `C:\tmp`, loopback `127.0.0.1:55432`, random process-only
+database identity/credentials, UTF-8, deterministic timezone, data checksums,
+and SCRAM before application traffic. The Manual/Stopped Windows service was
+read only and never controlled.
+
+Flyway applied V1-V46 with 46 successful rows and Hibernate validated the
+schema through `org.postgresql.jdbc.PgConnection`. Actual PostgreSQL execution
+proved V44 evidence/decision/ledger append-only triggers, V46 database-backed
+bridge uniqueness and rollback, four tenant-reference trigger failures, and an
+application-service approval flow that creates at most one DRAFT without
+ordering, receiving, inventory, purchase-lot, notification, provider, or
+cross-tenant side effects.
+
+The temporary cluster was fast-stopped, its listener was verified closed, its
+validated unique directory was removed, and task variables were cleared. The
+normal affected 68/68 and full backend 377/377 suites plus package also passed;
+their H2 paths remain separate from the PostgreSQL proof. Flyway's PostgreSQL
+18.1-versus-tested-16 warning is retained as a limitation.
+
+Current database result is `POSTGRES_PARITY=VERIFIED`. No production/remote
+database, OpenAI request, push, deploy, account, public traffic, upload, or
+submission was authorized or performed. `LIVE_OPENAI_SMOKE=DEFERRED`; all
+external actions remain separate approval gates.
