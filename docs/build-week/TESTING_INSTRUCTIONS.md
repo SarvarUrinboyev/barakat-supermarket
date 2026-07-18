@@ -1,0 +1,188 @@
+# SavdoGraph AI — Testing Instructions
+
+## Safety boundary
+
+Run checks only from a clean Build Week worktree. Do not point any command at a
+production database, production `.env`, production host, real provider key, or
+customer/supplier data. The staging Compose stack uses generated demo data and is
+not PostgreSQL production parity.
+
+At initial preflight, the active Java was `1.8.0_481`, Node was `v24.14.0`, and
+the Docker daemon was unavailable. A shell-local JDK 21.0.11 was then selected
+for Maven validation. CI requires Java 21 and Node 20; the frontend audit result
+below is useful but not Node-20 parity. Record the actual versions used with
+every future run.
+
+## Audit run results — 2026-07-18
+
+| Check | Result | Notes |
+|---|---|---|
+| Backend tests | `PASS` — 308 tests, exit 0 | JDK 21.0.11; H2/Flyway context tests ran. Test-profile startup logs attempted an H2 in-memory backup and emitted warnings/errors, but Maven reported no test failure. |
+| Backend package | `PASS`, exit 0 | JDK 21.0.11, `-DskipTests package`. |
+| License tests | `PASS` — 157 tests, exit 0 | JDK 21.0.11 and H2 test profile. Do not treat this as PostgreSQL proof. |
+| License package | `PASS`, exit 0 | JDK 21.0.11, `-DskipTests package`. |
+| Frontend Vitest | `PASS` — 13 tests, exit 0 | Node 24.14.0; CI still pins Node 20. |
+| Frontend isolated build | `PASS`, exit 0 | Node 24.14.0; output was external to the repository. Vite warned of a 938.60 kB minified `ExportButton` chunk. |
+| Python import safety | `PASS` — 10/10, exit 0 | No production source/data path used. |
+| Secret-pattern scan | `PASS` — five sanitized baseline rules returned 0 | Current committed baseline only; it was not a historical Git scan. |
+| Frontend production audit | `PASS` — 0 vulnerabilities, exit 0 | `npm audit --package-lock-only --omit=dev`. |
+| Electron production audit | `FAIL` — 1 moderate vulnerability, exit 1 | Transitive `js-yaml@4.1.1` via `electron-updater@6.8.3`; no dependency change was made. |
+| Docker staging E2E / PostgreSQL parity | `BLOCKED` | Docker client is installed but `dockerDesktopLinuxEngine` was unavailable. No service was started. |
+| Lint / format / typecheck | `NOT_CONFIGURED` | No repository scripts/configuration exist for the JavaScript/JSX frontend. |
+
+## Preflight
+
+```powershell
+git status --short --branch
+git rev-parse HEAD
+java -version
+node --version
+npm --version
+docker version
+```
+
+Expected branch: `feat/build-week-savdograph-ai`. A dirty tree must be explained
+before a validation claim is made.
+
+## Backend: unit, integration, and migration-context validation
+
+Select JDK 21 for this shell only, then run the Maven wrapper:
+
+```powershell
+# Set these only after locating an installed JDK 21. Do not change global machine state.
+$env:JAVA_HOME = 'C:\path\to\jdk-21'
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+Set-Location .\backend
+.\mvnw.cmd -B --no-transfer-progress test
+.\mvnw.cmd -B --no-transfer-progress -DskipTests package
+```
+
+Surefire explicitly includes `*Test`, `*Tests`, and `*IT` in
+`backend/pom.xml`; this is the supported local migration/context check. There is
+no standalone Flyway Maven validation command configured. Do not substitute a
+production database for an unavailable local test dependency.
+
+Required SavdoGraph additions before a release claim:
+
+- golden calculations for daily P&L and reorder simulation;
+- unsupported numeric model-output rejection;
+- per-tool least-privilege authorization;
+- tenant A/B isolation for evidence/proposal/simulation/ledger;
+- proposal `PROPOSED → APPROVED|REJECTED → DRAFT_CREATED` idempotency and no-spend
+  negative cases.
+
+## License server
+
+```powershell
+Set-Location .\license-server
+.\mvnw.cmd -B --no-transfer-progress test
+.\mvnw.cmd -B --no-transfer-progress -DskipTests package
+```
+
+CI additionally boots the license context against PostgreSQL. If Docker is
+unavailable, record the unavailable Docker evidence rather than treating an H2
+result as PostgreSQL proof.
+
+## Frontend: unit test and isolated build
+
+Use Node 20 for CI-parity. The default Vite output path is inside backend static
+resources, so use an external temporary directory for an audit build.
+
+```powershell
+Set-Location .\frontend
+npm ci
+npm test
+$validationOutput = Join-Path $env:TEMP "savdograph-frontend-build-$PID"
+npm run build -- --outDir $validationOutput
+```
+
+The baseline has three Vitest files covering format, customer balance and
+nakladnoy totals. New SavdoGraph tests must cover Evidence Card rendering,
+unsupported-number behavior, approval/rejection state, and simulator edge cases.
+
+There is no repository-defined frontend lint, format, or typecheck script. The
+frontend is JavaScript/JSX with no TypeScript or ESLint configuration. Report
+those checks as **not configured**, never as passed.
+
+## Python import safety test
+
+```powershell
+$env:PYTHONDONTWRITEBYTECODE = '1'
+$env:PYTHONUTF8 = '1'
+python .\imports\test_warehouse_import.py
+```
+
+This is a local import-safety check only; it is not a substitute for SavdoGraph
+workflow validation.
+
+## Docker staging and Playwright E2E
+
+Run only after `docker version` succeeds and only against the local staging file:
+
+```powershell
+docker compose -f docker-compose.staging.yml up -d --build
+Set-Location .\frontend
+npm ci
+npx playwright install chromium
+npm run e2e
+```
+
+The baseline smoke covers landing, seeded login/dashboard and POS catalogue. Add
+a focused seeded flow for: brief → question → evidence → simulation →
+approve/reject → ledger. Capture both desktop and 375px viewport evidence. Never
+reuse this command or its seeded credentials against production.
+
+## Sanitized secret and dependency checks
+
+The audit found no high-confidence private-key, GitHub, OpenAI, AWS, Google,
+Slack or JWT token-prefix hit in tracked baseline files. Do not print candidate
+values while repeating a scan:
+
+```powershell
+$rules = @(
+  'BEGIN (RSA|EC|OPENSSH|DSA|PGP) PRIVATE KEY',
+  'gh[pousr]_[A-Za-z0-9_]{20,}',
+  'sk-[A-Za-z0-9]{20,}',
+  'AKIA[0-9A-Z]{16}',
+  'AIza[0-9A-Za-z_-]{20,}'
+)
+foreach ($rule in $rules) {
+  $count = (git grep -I -E $rule HEAD -- | Measure-Object).Count
+  "rule=$rule count=$count"
+}
+```
+
+Dependency audit commands:
+
+```powershell
+Set-Location .\frontend
+npm audit --package-lock-only --omit=dev --json
+Set-Location ..\electron
+npm audit --package-lock-only --omit=dev --json
+```
+
+At baseline, the frontend production audit reported zero vulnerabilities. The
+Electron audit reported one moderate transitive `js-yaml@4.1.1` vulnerability via
+`electron-updater@6.8.3`; resolve or explicitly accept it before a public release.
+
+`gitleaks`, `trivy`, `osv-scanner`, `semgrep`, `pip-audit`, and a Maven CVE scan
+were not available/configured during the audit. Historical Git blobs, deployed
+secret storage, rotation and live infrastructure were intentionally out of scope.
+
+## Required result record
+
+For every command, record:
+
+| Check | Command | Runtime versions | Exit code | Result / blocker |
+|---|---|---|---:|---|
+| Backend tests | wrapper command above | Java | | |
+| Backend package | wrapper command above | Java | | |
+| License tests/package | wrapper commands above | Java | | |
+| Frontend Vitest/build | npm commands above | Node | | |
+| Staging E2E | Compose + Playwright | Docker/Node | | |
+| Python import test | command above | Python | | |
+| Secret scan | sanitized rules | Git | | |
+| Dependency audit | npm audit | Node/npm | | |
+
+Do not mark a Build Week release ready until every applicable row has a fresh,
+recorded result or an explicit, user-accepted blocker.
