@@ -116,3 +116,15 @@ HEAD `bffc4326`, are pre-existing SavdoPRO/Barakat work. `git log --all --since
 The original working tree also contained uncommitted files at audit start. Their
 provenance cannot be proven from Git, so they are neither claimed here nor
 included in this branch.
+
+### B2 deterministic brief and simulator
+
+- Added tenant-scoped Daily Gross Profit Brief and reorder scenario endpoints,
+  backed only by canonical immutable evidence.
+- Added `V45` generic B2 evidence support and cost-snapshot provenance; newly
+  checked-out sale items are marked `TRANSACTION_TIME`.
+- Added explicit VERIFIED/ESTIMATED/INSUFFICIENT_DATA result semantics, source
+  counts, Asia/Tashkent boundaries, and no-side-effect integration coverage.
+- `POSTGRES_PARITY=DEFERRED`; H2/Flyway V45 passed, but PostgreSQL runtime
+  triggers remain unproven. B3 is limited to an evidence-validated proposal
+  bridge/presentation after that parity gate.

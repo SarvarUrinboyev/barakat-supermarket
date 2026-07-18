@@ -25,7 +25,8 @@ public class EvidenceItem extends TenantScopedEntity {
     @Column(name = "analysis_run_id", nullable = false)
     private Long analysisRunId;
 
-    @Column(name = "product_id", nullable = false)
+    /** Null for a shop-wide B2 brief; product-specific simulator evidence sets it. */
+    @Column(name = "product_id")
     private Long productId;
 
     @Enumerated(EnumType.STRING)

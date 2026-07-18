@@ -23,6 +23,10 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     /** Sales window — used by Reports and end-of-day. */
     List<Sale> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime from, LocalDateTime to);
 
+    /** Strict start-inclusive/end-exclusive window for deterministic B2 snapshots. */
+    List<Sale> findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAscIdAsc(
+            LocalDateTime from, LocalDateTime to);
+
     /**
      * Single-shot summary of a window: (count, sumTotal, sumRefunded).
      * Cheap enough to call multiple times per request — backs the AI

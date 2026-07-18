@@ -54,6 +54,11 @@ public class SaleItem extends BaseEntity {
     @Column(name = "cost_at_sale_uzs", precision = 15, scale = 2)
     private BigDecimal costAtSaleUzs;
 
+    /** Whether {@link #costAtSaleUzs} is known to have been captured at checkout. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cost_snapshot_provenance", nullable = false, length = 32)
+    private CostSnapshotProvenance costSnapshotProvenance = CostSnapshotProvenance.LEGACY_OR_UNKNOWN;
+
     /** How many units of this line have been returned via refund. */
     @Column(name = "refunded_qty", nullable = false)
     private int refundedQty = 0;

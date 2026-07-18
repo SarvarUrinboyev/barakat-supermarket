@@ -173,5 +173,8 @@ decision check.
 
 `B2_FINANCIAL_SEMANTICS.md` is binding for B2: only a source-backed Gross
 Profit Brief is eligible when inputs are proven; net profit is prohibited.
-`POSTGRES_PARITY=DEFERRED` until a disposable local PostgreSQL database applies
-V42–V44 and proves the triggers at runtime.
+`POSTGRES_PARITY=DEFERRED` until a disposable local PostgreSQL database applies V42–V44 and proves the triggers at runtime.
+
+## B2 deterministic backend contract
+
+`POST /api/savdograph/gross-profit-briefs` and `POST /api/savdograph/reorder-simulations` use only `SAVDOGRAPH:WRITE`; their reads use `SAVDOGRAPH:READ`. They append canonical evidence and AnalysisRun snapshots, never create a proposal/PO or alter inventory, prices, suppliers, payments, deliveries, or provider state. See `B2_API_CONTRACT.md`; PostgreSQL runtime parity remains deferred through V45.

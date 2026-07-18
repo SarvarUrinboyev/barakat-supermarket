@@ -256,3 +256,17 @@ Remove-Item Env:SG_B11_POSTGRES_PASSWORD,Env:SPRING_DATASOURCE_URL,Env:SPRING_DA
 Record the actual migration and trigger-runtime result separately; source/static
 tests and trigger-name inspection alone do not prove rejected `UPDATE`/`DELETE`
 behavior.
+
+## B2 deterministic brief and simulator
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -q '-Dtest=SavdoGraphB2ControllerIT,SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,ProviderExplanationPayloadMapperTest,EvidenceContentHasherTest,AppendOnlyRepositoryContractTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+```
+
+This covers B2 formulas, cost/currency classification, rounding, zero/negative
+cases, Asia/Tashkent boundaries, canonical evidence, retrieval, tenant isolation,
+and absence of PO, inventory-movement, and price side effects. H2 applies V45.
+`POSTGRES_PARITY=DEFERRED`; do not start the stopped Windows PostgreSQL service.
+B3 must retain this classification/evidence boundary and run PostgreSQL runtime
+trigger proof before any release claim.

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.barakat.market.auth.TenantContext;
 import uz.barakat.market.domain.Currency;
+import uz.barakat.market.domain.CostSnapshotProvenance;
 import uz.barakat.market.domain.Customer;
 import uz.barakat.market.domain.CustomerTransaction;
 import uz.barakat.market.domain.CustomerTxType;
@@ -217,6 +218,7 @@ public class PosService {
             // Freeze the cost price (so'm-canonical) so COGS stays correct even
             // if the product's purchase_price is edited after this sale.
             item.setCostAtSaleUzs(costSom);
+            item.setCostSnapshotProvenance(CostSnapshotProvenance.TRANSACTION_TIME);
             // Native currency + the kurs used to fold it in, for the receipt
             // annotation ("$1 350 @ 12 650") and correct later profit math.
             item.setCurrency(lineCurrency);

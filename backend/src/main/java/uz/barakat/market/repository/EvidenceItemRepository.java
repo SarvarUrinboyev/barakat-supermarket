@@ -12,5 +12,7 @@ public interface EvidenceItemRepository extends Repository<EvidenceItem, Long> {
 
     Optional<EvidenceItem> findById(Long id);
 
+    List<EvidenceItem> findAllByAnalysisRunIdOrderByIdAsc(Long analysisRunId);
+
     List<EvidenceItem> findAllByOrderByIdDesc();
 }

@@ -1,6 +1,6 @@
 # SavdoGraph B2 Financial Semantics Contract
 
-**Status:** B1.1 source review, 2026-07-18. This is a contract for a future deterministic backend implementation, not B2 calculations.
+**Status:** B2 deterministic implementation, 2026-07-18. This is the binding source-of-truth for the implemented Daily Gross Profit Brief and read-only reorder simulator.
 
 ## 1. Revenue
 
@@ -71,3 +71,11 @@ Minimum transparent future simulator assumptions: evidence-backed velocity windo
 - `ESTIMATED`: V37-backfilled cost, legacy currency provenance, legacy ForecastService lead-time/safety assumptions, and any expense-based operating contribution.
 
 Every future B2 result must persist its source period, calculation version, assumptions, outcome state, and immutable EvidenceItem references. Generic report/AI output is not evidence.
+
+## B2 implementation correction
+
+`V45` adds `SaleItem.costSnapshotProvenance`. Existing rows are explicitly `LEGACY_OR_UNKNOWN`; POS checkout now writes `TRANSACTION_TIME`. B2 can therefore classify legacy snapshot calculations as `ESTIMATED` without treating them as verified historical COGS, while a null snapshot remains `INSUFFICIENT_DATA` and never falls back to current product cost.
+
+### B2 deterministic reorder correction
+
+The implemented simulator does not use `StockMovementRepository.sumSalesQtyByProduct`, because it reports gross `SALE` movements and cannot net refunds. It uses `SaleRepository.findByCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAscIdAsc` and same-product `SaleItem` rows instead: `netUnitsSold = SUM(quantity - refundedQty)` in the explicit Asia/Tashkent `[lookbackStart, lookbackEnd)` window. A negative or invalid returned quantity is `INSUFFICIENT_DATA`; no cross-unit conversion is attempted. Lead time, safety stock, and forecast horizon remain visible bounded scenario assumptions, so every reorder output is `ESTIMATED`.
