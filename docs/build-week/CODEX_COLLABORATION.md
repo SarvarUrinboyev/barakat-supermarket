@@ -178,3 +178,13 @@ Profit Brief is eligible when inputs are proven; net profit is prohibited.
 ## B2 deterministic backend contract
 
 `POST /api/savdograph/gross-profit-briefs` and `POST /api/savdograph/reorder-simulations` use only `SAVDOGRAPH:WRITE`; their reads use `SAVDOGRAPH:READ`. They append canonical evidence and AnalysisRun snapshots, never create a proposal/PO or alter inventory, prices, suppliers, payments, deliveries, or provider state. See `B2_API_CONTRACT.md`; PostgreSQL runtime parity remains deferred through V45.
+
+## B3 grounded store-copilot boundary
+
+`POST /api/savdograph/ask` is a read-only query protected by `SAVDOGRAPH:READ`. Tenant/shop authority is taken only from authenticated server context; `shopId`, account authority, permissions, and tool definitions are not accepted from the model or request body.
+
+The only provider-visible tools are the deterministic B2 Gross Profit Brief, bounded tenant-filtered product search, and deterministic B2 reorder simulator. They can append AnalysisRun/evidence/audit records but cannot approve/reject, create a PurchaseOrder, mutate stock or prices, contact a supplier, receive/deliver goods, or make a payment. More than five sequential tool calls, any parallel tool-call batch, an unknown tool, ambiguous product selection, cross-tenant product/evidence, or an unsupported business number fails closed.
+
+Provider payloads exclude tenant IDs, raw authority, credentials, customer/employee/supplier contacts, raw personal identifiers, and hidden reasoning. Product and tool text is untrusted data. Final visible numbers must be present in the current deterministic tool result and map to current-interaction immutable evidence; Gross Profit cannot be relabeled Net Profit. Provider failures never fall back to the generic chat chain.
+
+B4 is limited to the frontend experience: render the B1/B2/B3 contracts, evidence/classification/assumption/limitation states, multilingual Ask flow, deterministic simulator, proposal human-review controls, and ledger. B4 must not add backend semantics, provider tools, permissions, autonomous actions, deployment, or production changes.

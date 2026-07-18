@@ -83,3 +83,13 @@ names, supplier contacts, IP addresses, or internal deployment instructions.
 SavdoGraph is differentiated by the chain of custody around a recommendation:
 deterministic data → evidence → simulation → human decision → non-financial
 draft → immutable ledger. The AI is useful only inside that chain of custody.
+
+## B3 Ask Your Store demo behavior
+
+The B3 backend endpoint is ready for the B4 renderer, but no live provider smoke is claimed. When a safe provider is not configured, show the typed `PROVIDER_UNAVAILABLE` state and continue with the deterministic B1/B2 evidence path; never substitute invented chat text.
+
+For the eventual non-production B4 demo, ask one question in each supported language (`uz`, `ru`, `en`), show tool and evidence chips, classification, assumptions, and limitations, then demonstrate an ambiguous product clarification and a Net Profit request reframed as unsupported Gross Profit scope. Keep any suggested action human-only. Do not show raw provider input/output, safety identifiers, API keys, tenant IDs, contacts, or hidden reasoning.
+
+The frontend must render typed refusal, unavailable, timeout/rate/network, invalid-output, unknown/invalid-tool, tool-limit, insufficient-data, and groundedness-failure states. A groundedness failure must show no unsupported business number. The Ask flow cannot create/approve a PO, alter inventory/prices, message a supplier, receive/deliver goods, or make a payment.
+
+`LIVE_OPENAI_SMOKE=DEFERRED`. `POSTGRES_PARITY=DEFERRED`.

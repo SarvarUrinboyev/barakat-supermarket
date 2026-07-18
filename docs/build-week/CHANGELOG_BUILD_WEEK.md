@@ -128,3 +128,17 @@ included in this branch.
 - `POSTGRES_PARITY=DEFERRED`; H2/Flyway V45 passed, but PostgreSQL runtime
   triggers remain unproven. B3 is limited to an evidence-validated proposal
   bridge/presentation after that parity gate.
+
+### B3 grounded multilingual Ask Your Store
+
+- Recovered the existing B3-only dirty draft without discarding, stashing, resetting, or replacing any user work. The retained draft comprised the read route, bounded tenant product query, B3 controller/DTO, provider/copilot package, and four focused test classes.
+- Added `POST /api/savdograph/ask` under `SAVDOGRAPH:READ`. Existing B1/B2 deterministic routes remain usable with no OpenAI key.
+- Added the internal OpenAI Responses API adapter with server-only environment configuration, `store=false`, strict function and final-output schemas, `parallel_tool_calls=false`, a five-call ceiling, bounded retries, and typed safe errors.
+- Registered only `get_daily_gross_profit_brief`, `search_store_products`, and `run_reorder_simulation`. Stockout-risk candidate batching was cut because no separate B2 batch contract safely preserves the required semantics.
+- Added fail-closed evidence, numeric, classification, tenant, Gross-Profit-label, privacy, prompt-injection, and no-operational-claim validation. No model-accessible mutation, approval, PO, payment, supplier, delivery, receiving, inventory, or price tool exists.
+- Focused B3 tests passed `38/38` with fake transports, mocks, blank provider configuration, H2/Flyway, and real tenant-filter checks. No automated test contacts OpenAI.
+- The affected B1/B2/B3 regression set passed `57/57`; the full backend suite passed `365/365` with zero failures/errors/skips; and `mvnw.cmd -q -DskipTests package` passed.
+- Configured production dependency audits: frontend passed with zero vulnerabilities; Electron retained an unrelated pre-existing `electron-updater` -> `js-yaml` chain and reported two moderate findings with no available fix. No dependency file was changed.
+- `LIVE_OPENAI_SMOKE=DEFERRED`: no safe API key was present; no key was requested or printed.
+- `POSTGRES_PARITY=DEFERRED`: no disposable PostgreSQL runtime was validated and the stopped Windows PostgreSQL service was not started.
+- The next gate is B4 frontend experience only; it must consume the established B1/B2/B3 contracts without changing backend financial, evidence, provider, permission, or approval semantics.

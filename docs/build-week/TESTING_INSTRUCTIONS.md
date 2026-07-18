@@ -270,3 +270,28 @@ and absence of PO, inventory-movement, and price side effects. H2 applies V45.
 `POSTGRES_PARITY=DEFERRED`; do not start the stopped Windows PostgreSQL service.
 B3 must retain this classification/evidence boundary and run PostgreSQL runtime
 trigger proof before any release claim.
+
+## B3 grounded multilingual Ask Your Store
+
+Focused B3 validation uses only fake provider transports, mocks, and an empty `OPENAI_API_KEY`; it must never contact OpenAI:
+
+```powershell
+Set-Location .\backend
+.\mvnw.cmd -q '-Dtest=SavdoGraphB3ControllerIT,OpenAiResponsesStoreCopilotProviderTest,StoreCopilotGroundingValidatorTest,StoreCopilotServiceTest' test
+```
+
+The focused slice covers configured model/key isolation, strict Responses API shape, no persistence/hidden-reasoning request, refusal/incomplete/timeout/rate/network/auth failures, retry bounds, invalid structured output, missing-key behavior, UZ/RU/EN and AUTO language selection, ambiguity, Gross-vs-Net Profit, read-only allow-list, five sequential calls, parallel-call rejection, current tenant product/evidence visibility, immutable evidence numeric grounding, privacy redaction, malicious data, audit minimization, request bounds, permission denial, and PO/stock-movement no-side-effect checks. Current result: `38/38` passed.
+
+Current B3 completion results: affected B1/B2/B3 tests `57/57`; full backend `365/365` with zero failures/errors/skips; backend package passed. Frontend production dependency audit passed with zero vulnerabilities. Electron audit exited 1 on the unchanged `electron-updater` -> `js-yaml` chain, reporting two moderate findings and no available fix; B3 changed no Electron dependency or source.
+
+Run the affected B1/B2/B3 regression set, then the full backend suite and package:
+
+```powershell
+.\mvnw.cmd -q '-Dtest=SavdoGraphB3ControllerIT,OpenAiResponsesStoreCopilotProviderTest,StoreCopilotGroundingValidatorTest,StoreCopilotServiceTest,SavdoGraphB2ControllerIT,SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,ProviderExplanationPayloadMapperTest,EvidenceContentHasherTest,AppendOnlyRepositoryContractTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+.\mvnw.cmd -q test
+.\mvnw.cmd -q -DskipTests package
+```
+
+B3 reuses the already registered `SAVDOGRAPH:READ` permission and does not change the License Server permission vocabulary, so the License Server is not touched by this increment. H2/Flyway is exercised by `SavdoGraphB3ControllerIT` and the affected/full suites. Use the existing sanitized dependency and secret checks; do not print matched secret values.
+
+`LIVE_OPENAI_SMOKE=DEFERRED` when no safe key already exists. Do not request or display a key. `POSTGRES_PARITY=DEFERRED` until a disposable PostgreSQL runtime is genuinely validated; do not start the stopped Windows PostgreSQL service.

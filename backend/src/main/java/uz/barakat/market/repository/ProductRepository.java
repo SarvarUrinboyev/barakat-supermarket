@@ -2,6 +2,7 @@ package uz.barakat.market.repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uz.barakat.market.domain.Product;
@@ -11,6 +12,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findAllByOrderByNameAsc();
 
     Optional<Product> findFirstByBarcode(String barcode);
+
+    /** Bounded tenant-filtered product resolution for the read-only store copilot. */
+    List<Product> findByNameContainingIgnoreCaseOrBarcodeContainingIgnoreCaseOrderByNameAsc(
+            String name, String barcode, Pageable pageable);
 
     // ---- duplicate guards (tenant-scoped via the shop @Filter) ----
     boolean existsByBarcode(String barcode);

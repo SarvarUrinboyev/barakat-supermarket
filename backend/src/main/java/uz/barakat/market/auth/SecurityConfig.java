@@ -205,6 +205,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/savdograph/proposals/*/approve",
                                 "/api/savdograph/proposals/*/reject")
                         .access(perm("SAVDOGRAPH", "DECIDE"))
+                        // B3 ask is a read-only query even though its HTTP verb is POST.
+                        .requestMatchers(HttpMethod.POST, "/api/savdograph/ask")
+                        .access(perm("SAVDOGRAPH", "READ"))
                         .requestMatchers(HttpMethod.GET, "/api/savdograph/**").access(perm("SAVDOGRAPH", "READ"))
                         .requestMatchers("/api/savdograph/**").access(perm("SAVDOGRAPH", "WRITE"))
                         // Acknowledging an anomaly is an owner mutation — must precede the
