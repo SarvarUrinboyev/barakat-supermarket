@@ -17,6 +17,9 @@ const env = import.meta.env || {};
 /** True for the hosted multi-tenant web build. */
 export const IS_WEB = String(env.VITE_TARGET || '').toLowerCase() === 'web';
 
+/** Explicit sample-data signal; never inferred from hostnames or API origins. */
+export const IS_DEMO_DATA = String(env.VITE_DEMO_DATA || '').toLowerCase() === 'true';
+
 /** HTTP origin of the data API ('' = same origin). No trailing slash. */
 export const API_ORIGIN = (env.VITE_API_URL || '').replace(/\/+$/, '');
 

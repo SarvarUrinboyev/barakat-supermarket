@@ -342,3 +342,51 @@ Validation record for this increment:
 - provider/model and License Server configuration: unchanged;
 - PostgreSQL runtime: deferred; H2/Flyway V46 validated;
 - live OpenAI smoke: deferred and not applicable to this provider-free bridge.
+
+## B4 owner workspace validation
+
+Run all configured frontend tests:
+
+```powershell
+Set-Location .\frontend
+npm test -- --reporter=dot
+```
+
+Expected B4 record: `6` files, `104/104` tests passed. This includes `13`
+pre-existing format/customer/print regressions and `91` focused SavdoGraph
+model/component cases. No dedicated `typecheck` script exists in
+`frontend/package.json`; do not claim one.
+
+Run the configured production build:
+
+```powershell
+npm run build
+```
+
+Expected B4 record: Vite build passes and emits separate SavdoGraph JS/CSS
+chunks to the configured ignored `backend/src/main/resources/static` output.
+The existing large `ExportButton` chunk warning is non-blocking and unrelated.
+
+Run the smallest backend contract regression from `backend`:
+
+```powershell
+Set-Location ..\backend
+.\mvnw.cmd '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphControllerIT' test
+```
+
+Expected B4 record: `17/17` passed, covering B3.5 supplier-only bridging,
+evidence/tamper/tenant/idempotency safety, owner-only decisions, and at-most-one
+PurchaseOrder `DRAFT` with no operational/provider side effect.
+
+The mocked browser journey is:
+
+```powershell
+Set-Location ..\frontend
+$env:E2E_BASE_URL='http://127.0.0.1:4174'
+npx playwright test e2e/savdograph.mock.spec.js --reporter=list
+```
+
+It requires a separate local Vite server. The B4 machine has no Playwright
+Chromium executable, so `BROWSER_VERIFICATION=DEFERRED`. Do not download a
+browser or access staging/production without the B5 approval gate.
+`LIVE_OPENAI_SMOKE=DEFERRED`; `POSTGRES_PARITY=DEFERRED`.

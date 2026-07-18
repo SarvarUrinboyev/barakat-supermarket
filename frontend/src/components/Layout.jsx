@@ -15,6 +15,7 @@ import { formatDate, todayIso } from '../lib/format.js';
 
 const PAGE_TITLES = {
   '/dashboard': 'Boshqaruv',
+  '/savdograph': 'SavdoGraph AI',
   '/pos': 'Kassa (POS)',
   '/pos/history': 'Sotuvlar tarixi',
   '/management': 'Moliya',

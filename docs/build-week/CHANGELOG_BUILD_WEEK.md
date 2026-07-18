@@ -163,3 +163,19 @@ included in this branch.
 - Focused bridge and rollback tests passed `12/12`. Full validation results and
   the exact B4 retry boundary are recorded in `TESTING_INSTRUCTIONS.md` and
   `B3_5_PROPOSAL_BRIDGE_CONTRACT.md`.
+
+### B4 owner decision workspace
+
+- Added permission-aware `/savdograph` navigation inside the existing shell,
+  with a safe direct-access denial and exact ACCOUNT_OWNER decision visibility.
+- Added localized UZ/RU/EN Gross Profit Brief, typed Ask Your Store, safe
+  evidence drawer, deterministic reorder simulator, explicit supplier-only
+  B3.5 proposal bridge, confirmation-only approval/rejection, and immutable
+  Action Ledger timeline.
+- Added route-scoped responsive/accessibility styling, explicit
+  `VITE_DEMO_DATA` labeling, focus-managed dialogs/drawers, and safe degraded
+  states without client financial calculations or autonomous action.
+- Frontend tests passed `104/104` (`13` existing plus `91` focused); production
+  Vite build passed; focused B3.5/B1 backend regression passed `17/17`.
+- Browser execution is deferred because Playwright Chromium is not installed;
+  `LIVE_OPENAI_SMOKE=DEFERRED`; `POSTGRES_PARITY=DEFERRED`.

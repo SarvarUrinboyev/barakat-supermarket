@@ -368,6 +368,26 @@ export const SupplierApi = {
   remove: (id) => api.del(`/suppliers/${id}`),
 };
 
+/**
+ * SavdoGraph B1/B2/B3/B3.5 boundary. Callers pass only the committed DTO
+ * fields; tenant/shop authority continues to come from the shared API client.
+ */
+export const SavdoGraphApi = {
+  createGrossProfitBrief: (body) => api.post('/savdograph/gross-profit-briefs', body),
+  grossProfitBrief: (analysisRunId) => api.get(`/savdograph/gross-profit-briefs/${analysisRunId}`),
+  ask: (body) => api.post('/savdograph/ask', body),
+  evidence: (evidenceId) => api.get(`/savdograph/evidence-items/${evidenceId}`),
+  createReorderSimulation: (body) => api.post('/savdograph/reorder-simulations', body),
+  reorderSimulation: (analysisRunId) => api.get(`/savdograph/reorder-simulations/${analysisRunId}`),
+  createProposalFromSimulation: (analysisRunId, body) =>
+    api.post(`/savdograph/reorder-simulations/${analysisRunId}/proposals`, body),
+  proposals: () => api.get('/savdograph/proposals'),
+  proposal: (proposalId) => api.get(`/savdograph/proposals/${proposalId}`),
+  approveProposal: (proposalId, body) => api.post(`/savdograph/proposals/${proposalId}/approve`, body),
+  rejectProposal: (proposalId, body) => api.post(`/savdograph/proposals/${proposalId}/reject`, body),
+  actionLedger: () => api.get('/savdograph/action-ledger'),
+};
+
 export const TransferApi = {
   list: () => api.get('/transfers'),
   create: (body) => api.post('/transfers', body),

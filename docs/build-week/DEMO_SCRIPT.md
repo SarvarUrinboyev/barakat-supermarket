@@ -93,3 +93,31 @@ For the eventual non-production B4 demo, ask one question in each supported lang
 The frontend must render typed refusal, unavailable, timeout/rate/network, invalid-output, unknown/invalid-tool, tool-limit, insufficient-data, and groundedness-failure states. A groundedness failure must show no unsupported business number. The Ask flow cannot create/approve a PO, alter inventory/prices, message a supplier, receive/deliver goods, or make a payment.
 
 `LIVE_OPENAI_SMOKE=DEFERRED`. `POSTGRES_PARITY=DEFERRED`.
+
+## B4 owner workspace click path
+
+Use only an approved local/staging environment with anonymized seed data and
+`VITE_DEMO_DATA=true`. Confirm the permanent localized Demo Data banner before
+showing any figure.
+
+1. Open `/savdograph` as an ACCOUNT_OWNER with SavdoGraph read/write/decide and
+   ledger-read permissions; point out that an unauthorized user has no nav item.
+2. Set the end-exclusive period and generate `Daily Gross Profit Brief`; call
+   it Gross Profit, never Net Profit.
+3. Ask the exact Uzbek example and show classification, facts, assumptions,
+   limitations, tools, interaction metadata, and cited evidence.
+4. Open evidence. Show safe inputs, source period, calculation/version, result
+   and integrity status; do not show raw hash/provider data.
+5. Explicitly select a product, run the scenario, select only a supplier, and
+   click `Create proposal for review`.
+6. Explain that the bridge body contains only `supplierId`; proposal quantity,
+   classification, source run and evidence are server-derived.
+7. Open Approve or Reject, read the human-decision/DRAFT-only warning, and
+   explicitly confirm. Never describe DRAFT as an order.
+8. Refresh Action Ledger and show decision, proposal, evidence, actor label,
+   timestamp, outcome and optional DRAFT reference.
+9. Switch UZ, RU and EN; verify 1440, 1024, 768 and 390 layouts.
+
+The mocked Playwright script encodes this path, but B4 execution is
+`BROWSER_VERIFICATION=DEFERRED` because Chromium is not installed locally.
+No screenshot or live-browser result is claimed.

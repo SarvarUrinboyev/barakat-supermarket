@@ -6,5 +6,6 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.{js,jsx}'],
     environment: 'node',
+    setupFiles: ['./src/test/setupReact.js'],
   },
 });

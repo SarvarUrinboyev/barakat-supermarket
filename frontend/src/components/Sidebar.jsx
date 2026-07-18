@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
 import { isModuleEnabled } from '../lib/modules.js';
+import { canReadSavdoGraph } from '../features/savdograph/model.js';
 
 /**
  * Line icons (24x24 stroke), keyed by route. They use currentColor, so
@@ -147,6 +148,13 @@ const ICON = {
       <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
     </svg>
   ),
+  '/savdograph': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
+         strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 18V9m5 9V5m5 13v-7m5 7V3" />
+      <path d="M3 21h18M5 6l4-3 5 5 5-6" />
+    </svg>
+  ),
   '/accounting': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"
          strokeLinecap="round" strokeLinejoin="round">
@@ -171,6 +179,7 @@ const ICON_COLOR = {
   '/pos':           '#16a34a',
   '/pos/history':   '#8b5cf6',
   '/promos':        '#ec4899',
+  '/savdograph':    '#10b981',
   '/management':    '#0ea5e9',
   '/home-expenses': '#f97316',
   '/payments':      '#14b8a6',
@@ -343,6 +352,19 @@ export function Sidebar({ open, onClose }) {
               </svg>
             </span>
             <span>{t('IMEI baza')}</span>
+          </NavLink>
+        )}
+        {canReadSavdoGraph(user) && (
+          <NavLink
+            to="/savdograph"
+            title="SavdoGraph AI"
+            aria-label="SavdoGraph AI"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            <span className="ico" style={{ color: iconColor('/savdograph') }}>
+              {ICON['/savdograph']}
+            </span>
+            <span>SavdoGraph AI</span>
           </NavLink>
         )}
         {NAV_ITEMS.filter((item) => isOn(item.key)).map((item) => (

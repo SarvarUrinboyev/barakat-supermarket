@@ -24,6 +24,7 @@ const Calculator = lazyPage(() => import('./pages/Calculator.jsx'), 'Calculator'
 const CustomerDetail = lazyPage(() => import('./pages/CustomerDetail.jsx'), 'CustomerDetail');
 const Customers = lazyPage(() => import('./pages/Customers.jsx'), 'Customers');
 const Dashboard = lazyPage(() => import('./pages/Dashboard.jsx'), 'Dashboard');
+const SavdoGraph = lazyPage(() => import('./pages/SavdoGraph.jsx'), 'SavdoGraph');
 const Admin = lazyPage(() => import('./pages/Admin.jsx'), 'Admin');
 const AccountDetail = lazyPage(() => import('./pages/AccountDetail.jsx'), 'AccountDetail');
 const AuditLog = lazyPage(() => import('./pages/AuditLog.jsx'), 'AuditLog');
@@ -116,6 +117,7 @@ function Authenticated() {
       <Route element={<Layout />}>
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="savdograph" element={<SavdoGraph />} />
         <Route path="management" element={g(<Management />, { module: 'management' })} />
         <Route path="expenses" element={<Navigate to="/home-expenses" replace />} />
         <Route path="home-expenses" element={g(<HomeExpenses />, { module: 'home-expenses' })} />

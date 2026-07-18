@@ -210,3 +210,23 @@ idempotent and creates at most one PurchaseOrder `DRAFT`. Frontend work must not
 add autonomous actions, provider tools, backend calculations, or weaker evidence
 handling. See `B3_5_PROPOSAL_BRIDGE_CONTRACT.md` for the exact contract and B4
 retry prompt.
+
+## B4 frontend ownership boundary
+
+The owner workspace is implemented at `/savdograph` in the existing React
+shell. `SavdoGraph.jsx` orchestrates authenticated store state;
+`features/savdograph/model.js` owns permission/bounds/request-safety helpers and
+route-local UZ/RU/EN content; `components.jsx` owns typed result/evidence/
+decision/ledger presentation; and `savdograph.css` owns route-scoped responsive
+styles. See `B4_OWNER_WORKSPACE_CONTRACT.md` for the complete API matrix.
+
+Navigation and direct route rendering use effective permissions returned by
+`/me`; decision controls additionally require exact `ACCOUNT_OWNER`. No
+editable form/local-storage field grants approval authority. The shared API
+client remains the only source of bearer and `X-Shop-Id` context.
+
+The B3.5 bridge helper emits only numeric `supplierId`; simulation output,
+evidence, quantity, classification and tenant authority are not copied into the
+request. Approval/rejection is a separate dialog and is not rendered complete
+until the backend confirms it. B4 changes no backend, formula, evidence,
+provider/tool, permission, idempotency, PO, deployment or production semantics.
