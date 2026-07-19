@@ -274,3 +274,21 @@ included in this branch.
   16 ceiling; runtime migration and required PostgreSQL behavior nevertheless
   passed. Current result: `POSTGRES_PARITY=VERIFIED`;
   `LIVE_OPENAI_SMOKE=DEFERRED`.
+
+### B5.2C offline groundedness diagnosis
+
+- Preserved the sanitized B5.2B failure and classified its exact historical
+  draft cause as `G. INSUFFICIENT_EVIDENCE_TO_DETERMINE`; no raw provider
+  output or missing subreason was reconstructed.
+- Added typed privacy-safe groundedness reasons with fixed field paths and
+  evidence counts while keeping ordinary user failures generic.
+- Bound monetary units/currency to cited evidence; exact differing currency,
+  value, classification, tenant, interaction, and terminology still fail closed.
+- Serialized the B2 calculation version, handled only exact structured metadata
+  tokens, required non-empty fact citations, and rejected ANSWERED results with
+  no result evidence.
+- Added the exact Uzbek two-exchange fake-provider fixture and the required
+  20-case offline reproduction matrix.
+- Passed focused 38/38, affected 80/80, full backend 389/389, and package.
+  No network/OpenAI request, operational side effect, formula/tool-registry
+  change, push, deployment, or live retry occurred.

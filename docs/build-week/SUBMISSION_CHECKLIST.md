@@ -207,3 +207,24 @@ Current local database gate: `POSTGRES_PARITY=VERIFIED`. The temporary parity
 cluster is not a deployed demo database; the separate demo environment,
 live-provider, push, deploy, account, traffic, upload, and submission gates stay
 closed.
+
+## B5.2C offline groundedness diagnosis - 2026-07-19
+
+- [x] Exact B5.2B sanitized failure retained without a live-pass claim.
+- [x] Historical live draft root cause classified
+  `G. INSUFFICIENT_EVIDENCE_TO_DETERMINE`; no missing payload was guessed.
+- [x] Full request/parser/tool/evidence/numeric/classification/terminology/audit
+  pipeline and every validator rejection branch reviewed.
+- [x] Typed privacy-safe reason, field path, and evidence count added.
+- [x] Fact unit/currency is now checked against cited current-interaction evidence.
+- [x] Exact calculation version and disclosed evidence IDs are structural metadata,
+  not generic business numbers.
+- [x] Fact evidence schema requires at least one ID; ANSWERED without result
+  evidence fails closed.
+- [x] Exact Uzbek fake-provider path passed with two offline exchanges.
+- [x] Required 20-case matrix and negative value/currency/shorthand regressions passed.
+- [x] Focused 38/38, affected 80/80, full backend 389/389, package exit 0.
+- [x] Network requests during B5.2C: 0; no raw provider result or key value used.
+- [ ] One live retry remains `BLOCKED_NEEDS_SEPARATE_APPROVAL`.
+- [ ] No live pass is claimed; push, deploy, demo migration, judge account,
+  traffic, upload, and submission remain separately gated.

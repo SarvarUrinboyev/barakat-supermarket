@@ -45,11 +45,14 @@ public final class StoreCopilotSchemas {
     }
 
     public static ObjectNode responseFormat(ObjectMapper mapper) {
+        ObjectNode factEvidenceIds = array(mapper, integer(mapper,
+                "Immutable repository evidence ID."), 30);
+        factEvidenceIds.put("minItems", 1);
         ObjectNode fact = object(mapper,
                 property(mapper, "label", boundedString(mapper, "Short localized fact label.", 1, 160)),
                 property(mapper, "value", boundedString(mapper, "Tool-grounded display value.", 1, 160)),
                 property(mapper, "unit", nullableBoundedString(mapper, "Display unit or null.", 40)),
-                property(mapper, "evidence_ids", array(mapper, integer(mapper, "Immutable repository evidence ID."), 30)),
+                property(mapper, "evidence_ids", factEvidenceIds),
                 property(mapper, "classification", enumString(mapper, "Exact fact classification.", "VERIFIED", "ESTIMATED")));
         fact.set("required", strings(mapper, "label", "value", "unit", "evidence_ids", "classification"));
 

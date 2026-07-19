@@ -610,3 +610,33 @@ Afterward the exact cluster was fast-stopped, port closure was verified, the
 unique directory was removed, and task variables were cleared. No remote or
 production database, Windows service control, Docker, or OpenAI request was
 used. `POSTGRES_PARITY=VERIFIED`; `LIVE_OPENAI_SMOKE=DEFERRED`.
+
+## B5.2C offline groundedness diagnosis - 2026-07-19
+
+No command in this phase may use the network or the OpenAI key. JDK 21 and Maven
+offline mode were used:
+
+```powershell
+Set-Location .\backend
+$env:JAVA_HOME = 'C:\Users\Laptop\tools\jdk-21.0.11'
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+.\mvnw.cmd -o '-Dtest=StoreCopilotGroundingValidatorTest,StoreCopilotGroundingMatrixTest,StoreCopilotServiceTest' test
+.\mvnw.cmd -o '-Dtest=SavdoGraphProposalBridgeIT,SavdoGraphProposalBridgeRollbackIT,SavdoGraphControllerIT,SavdoGraphTransactionRollbackIT,SavdoGraphB2ControllerIT,SavdoGraphB3ControllerIT,OpenAiResponsesStoreCopilotProviderTest,StoreCopilotGroundingValidatorTest,StoreCopilotGroundingMatrixTest,StoreCopilotServiceTest,AppendOnlyRepositoryContractTest,EvidenceContentHasherTest,V44SavdoGraphPostgresqlHardeningMigrationTest' test
+.\mvnw.cmd -o -q test
+.\mvnw.cmd -o -q -DskipTests package
+```
+
+Results:
+
+- focused validator/service fake-provider slice: 38/38;
+- affected B1/B2/B3/B3.5 slice: 80/80;
+- full backend: 389/389, zero failures/errors/skips;
+- package: exit 0; `barakat-market.jar`, 94,784,550 bytes, SHA-256
+  `74d0d655893856c6977ac2546a81239c14186553234cf6c5198986e6781c1a76`;
+- required 20 matrix variants all matched their exact safe reason;
+- provider exchanges were Mockito/fake-provider calls only; network count was 0.
+
+The known H2 in-memory backup-startup warning remained non-fatal and is not
+PostgreSQL proof. The B5.2B live outcome remains failed groundedness, not passed.
+A new live retry requires a separate explicit approval and must stop after one
+interaction while capturing only the safe enum/path/count.

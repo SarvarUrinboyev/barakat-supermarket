@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -125,6 +127,56 @@ class StoreCopilotServiceTest {
         assertThat(result.evidenceIds()).containsExactly(101L);
         assertThat(result.answer()).contains("50").doesNotContainIgnoringCase("Net Profit");
         verify(b2).generateGrossProfitBrief(any());
+    }
+
+    @Test
+    void exactUzbekLiveShapedFixtureUsesTwoFakeProviderExchangesAndPasses() {
+        when(b2.generateGrossProfitBrief(any())).thenReturn(liveBrief());
+        ToolCall call = new ToolCall("gross_call", StoreCopilotSchemas.GROSS_PROFIT_TOOL,
+                mapper.createObjectNode().put("start_date", "2026-07-19")
+                        .put("end_date", "2026-07-20").put("timezone", "Asia/Tashkent"));
+        List<ProviderRequest> requests = new ArrayList<>();
+        when(provider.exchange(any())).thenAnswer(invocation -> {
+            requests.add(invocation.getArgument(0));
+            return requests.size() == 1 ? callTurn(call) : finalTurn(answeredLiveGross());
+        });
+
+        var result = service().ask(request(
+                "Bugungi yalpi foyda qancha va bu raqam qaysi dalillarga asoslangan?",
+                RequestedLocale.AUTO, null));
+
+        assertThat(result.status()).isEqualTo(CopilotStatus.ANSWERED);
+        assertThat(result.language()).isEqualTo(CopilotLanguage.uz);
+        assertThat(result.answer()).contains("300 000 UZS", "1 250 000 UZS", "950 000 UZS", "24%");
+        assertThat(result.interactionId()).isNotBlank();
+        assertThat(requests).hasSize(2);
+        assertThat(requests.get(1).input().toString())
+                .contains("function_call_output", "calculation_version", "B2.0", "910005");
+        verify(provider, times(2)).exchange(any());
+    }
+
+    @Test
+    void groundednessFailureExposesGenericResultAndAuditsOnlySafeReason() {
+        when(b2.generateGrossProfitBrief(any())).thenReturn(brief());
+        ToolCall call = new ToolCall("gross_call", StoreCopilotSchemas.GROSS_PROFIT_TOOL,
+                mapper.createObjectNode().put("start_date", "2026-07-15")
+                        .put("end_date", "2026-07-16").put("timezone", "Asia/Tashkent"));
+        JsonNode invalid = answeredGross().deepCopy();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) invalid).put("answer",
+                "PRIVATE RAW ANSWER Gross Profit is 51 UZS.");
+        ((com.fasterxml.jackson.databind.node.ObjectNode) invalid.path("facts").get(0)).put("value", "51");
+        when(provider.exchange(any())).thenReturn(callTurn(call), finalTurn(invalid));
+
+        var result = service().ask(request("Gross Profit for 2026-07-15", RequestedLocale.EN, null));
+
+        assertThat(result.status()).isEqualTo(CopilotStatus.GROUNDEDNESS_VALIDATION_FAILED);
+        assertThat(result.errorCode()).isEqualTo(CopilotErrorCode.GROUNDEDNESS_VALIDATION_FAILED);
+        assertThat(result.facts()).isEmpty();
+        assertThat(result.evidenceIds()).isEmpty();
+        assertThat(result.answer()).doesNotContain("PRIVATE RAW ANSWER", "51");
+        verify(audit).record(anyString(), eq("COPILOT_GROUNDEDNESS"),
+                eq("FAILED_numeric_fact_not_in_cited_evidence"), eq("gpt-5.6-terra"),
+                any(), any(), eq("VERIFIED"));
     }
 
     @Test
@@ -373,6 +425,24 @@ class StoreCopilotServiceTest {
                 mapper.createArrayNode().add(101L));
     }
 
+    private JsonNode answeredLiveGross() {
+        var fact = mapper.createObjectNode()
+                .put("label", "Yalpi foyda").put("value", "300 000").put("unit", "UZS");
+        fact.set("evidence_ids", mapper.createArrayNode().add(910005L));
+        fact.put("classification", "VERIFIED");
+        ArrayNode facts = mapper.createArrayNode().add(fact);
+        ArrayNode evidenceIds = mapper.createArrayNode();
+        for (long id = 910001L; id <= 910008L; id++) {
+            evidenceIds.add(id);
+        }
+        return root("ANSWERED", "uz",
+                "Bugungi yalpi foyda 300 000 UZS. Dalillar: tushum 1 250 000 UZS, "
+                        + "qaytarilgan summa 50 000 UZS, transaction-time COGS 950 000 UZS, "
+                        + "yalpi marja 24%, 8 ta yakunlangan savdo va 12 ta manba qatori.",
+                "VERIFIED", facts, mapper.createArrayNode().add(StoreCopilotSchemas.GROSS_PROFIT_TOOL),
+                evidenceIds);
+    }
+
     private JsonNode answeredReorder() {
         var fact = mapper.createObjectNode()
                 .put("label", "Reorder quantity").put("value", "4").put("unit", "dona");
@@ -415,6 +485,25 @@ class StoreCopilotServiceTest {
                 new BigDecimal("35.71"), "AVAILABLE", 2, 2, BigDecimal.ZERO, List.of(), List.of(),
                 "DAILY_GROSS_PROFIT_BRIEF", "B2.0", LocalDateTime.of(2026, 7, 16, 0, 0),
                 Map.of("grossProfit", 101L, "classification", 102L));
+    }
+
+    private GrossProfitBriefResponse liveBrief() {
+        return new GrossProfitBriefResponse(700001L, "Daily Gross Profit Brief",
+                SavdoGraphResultClassification.VERIFIED, LocalDate.of(2026, 7, 19),
+                LocalDate.of(2026, 7, 20), "Asia/Tashkent", Currency.UZS,
+                new BigDecimal("1250000.00"), new BigDecimal("950000.00"),
+                new BigDecimal("300000.00"), new BigDecimal("24.00"), "AVAILABLE",
+                8, 12, new BigDecimal("50000.00"), List.of("Synthetic fixture"), List.of(),
+                "DAILY_GROSS_PROFIT_BRIEF", "B2.0", LocalDateTime.of(2026, 7, 20, 0, 0),
+                Map.ofEntries(
+                        Map.entry("periodTimezone", 910001L),
+                        Map.entry("revenue", 910002L),
+                        Map.entry("refundedRevenue", 910003L),
+                        Map.entry("cogs", 910004L),
+                        Map.entry("grossProfit", 910005L),
+                        Map.entry("grossMargin", 910006L),
+                        Map.entry("sourceRecordCounts", 910007L),
+                        Map.entry("classification", 910008L)));
     }
 
     private ReorderSimulationResponse reorder() {

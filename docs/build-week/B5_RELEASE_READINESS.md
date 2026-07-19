@@ -499,3 +499,56 @@ public system was contacted. Flyway warned that PostgreSQL 18.1 is newer than
 its tested PostgreSQL 16 ceiling; the warning is retained as a tooling
 limitation, while migration and runtime behavior passed on actual PostgreSQL
 18.1.
+
+## B5.2C offline groundedness diagnosis - 2026-07-19
+
+The single previously authorized B5.2B interaction used the exact Uzbek
+question `Bugungi yalpi foyda qancha va bu raqam qaysi dalillarga asoslangan?`,
+`gpt-5.6-terra`, two provider exchanges, and
+`get_daily_gross_profit_brief`. Language and schema validation passed, but the
+public result was `GROUNDEDNESS_VALIDATION_FAILED`. No financial result was
+accepted, no side effect occurred, and no raw provider body or validator
+subreason was retained.
+
+The exact cause of that historical provider draft is
+`G. INSUFFICIENT_EVIDENCE_TO_DETERMINE`: the raw draft and its rejection
+subreason do not exist, and several independent fail-closed branches map to the
+same public status. This is not relabeled as a live pass.
+
+Offline review nevertheless proved and remediated bounded validator and
+serialization defects plus one schema gap:
+
+- cited monetary facts were value-checked but their unit/currency was not
+  compared with the cited tool evidence;
+- exact structured metadata tokens such as `B2.0` and a disclosed immutable
+  evidence ID could be parsed as unsupported business numbers;
+- the Gross Profit tool omitted the calculation version from its safe serialized
+  result;
+- fact evidence arrays allowed zero items, and an `ANSWERED` result with no
+  facts and no top-level evidence could pass the prior validator.
+
+The remediation adds a typed safe reason, fixed field path and evidence-reference
+count; interaction-scoped unit metadata; exact-token metadata handling; safe
+calculation-version serialization; `minItems: 1` for fact evidence; and a
+fail-closed empty-answer-evidence check. Ordinary users still receive only the
+generic groundedness failure. No raw answer, provider payload, hidden reasoning,
+credential, tenant ID, or authorization value is stored in the diagnostic.
+
+The 20-case fake-provider matrix passed. Semantically equal decimal/grouping,
+UZS/Uzbek currency, percentage, date, and numeric-JSON-to-string forms pass;
+different values/currencies, shorthand scaling, empty/missing/previous/
+cross-tenant/unrelated evidence, unsupported narrative numbers, evidence
+counts, modified IDs, classification upgrades, Net Profit relabeling, and
+pre-tool evidence collection fail with exact safe reasons. The exact live-shaped
+Uzbek fake-provider path passed in two exchanges.
+
+Fresh offline gates: focused B3 `38/38`; affected B1/B2/B3/B3.5 `80/80`;
+full backend `389/389`, zero failures/errors/skips; package exit 0.
+`barakat-market.jar` is 94,784,550 bytes with SHA-256
+`74d0d655893856c6977ac2546a81239c14186553234cf6c5198986e6781c1a76`.
+Changed-file secret scanning and final Git checks are recorded at commit gate.
+
+No network request was made in B5.2C. `OPENAI_API_KEY` was handled as
+presence-only and never read or used. `POSTGRES_PARITY=VERIFIED` remains
+unchanged. One further live attempt is justified only as a separately approved,
+single bounded retry that captures the new safe enum; it is not authorized here.

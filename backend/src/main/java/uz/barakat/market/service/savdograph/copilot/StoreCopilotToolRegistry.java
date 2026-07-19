@@ -92,6 +92,9 @@ public class StoreCopilotToolRegistry {
         state.classificationByEvidence.putAll(outcome.classificationByEvidence());
         outcome.numbersByEvidence().forEach((id, values) ->
                 state.numbersByEvidence.computeIfAbsent(id, ignored -> new HashSet<>()).addAll(values));
+        outcome.unitsByEvidence().forEach((id, values) ->
+                state.unitsByEvidence.computeIfAbsent(id, ignored -> new HashSet<>()).addAll(values));
+        state.metadataTokens.addAll(outcome.metadataTokens());
         return outcome;
     }
 
@@ -116,6 +119,7 @@ public class StoreCopilotToolRegistry {
         safe.put("completed_sale_count", result.completedSaleCount());
         safe.put("source_sale_item_count", result.sourceSaleItemCount());
         putNullable(safe, "refunded_amount", result.refundedAmountUzs());
+        safe.put("calculation_version", result.calculationVersion());
         safe.set("assumptions", mapper.valueToTree(result.assumptions()));
         safe.set("limitations", mapper.valueToTree(result.limitations()));
         return deterministicOutcome(safe, result.evidenceIds(), result.classification(), Map.ofEntries(
@@ -125,7 +129,14 @@ public class StoreCopilotToolRegistry {
                 Map.entry("cogs", values(result.cogsUzs())),
                 Map.entry("grossProfit", values(result.grossProfitUzs())),
                 Map.entry("grossMargin", values(result.grossMarginPercent())),
-                Map.entry("sourceRecordCounts", List.of(result.completedSaleCount(), result.sourceSaleItemCount()))));
+                Map.entry("sourceRecordCounts", List.of(result.completedSaleCount(), result.sourceSaleItemCount()))),
+                Map.ofEntries(
+                        Map.entry("revenue", Set.of(result.currency().name())),
+                        Map.entry("refundedRevenue", Set.of(result.currency().name())),
+                        Map.entry("cogs", Set.of(result.currency().name())),
+                        Map.entry("grossProfit", Set.of(result.currency().name())),
+                        Map.entry("grossMargin", Set.of("%"))),
+                metadata(result.calculationVersion()));
     }
 
     private ToolOutcome searchProducts(JsonNode args, InteractionState state) {
@@ -152,7 +163,7 @@ public class StoreCopilotToolRegistry {
         output.put("ambiguous", candidates.size() > 1);
         output.set("candidates", mapper.valueToTree(candidates));
         output.set("evidence_ids", mapper.createArrayNode());
-        return new ToolOutcome(output, Set.of(), Map.of(), Map.of());
+        return new ToolOutcome(output, Set.of(), Map.of(), Map.of(), Map.of(), Set.of());
     }
 
     private ToolOutcome reorder(JsonNode args, InteractionState state) {
@@ -201,12 +212,15 @@ public class StoreCopilotToolRegistry {
                 Map.entry("coverageBefore", values(result.coverageBeforeDays())),
                 Map.entry("coverageAfter", values(result.coverageAfterDays())),
                 Map.entry("stockoutRisk", values(result.coverageBeforeDays())),
-                Map.entry("overstockRisk", values(result.coverageAfterDays()))));
+                Map.entry("overstockRisk", values(result.coverageAfterDays()))),
+                Map.of(), Set.of());
     }
 
     private ToolOutcome deterministicOutcome(ObjectNode result, Map<String, Long> evidenceIds,
                                              SavdoGraphResultClassification classification,
-                                             Map<String, List<?>> valuesByEvidenceName) {
+                                             Map<String, List<?>> valuesByEvidenceName,
+                                             Map<String, Set<String>> unitsByEvidenceName,
+                                             Set<String> metadataTokens) {
         ObjectNode output = mapper.createObjectNode();
         output.put("deterministic", true);
         output.put("read_only", true);
@@ -217,6 +231,7 @@ public class StoreCopilotToolRegistry {
         Set<Long> ids = Set.copyOf(evidenceIds.values());
         Map<Long, Set<String>> numbersByEvidence = new HashMap<>();
         Map<Long, SavdoGraphResultClassification> classifications = new HashMap<>();
+        Map<Long, Set<String>> unitsByEvidence = new HashMap<>();
         ids.forEach(id -> classifications.put(id, classification));
         valuesByEvidenceName.forEach((name, values) -> {
             Long evidenceId = evidenceIds.get(name);
@@ -226,13 +241,24 @@ public class StoreCopilotToolRegistry {
             Set<String> supported = numbersByEvidence.computeIfAbsent(evidenceId, ignored -> new HashSet<>());
             values.forEach(value -> addSupportedValue(supported, value));
         });
-        return new ToolOutcome(output, ids, immutableSets(numbersByEvidence), Map.copyOf(classifications));
+        unitsByEvidenceName.forEach((name, units) -> {
+            Long evidenceId = evidenceIds.get(name);
+            if (evidenceId != null) {
+                unitsByEvidence.put(evidenceId, Set.copyOf(units));
+            }
+        });
+        return new ToolOutcome(output, ids, immutableSets(numbersByEvidence), Map.copyOf(classifications),
+                immutableSets(unitsByEvidence), Set.copyOf(metadataTokens));
     }
 
     private static Map<Long, Set<String>> immutableSets(Map<Long, Set<String>> source) {
         Map<Long, Set<String>> result = new HashMap<>();
         source.forEach((id, values) -> result.put(id, Set.copyOf(values)));
         return Map.copyOf(result);
+    }
+
+    private static Set<String> metadata(String value) {
+        return value == null || value.isBlank() ? Set.of() : Set.of(value);
     }
 
     private static List<?> values(Object value) {
@@ -320,8 +346,10 @@ public class StoreCopilotToolRegistry {
         private final Map<Long, String> resolvedProductNames = new HashMap<>();
         private final Set<Long> evidenceIds = new LinkedHashSet<>();
         private final Map<Long, Set<String>> numbersByEvidence = new HashMap<>();
+        private final Map<Long, Set<String>> unitsByEvidence = new HashMap<>();
         private final Map<Long, SavdoGraphResultClassification> classificationByEvidence = new HashMap<>();
         private final List<String> toolsUsed = new ArrayList<>();
+        private final Set<String> metadataTokens = new HashSet<>();
 
         public Set<Long> evidenceIds() {
             return Set.copyOf(evidenceIds);
@@ -331,6 +359,10 @@ public class StoreCopilotToolRegistry {
             return Map.copyOf(numbersByEvidence);
         }
 
+        public Map<Long, Set<String>> unitsByEvidence() {
+            return Map.copyOf(unitsByEvidence);
+        }
+
         public Map<Long, SavdoGraphResultClassification> classificationByEvidence() {
             return Map.copyOf(classificationByEvidence);
         }
@@ -338,13 +370,19 @@ public class StoreCopilotToolRegistry {
         public List<String> toolsUsed() {
             return List.copyOf(toolsUsed);
         }
+
+        public Set<String> metadataTokens() {
+            return Set.copyOf(metadataTokens);
+        }
     }
 
     public record ToolOutcome(
             JsonNode output,
             Set<Long> evidenceIds,
             Map<Long, Set<String>> numbersByEvidence,
-            Map<Long, SavdoGraphResultClassification> classificationByEvidence) {
+            Map<Long, SavdoGraphResultClassification> classificationByEvidence,
+            Map<Long, Set<String>> unitsByEvidence,
+            Set<String> metadataTokens) {
     }
 
     private record ProductCandidate(Long productId, String displayName, String unit) {

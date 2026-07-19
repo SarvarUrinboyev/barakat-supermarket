@@ -342,3 +342,22 @@ Current database result is `POSTGRES_PARITY=VERIFIED`. No production/remote
 database, OpenAI request, push, deploy, account, public traffic, upload, or
 submission was authorized or performed. `LIVE_OPENAI_SMOKE=DEFERRED`; all
 external actions remain separate approval gates.
+
+## B5.2C offline diagnosis collaboration record
+
+Codex worked directly in the existing worktree and used no subagent. It first
+re-verified root, branch, required ancestry, clean status, PostgreSQL parity,
+and API-key presence only. The key value was never read, copied, hashed,
+validated, logged, persisted, or used. Network request count remained zero.
+
+The review was bounded to the committed B3 groundedness path and fake-provider
+tests. The historical B5.2B draft cannot be recovered, so its exact root remains
+`G. INSUFFICIENT_EVIDENCE_TO_DETERMINE`. Concrete offline gaps were fixed
+without relaxing current-interaction, tenant, fact citation, narrative numeric,
+classification, Gross-vs-Net, read-only, or human-approval invariants.
+
+The exact Uzbek fake-provider path and 20-case matrix passed; focused 38/38,
+affected 80/80, full backend 389/389, and package completed offline. No live
+retry, provider request, production/remote database, push, deploy, account,
+traffic, upload, feedback, or submission action occurred. A single live retry
+is only a separately approval-gated next step.
