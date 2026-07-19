@@ -15,6 +15,7 @@ import {
   hasPermission,
   isReviewPendingStatus,
   isSimulationEligible,
+  normaliseAskResponse,
   normalisePermissions,
   parseEvidenceReferences,
   safeErrorKey,
@@ -63,6 +64,34 @@ describe('Ask Your Store typed states and localization', () => {
   it('28 labels REFUSED as a domain or safety boundary', () => expect(statusLabel('REFUSED', 'EN')).toContain('refused'));
   it('29 labels groundedness validation failure explicitly', () => expect(statusLabel('GROUNDEDNESS_VALIDATION_FAILED', 'EN')).toContain('not sufficiently grounded'));
   it('30 preserves fact evidence maps and arrays', () => expect(evidenceIdList({ revenue: 8, cogs: 9 })).toEqual([8, 9]));
+  it.each(['PROVIDER_UNAVAILABLE', 'REFUSED', 'ERROR', 'GROUNDEDNESS_VALIDATION_FAILED'])(
+    'accepts %s without a classification badge',
+    (status) => expect(normaliseAskResponse({ status, classification: null, answer: 'Safe backend message' })).toMatchObject({ status, classification: null }),
+  );
+  it('accepts NEEDS_CLARIFICATION without inferring a classification', () => expect(normaliseAskResponse({ status: 'NEEDS_CLARIFICATION', classification: null, answer: 'Which product?' })).toMatchObject({ classification: null }));
+  it.each([
+    ['INSUFFICIENT_DATA', 'INSUFFICIENT_DATA'],
+    ['UNSUPPORTED', 'UNSUPPORTED'],
+  ])('accepts %s only with its corresponding classification', (status, classification) => {
+    expect(normaliseAskResponse({ status, classification })).toMatchObject({ status, classification });
+    expect(normaliseAskResponse({ status, classification: 'VERIFIED' })).toBeNull();
+  });
+  it('requires ANSWERED to contain both an answer and a valid business classification', () => {
+    expect(normaliseAskResponse({ status: 'ANSWERED', classification: null, answer: 'Fact' })).toBeNull();
+    expect(normaliseAskResponse({ status: 'ANSWERED', classification: 'VERIFIED', answer: ' ' })).toBeNull();
+  });
+  it('fails closed for unknown or missing statuses', () => {
+    expect(normaliseAskResponse({ status: 'FUTURE_STATUS', classification: null })).toBeNull();
+    expect(normaliseAskResponse({ classification: null })).toBeNull();
+  });
+  it('preserves a legitimate ANSWERED response and its public evidence fields', () => {
+    const response = { interactionId: 'ask-1', model: 'gpt-5.6', promptVersion: 'v1', status: 'ANSWERED', errorCode: null, language: 'uz', answer: 'Yalpi foyda 44 UZS.', classification: 'VERIFIED', facts: [{ value: '44', unit: 'UZS', evidence_ids: [71] }], assumptions: [], limitations: [], toolsUsed: ['get_daily_gross_profit_brief'], evidenceIds: [71], suggestedNextActions: [], providerLatencyMs: 120, generatedAt: '2026-07-20T10:00:00Z' };
+    expect(normaliseAskResponse(response)).toEqual(response);
+  });
+  it('preserves safe degraded fields while dropping non-contract provider payloads', () => {
+    const response = normaliseAskResponse({ status: 'PROVIDER_UNAVAILABLE', classification: null, answer: 'Safe message', errorCode: 'PROVIDER_UNAVAILABLE', interactionId: 'ask-2', model: 'gpt-5.6', providerLatencyMs: 30, rawProviderResponse: 'DO_NOT_RENDER' });
+    expect(response).toEqual({ status: 'PROVIDER_UNAVAILABLE', classification: null, answer: 'Safe message', errorCode: 'PROVIDER_UNAVAILABLE', interactionId: 'ask-2', model: 'gpt-5.6', providerLatencyMs: 30 });
+  });
 });
 
 describe('Reorder simulator contract', () => {

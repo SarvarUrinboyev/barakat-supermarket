@@ -9,6 +9,23 @@ export const WORKSPACE_LOCALES = Object.freeze(['UZ', 'RU', 'EN']);
 export const ASK_LOCALES = Object.freeze(['AUTO', ...WORKSPACE_LOCALES]);
 export const MAX_PRODUCT_RESULTS = 8;
 
+const ASK_CLASSIFICATIONS_BY_STATUS = Object.freeze({
+  ANSWERED: new Set(['VERIFIED', 'ESTIMATED']),
+  NEEDS_CLARIFICATION: new Set([null, 'INSUFFICIENT_DATA']),
+  INSUFFICIENT_DATA: new Set(['INSUFFICIENT_DATA']),
+  UNSUPPORTED: new Set(['UNSUPPORTED']),
+  PROVIDER_UNAVAILABLE: new Set([null]),
+  REFUSED: new Set([null]),
+  ERROR: new Set([null]),
+  GROUNDEDNESS_VALIDATION_FAILED: new Set([null]),
+});
+
+const ASK_RESPONSE_FIELDS = Object.freeze([
+  'interactionId', 'model', 'promptVersion', 'status', 'errorCode', 'language',
+  'answer', 'classification', 'facts', 'assumptions', 'limitations', 'toolsUsed',
+  'evidenceIds', 'suggestedNextActions', 'providerLatencyMs', 'generatedAt',
+]);
+
 const TEXT = {
   UZ: {
     productPromise: "Mahalla savdosi uchun dalillarga asoslangan qarorlar.",
@@ -178,6 +195,21 @@ export function statusLabel(status, locale = 'UZ') {
     APPROVED: 'approved', DRAFT_CREATED: 'approved', REJECTED: 'rejected',
   };
   return sgText(locale, labels[String(status || '').toUpperCase()] || 'error');
+}
+
+export function normaliseAskResponse(response) {
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return null;
+  const status = response.status;
+  const allowedClassifications = ASK_CLASSIFICATIONS_BY_STATUS[status];
+  if (!allowedClassifications) return null;
+
+  const classification = response.classification == null ? null : response.classification;
+  if (!allowedClassifications.has(classification)) return null;
+  if (status === 'ANSWERED' && (typeof response.answer !== 'string' || !response.answer.trim())) return null;
+
+  return Object.fromEntries(ASK_RESPONSE_FIELDS
+    .filter((field) => Object.prototype.hasOwnProperty.call(response, field))
+    .map((field) => [field, response[field]]));
 }
 
 export function isReviewPendingStatus(status) {

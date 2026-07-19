@@ -12,6 +12,7 @@ import {
 } from './model.js';
 
 export function ClassificationBadge({ classification, locale = 'UZ' }) {
+  if (classification == null) return null;
   const meta = classificationMeta(classification, locale);
   return (
     <span className={`sg-classification sg-classification-${meta.tone}`} title={meta.description}>
@@ -69,7 +70,7 @@ export function EvidenceLinks({ evidenceIds, locale = 'UZ', onOpen }) {
     <div className="sg-evidence-links" aria-label={sgText(locale, 'evidencePlural')}>
       {ids.map((id) => (
         <button type="button" className="sg-evidence-link" key={id} onClick={() => onOpen?.(id)} aria-label={`${sgText(locale, 'openEvidence')} ${id}`}>
-          <span aria-hidden="true">\u29c9</span> {sgText(locale, 'evidence')} #{id}
+          <span aria-hidden="true">⧉</span> {sgText(locale, 'evidence')} #{id}
         </button>
       ))}
     </div>
@@ -77,7 +78,7 @@ export function EvidenceLinks({ evidenceIds, locale = 'UZ', onOpen }) {
 }
 
 export function BriefResult({ brief, locale = 'UZ', onOpenEvidence }) {
-  if (!brief) return <div className="sg-empty"><span aria-hidden="true">\u25cc</span><p>{sgText(locale, 'noBrief')}</p></div>;
+  if (!brief) return <div className="sg-empty"><span aria-hidden="true">◌</span><p>{sgText(locale, 'noBrief')}</p></div>;
   const currency = brief.currency || 'UZS';
   return (
     <div className="sg-result" data-result="gross-profit-brief">
@@ -113,14 +114,14 @@ function askStatusMessage(status, locale) {
 }
 
 export function AskResult({ response, locale = 'UZ', onOpenEvidence, clarificationControl }) {
-  if (!response) return <div className="sg-empty"><span aria-hidden="true">\u2736</span><p>{sgText(locale, 'noAnswer')}</p></div>;
+  if (!response) return <div className="sg-empty"><span aria-hidden="true">✶</span><p>{sgText(locale, 'noAnswer')}</p></div>;
   const facts = Array.isArray(response.facts) ? response.facts : [];
   const safeAnswer = response.status === 'GROUNDEDNESS_VALIDATION_FAILED' ? null : response.answer;
   return (
     <article className="sg-result" data-result="ask-store">
       <div className="sg-result-head">
         <span className={`sg-status sg-status-${String(response.status || '').toLowerCase()}`}>{statusLabel(response.status, locale)}</span>
-        <ClassificationBadge classification={response.classification} locale={locale} />
+        {response.classification != null && <ClassificationBadge classification={response.classification} locale={locale} />}
       </div>
       {safeAnswer && <p className="sg-answer">{String(safeAnswer)}</p>}
       {askStatusMessage(response.status, locale) && <AsyncNotice tone={response.status === 'NEEDS_CLARIFICATION' ? 'info' : 'warning'}>{askStatusMessage(response.status, locale)}</AsyncNotice>}
@@ -133,7 +134,7 @@ export function AskResult({ response, locale = 'UZ', onOpenEvidence, clarificati
               <div className="sg-fact" key={`${fact.label || 'fact'}-${index}`}>
                 <span>{displayBackendValue(fact.label, locale)}</span>
                 <strong>{displayBackendValue(fact.value, locale)}{fact.value != null && fact.unit ? ` ${fact.unit}` : ''}</strong>
-                <ClassificationBadge classification={fact.classification || response.classification} locale={locale} />
+                {(fact.classification || response.classification) && <ClassificationBadge classification={fact.classification || response.classification} locale={locale} />}
                 <EvidenceLinks evidenceIds={fact.evidence_ids ?? fact.evidenceIds} locale={locale} onOpen={onOpenEvidence} />
               </div>
             ))}
@@ -159,7 +160,7 @@ export function AskResult({ response, locale = 'UZ', onOpenEvidence, clarificati
 }
 
 export function SimulationResult({ simulation, productName, locale = 'UZ', onOpenEvidence }) {
-  if (!simulation) return <div className="sg-empty"><span aria-hidden="true">\u21ba</span><p>{sgText(locale, 'noSimulation')}</p></div>;
+  if (!simulation) return <div className="sg-empty"><span aria-hidden="true">↺</span><p>{sgText(locale, 'noSimulation')}</p></div>;
   return (
     <article className="sg-result" data-result="reorder-simulation">
       <div className="sg-result-head">
@@ -213,7 +214,7 @@ export function SupplierBridgeControls({
 }
 
 export function ProposalCard({ proposal, decision, canDecide, locale = 'UZ', onOpenEvidence, onDecision }) {
-  if (!proposal) return <div className="sg-empty"><span aria-hidden="true">\u2299</span><p>{sgText(locale, 'noProposal')}</p></div>;
+  if (!proposal) return <div className="sg-empty"><span aria-hidden="true">⊙</span><p>{sgText(locale, 'noProposal')}</p></div>;
   const status = decision?.proposalStatus || proposal.proposalStatus || proposal.status;
   return (
     <article className="sg-result sg-proposal" data-result="proposal-review">
@@ -249,12 +250,12 @@ export function ProposalCard({ proposal, decision, canDecide, locale = 'UZ', onO
 }
 
 export function LedgerTimeline({ events, locale = 'UZ', onOpenEvidence }) {
-  if (!Array.isArray(events) || events.length === 0) return <div className="sg-empty"><span aria-hidden="true">\u25f7</span><p>{sgText(locale, 'noLedger')}</p></div>;
+  if (!Array.isArray(events) || events.length === 0) return <div className="sg-empty"><span aria-hidden="true">◷</span><p>{sgText(locale, 'noLedger')}</p></div>;
   return (
     <ol className="sg-ledger" aria-label={sgText(locale, 'recordedHistory')}>
       {events.map((event) => (
         <li key={event.id}>
-          <div className="sg-ledger-marker" aria-hidden="true">\u25cf</div>
+          <div className="sg-ledger-marker" aria-hidden="true">●</div>
           <article>
             <div className="sg-ledger-head"><strong>{displayBackendValue(event.eventType, locale)}</strong><time>{event.createdAt ? formatDateTime(event.createdAt) : sgText(locale, 'notAvailable')}</time></div>
             <div className="sg-ledger-grid">
@@ -309,7 +310,7 @@ export function EvidenceDrawer({ open, evidence, loading, error, locale = 'UZ', 
   return (
     <div className="sg-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <aside className="sg-drawer" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={panelRef} tabIndex={-1}>
-        <header><div><span className="sg-eyebrow">{sgText(locale, 'evidencePlural')}</span><h2 id={titleId}>{sgText(locale, 'evidenceViewer')}</h2></div><button type="button" className="sg-icon-button" onClick={onClose} aria-label={sgText(locale, 'close')}>\u00d7</button></header>
+        <header><div><span className="sg-eyebrow">{sgText(locale, 'evidencePlural')}</span><h2 id={titleId}>{sgText(locale, 'evidenceViewer')}</h2></div><button type="button" className="sg-icon-button" onClick={onClose} aria-label={sgText(locale, 'close')}>×</button></header>
         <div className="sg-drawer-body">
           {loading && <div className="sg-skeleton-stack" aria-label={sgText(locale, 'loading')}><i /><i /><i /></div>}
           {error && <AsyncNotice tone="error">{error} {onRetry && <button type="button" className="btn btn-ghost btn-sm" onClick={onRetry}>{sgText(locale, 'retry')}</button>}</AsyncNotice>}
@@ -319,11 +320,11 @@ export function EvidenceDrawer({ open, evidence, loading, error, locale = 'UZ', 
                 { label: sgText(locale, 'evidenceId'), value: evidence.id },
                 { label: sgText(locale, 'evidenceType'), value: evidence.evidenceType },
                 { label: sgText(locale, 'calculation'), value: evidence.calculationId && evidence.calculationVersion ? `${evidence.calculationId} / ${evidence.calculationVersion}` : null },
-                { label: sgText(locale, 'sourcePeriod'), value: evidence.periodFrom && evidence.periodTo ? `${evidence.periodFrom} \u2192 ${evidence.periodTo}` : null },
+                { label: sgText(locale, 'sourcePeriod'), value: evidence.periodFrom && evidence.periodTo ? `${evidence.periodFrom} → ${evidence.periodTo}` : null },
                 { label: sgText(locale, 'result'), value: evidence.calculatedResult },
                 { label: sgText(locale, 'unitCurrency'), value: [evidence.unit, evidence.currency].filter(Boolean).join(' / ') || null },
                 { label: sgText(locale, 'generatedAt'), value: evidence.createdAt ? formatDateTime(evidence.createdAt) : null },
-                { label: sgText(locale, 'integrityRecorded'), value: evidence.contentHash ? '\u2713' : null },
+                { label: sgText(locale, 'integrityRecorded'), value: evidence.contentHash ? '✓' : null },
               ]} />
               {inputs && <section className="sg-safe-json"><h3>{sgText(locale, 'structuredInputs')}</h3><pre>{JSON.stringify(inputs, null, 2)}</pre></section>}
             </>
@@ -343,7 +344,7 @@ export function DecisionDialog({ open, kind, proposal, locale = 'UZ', pending, e
   return (
     <div className="sg-overlay sg-overlay-centered" onMouseDown={(event) => { if (event.target === event.currentTarget && !pending) onClose(); }}>
       <section className="sg-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={panelRef} tabIndex={-1}>
-        <header><div><span className="sg-eyebrow">{sgText(locale, 'confirmDecision')}</span><h2 id={titleId}>{sgText(locale, approve ? 'approveProposal' : 'rejectProposal')}</h2></div><button type="button" className="sg-icon-button" onClick={onClose} disabled={pending} aria-label={sgText(locale, 'close')}>\u00d7</button></header>
+        <header><div><span className="sg-eyebrow">{sgText(locale, 'confirmDecision')}</span><h2 id={titleId}>{sgText(locale, approve ? 'approveProposal' : 'rejectProposal')}</h2></div><button type="button" className="sg-icon-button" onClick={onClose} disabled={pending} aria-label={sgText(locale, 'close')}>×</button></header>
         <div className="sg-dialog-body">
           <ValueGrid locale={locale} items={[
             { label: sgText(locale, 'product'), value: proposal.productDisplayName },

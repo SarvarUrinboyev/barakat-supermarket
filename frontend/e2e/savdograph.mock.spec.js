@@ -91,6 +91,27 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
       }, 201);
     }
     if (path === '/api/savdograph/ask' && method === 'POST') {
+      const askBody = request.postDataJSON();
+      if (askBody.question === 'Provider unavailable') {
+        return json({
+          interactionId: 'ask-demo-provider-unavailable',
+          model: 'gpt-5.6',
+          promptVersion: 'b3-v1',
+          status: 'PROVIDER_UNAVAILABLE',
+          errorCode: 'PROVIDER_UNAVAILABLE',
+          language: 'uz',
+          answer: 'Safe backend provider message.',
+          classification: null,
+          facts: [],
+          assumptions: [],
+          limitations: [],
+          toolsUsed: [],
+          evidenceIds: [],
+          suggestedNextActions: [],
+          providerLatencyMs: 30,
+          generatedAt: '2026-07-18T12:00:30',
+        });
+      }
       return json({
         interactionId: 'ask-demo-1',
         model: 'gpt-5.6',
@@ -221,14 +242,30 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
   await expect(page.getByTestId('savdograph-workspace')).toBeVisible();
   await expect(page.locator('a[href="/savdograph"]')).toBeVisible();
   await expect(page.getByRole('note', { name: /Demo ma\u2019lumotlar/ })).toContainText(/Demo ma\u2019lumotlar/);
+  await expect(page.getByTestId('savdograph-workspace')).not.toContainText(/\\u[0-9a-fA-F]{4}/);
+  await expect(page.locator('section:has(#sg-brief) .sg-empty span')).toHaveText('◌');
+  await expect(page.locator('section:has(#sg-ask) .sg-empty span')).toHaveText('✶');
+  await expect(page.locator('section:has(#sg-simulator) .sg-empty span')).toHaveText('↺');
+  await expect(page.locator('section:has(#sg-proposal) .sg-empty span')).toHaveText('⊙');
+  await expect(page.locator('section:has(#sg-ledger) .sg-empty span')).toHaveText('◷');
+  await expect(page.locator('section:has(#sg-simulator)')).toContainText('Ssenariy farazi ·');
 
   await page.locator('section:has(#sg-brief)').getByRole('button', { name: /Brief yaratish/ }).click();
   await expect(page.locator('[data-result="gross-profit-brief"]')).toContainText('1250000.0000 UZS');
 
+  const askSection = page.locator('section:has(#sg-ask)');
+  await askSection.locator('textarea').fill('Provider unavailable');
+  await askSection.getByRole('button', { name: 'So\u2018rash', exact: true }).click();
+  const providerResult = page.locator('[data-result="ask-store"]');
+  await expect(providerResult).toContainText('AI provayder hozir mavjud emas');
+  await expect(providerResult).toContainText('Safe backend provider message.');
+  await expect(providerResult.locator('.sg-classification')).toHaveCount(0);
+  await expect(askSection).not.toContainText('Server kutilgan tuzilgan javobni qaytarmadi');
   await page.locator('section:has(#sg-ask)').getByRole('button', { name: /Bugungi yalpi foyda/ }).click();
   await page.locator('section:has(#sg-ask)').getByRole('button', { name: 'So\u2018rash', exact: true }).click();
   await expect(page.locator('[data-result="ask-store"]')).toContainText('Bugungi yalpi foyda');
   const evidenceButton = page.locator('[data-result="ask-store"]').getByRole('button', { name: /Dalilni ochish 101/ }).first();
+  await expect(evidenceButton.locator('span')).toHaveText('⧉');
   await evidenceButton.click();
   await expect(page.getByRole('dialog', { name: /Dalil ko\u2018ruvchi/ })).toContainText('gross-profit-v1');
   await page.keyboard.press('Escape');
@@ -237,7 +274,9 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
 
   await page.locator('#simulation-product-search').fill('Green Tea');
   await page.locator('#simulation-product-search').locator('xpath=ancestor::form').getByRole('button').click();
+  await expect(page.locator('.sg-product-results li').first()).toContainText('SKU: SKU-TEA-100 · Joriy zaxira');
   await page.locator('section:has(#sg-simulator)').getByRole('button', { name: /Tanlash Green Tea 100g/ }).click();
+  await expect(page.locator('section:has(#sg-simulator) .sg-selected-product span').first()).toHaveText('✓');
   await page.locator('section:has(#sg-simulator)').getByRole('button', { name: /Simulyatsiyani ishga tushirish/ }).click();
   await expect(page.locator('[data-result="reorder-simulation"]')).toContainText('9 PCS');
   await page.locator('section:has(#sg-simulator) select').last().selectOption('31');
@@ -286,6 +325,7 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
 
   await expect(page.getByTestId('savdograph-workspace')).toBeVisible();
   await expect(page.getByRole('note')).toBeVisible();
+  await expect(page.getByTestId('savdograph-workspace')).not.toContainText(/\\u[0-9a-fA-F]{4}/);
   const overflow = await page.evaluate(() => ({
     page: {
       clientWidth: document.documentElement.clientWidth,

@@ -16,6 +16,7 @@ import {
   canWriteSavdoGraph,
   createDecisionKey,
   isSimulationEligible,
+  normaliseAskResponse,
   safeErrorKey,
   sgText,
   validatePeriod,
@@ -94,7 +95,7 @@ function ProductPicker({ id, locale, selectedProduct, onSelect, disabled = false
       {error && <AsyncNotice tone="error">{error}</AsyncNotice>}
       {selectedProduct && (
         <div className="sg-selected-product" role="status">
-          <span aria-hidden="true">\u2713</span><strong>{selectedProduct.name}</strong>
+          <span aria-hidden="true">✓</span><strong>{selectedProduct.name}</strong>
           <span>SKU: {selectedProduct.barcode || selectedProduct.sku || sgText(locale, 'notAvailable')}</span>
           <span>{sgText(locale, 'currentStock')}: {selectedProduct.quantity ?? sgText(locale, 'notAvailable')} {selectedProduct.unit || ''}</span>
         </div>
@@ -103,7 +104,7 @@ function ProductPicker({ id, locale, selectedProduct, onSelect, disabled = false
         <ul className="sg-product-results" aria-label={sgText(locale, 'productSearch')}>
           {results.map((product) => (
             <li key={product.id}>
-              <div><strong>{product.name}</strong><span>SKU: {product.barcode || product.sku || sgText(locale, 'notAvailable')} \u00b7 {sgText(locale, 'currentStock')}: {product.quantity ?? sgText(locale, 'notAvailable')} {product.unit || ''}</span></div>
+              <div><strong>{product.name}</strong><span>SKU: {product.barcode || product.sku || sgText(locale, 'notAvailable')} · {sgText(locale, 'currentStock')}: {product.quantity ?? sgText(locale, 'notAvailable')} {product.unit || ''}</span></div>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => { onSelect(product); setResults([]); }} aria-label={`${sgText(locale, 'select')} ${product.name}`}>{selectedProduct?.id === product.id ? sgText(locale, 'selected') : sgText(locale, 'select')}</button>
             </li>
           ))}
@@ -117,7 +118,7 @@ function ProductPicker({ id, locale, selectedProduct, onSelect, disabled = false
 function AccessDenied({ locale }) {
   return (
     <main className="sg-denied" data-testid="savdograph-denied">
-      <span className="sg-denied-icon" aria-hidden="true">\u26d4</span>
+      <span className="sg-denied-icon" aria-hidden="true">⛔</span>
       <h1>{sgText(locale, 'deniedTitle')}</h1>
       <p>{sgText(locale, 'deniedBody')}</p>
     </main>
@@ -225,8 +226,9 @@ export function SavdoGraph() {
     if (askProduct?.id) body.productId = Number(askProduct.id);
     try {
       const result = await SavdoGraphApi.ask(body);
-      if (!result || !result.status || !result.classification) throw new Error('malformed');
-      setAskResponse(result);
+      const response = normaliseAskResponse(result);
+      if (!response) throw new Error('malformed');
+      setAskResponse(response);
     } catch (error) {
       setAskError(error.message === 'malformed' ? t('malformedResponse') : localizedError(error, locale));
     } finally { setAskLoading(false); }
@@ -333,7 +335,7 @@ export function SavdoGraph() {
     return (
       <main className="sg-page">
         <PageHeader title="SavdoGraph AI" desc={t('productPromise')} />
-        <div className="sg-denied"><span className="sg-denied-icon" aria-hidden="true">\u25c8</span><h1>{t('chooseStoreTitle')}</h1><p>{t('chooseStoreBody')}</p></div>
+        <div className="sg-denied"><span className="sg-denied-icon" aria-hidden="true">◈</span><h1>{t('chooseStoreTitle')}</h1><p>{t('chooseStoreBody')}</p></div>
       </main>
     );
   }
@@ -347,10 +349,10 @@ export function SavdoGraph() {
       </PageHeader>
 
       <section className="sg-command-strip" aria-label={t('safeEnvironment')}>
-        <div><span>{t('selectedPeriod')}</span><strong>{periodStart} \u2192 {periodEnd}</strong></div>
+        <div><span>{t('selectedPeriod')}</span><strong>{periodStart} → {periodEnd}</strong></div>
         <div><span>{t('timezone')}</span><strong>Asia/Tashkent (UTC+5)</strong></div>
         <div><span>{t('freshness')}</span><strong>{latestTimestamp || t('notGenerated')}</strong></div>
-        <div className="sg-safe-indicator"><span aria-hidden="true">\u25c8</span><strong>{t('safeEnvironment')}</strong></div>
+        <div className="sg-safe-indicator"><span aria-hidden="true">◈</span><strong>{t('safeEnvironment')}</strong></div>
       </section>
       <DemoDataBanner enabled={IS_DEMO_DATA} locale={locale} />
 
@@ -388,7 +390,7 @@ export function SavdoGraph() {
               ['lookbackDays', 'lookbackDays', 1, 90], ['forecastHorizonDays', 'forecastDays', 1, 180],
               ['leadTimeDays', 'leadTimeDays', 0, 60], ['safetyStockDays', 'safetyStockDays', 0, 90],
             ].map(([key, label, min, max]) => (
-              <label className="sg-field" key={key}><span>{t('scenarioAssumption')} \u00b7 {t(label)}</span><input className="input" type="number" min={min} max={max} step="1" value={scenario[key]} onChange={(event) => setScenarioValue(key, event.target.value)} /></label>
+              <label className="sg-field" key={key}><span>{t('scenarioAssumption')} · {t(label)}</span><input className="input" type="number" min={min} max={max} step="1" value={scenario[key]} onChange={(event) => setScenarioValue(key, event.target.value)} /></label>
             ))}
             <button type="submit" className="btn btn-primary" disabled={!writable || simulationLoading}>{simulationLoading ? t('loading') : t('runSimulation')}</button>
           </form>
@@ -413,7 +415,7 @@ export function SavdoGraph() {
         </Section>
 
         {ledgerAuthority && (
-          <Section id="sg-ledger" title={t('actionLedger')} hint={`${t('recordedHistory')} \u00b7 ${t('ledgerHint')}`} action={<button type="button" className="btn btn-ghost btn-sm" onClick={loadLedger} disabled={ledgerLoading}>{t('refresh')}</button>}>
+          <Section id="sg-ledger" title={t('actionLedger')} hint={`${t('recordedHistory')} · ${t('ledgerHint')}`} action={<button type="button" className="btn btn-ghost btn-sm" onClick={loadLedger} disabled={ledgerLoading}>{t('refresh')}</button>}>
             {ledgerError && <AsyncNotice tone="error">{ledgerError}</AsyncNotice>}
             {ledgerLoading ? <div className="sg-skeleton-stack" aria-label={t('loading')}><i /><i /><i /></div> : <LedgerTimeline events={ledger} locale={locale} onOpenEvidence={openEvidence} />}
           </Section>

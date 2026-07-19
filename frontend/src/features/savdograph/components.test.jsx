@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -8,6 +9,7 @@ import {
   DecisionDialog,
   DemoDataBanner,
   EvidenceDrawer,
+  EvidenceLinks,
   LedgerTimeline,
   ProposalCard,
   SimulationResult,
@@ -92,9 +94,44 @@ describe('SavdoGraph result rendering', () => {
     expect(html).toContain('Explicit candidate');
   });
 
-  it('renders provider unavailable without a sample answer', () => {
-    const html = render(<AskResult locale="EN" response={{ status: 'PROVIDER_UNAVAILABLE', classification: 'INSUFFICIENT_DATA' }} />);
-    expect(html).toContain('No fallback answer was fabricated');
+  it('renders a provider-unavailable response with null classification and no badge', () => {
+    const html = render(<AskResult locale="UZ" response={{ status: 'PROVIDER_UNAVAILABLE', classification: null, answer: 'Safe backend message' }} />);
+    expect(html).toContain('AI provayder hozir mavjud emas');
+    expect(html).toContain('Safe backend message');
+    expect(html).not.toContain('sg-classification');
+  });
+
+  it('suppresses an untrusted answer when groundedness validation fails', () => {
+    const html = render(<AskResult locale="UZ" response={{ status: 'GROUNDEDNESS_VALIDATION_FAILED', classification: null, answer: 'UNTRUSTED 999999 UZS' }} />);
+    expect(html).toContain('Javob dalillar bilan yetarlicha bog');
+    expect(html).not.toContain('UNTRUSTED');
+    expect(html).not.toContain('999999');
+    expect(html).not.toContain('sg-classification');
+  });
+
+  it('renders no classification badge when classification is null', () => {
+    expect(render(<ClassificationBadge classification={null} locale="EN" />)).toBe('');
+  });
+
+  it('renders intended symbols instead of literal Unicode escape text', () => {
+    const html = [
+      render(<EvidenceLinks evidenceIds={[1]} locale="EN" />),
+      render(<BriefResult locale="EN" brief={null} />),
+      render(<AskResult locale="EN" response={null} />),
+      render(<SimulationResult locale="EN" simulation={null} />),
+      render(<ProposalCard locale="EN" proposal={null} />),
+      render(<LedgerTimeline locale="EN" events={[]} />),
+    ].join('');
+    for (const symbol of ['⧉', '◌', '✶', '↺', '⊙', '◷']) expect(html).toContain(symbol);
+    expect(html).not.toMatch(/\\u[0-9a-fA-F]{4}/);
+  });
+
+  it('contains no raw Unicode escape sequences in SavdoGraph JSX text nodes', () => {
+    const source = [
+      readFileSync(new URL('./components.jsx', import.meta.url), 'utf8'),
+      readFileSync(new URL('../../pages/SavdoGraph.jsx', import.meta.url), 'utf8'),
+    ].join('\n');
+    expect(source).not.toMatch(/>[^<{]*\\u[0-9a-fA-F]{4}[^<{]*</);
   });
 
   it('renders simulation backend values without a proposal side effect', () => {
