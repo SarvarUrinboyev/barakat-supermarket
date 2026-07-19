@@ -292,3 +292,20 @@ included in this branch.
 - Passed focused 38/38, affected 80/80, full backend 389/389, and package.
   No network/OpenAI request, operational side effect, formula/tool-registry
   change, push, deployment, or live retry occurred.
+
+### B5.2D bounded live OpenAI retry
+
+- Performed exactly one separately approved live interaction with anonymized
+  synthetic data and the committed `SAVDOGRAPH_COPILOT_V1` path.
+- Verified two provider exchanges, actual model `gpt-5.6-terra`, Uzbek
+  `ANSWERED / VERIFIED`, and only
+  `get_daily_gross_profit_brief`.
+- Verified eight current-interaction immutable evidence references plus exact
+  numeric, currency/unit, classification, Gross-vs-Net, and narrative-number
+  groundedness.
+- Verified privacy and no-side-effect gates; no raw body, full answer, hidden
+  reasoning, key data, tenant identifier, contact/personal data, production
+  record, or operational write was persisted.
+- Recorded sanitized provider latency of 7,345 ms and wall latency of 10,257 ms.
+- No manual retry, product change, push, deployment, feedback, upload, or
+  submission occurred. `LIVE_OPENAI_RETRY=VERIFIED`.

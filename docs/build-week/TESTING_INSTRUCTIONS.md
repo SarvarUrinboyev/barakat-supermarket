@@ -640,3 +640,35 @@ The known H2 in-memory backup-startup warning remained non-fatal and is not
 PostgreSQL proof. The B5.2B live outcome remains failed groundedness, not passed.
 A new live retry requires a separate explicit approval and must stop after one
 interaction while capturing only the safe enum/path/count.
+
+## B5.2D bounded live OpenAI retry - 2026-07-19
+
+The separately approved live retry used a temporary, untracked harness under
+`C:\tmp` around the committed provider and service. Deterministic Gross
+Profit data, tenant-filtered evidence, audit capture, and safety identity were
+synthetic in-memory doubles; no local, remote, or production database record
+was read or written. The harness source contained no key and repository status
+remained clean before network use.
+
+Exactly one service interaction was executed with the exact approved Uzbek
+question. A hard wrapper permitted at most two provider exchanges and rejected
+any tool other than `get_daily_gross_profit_brief` before execution. Runtime
+configuration was `gpt-5.6-terra`, medium reasoning, 1,200 maximum output
+tokens, 30-second timeout, `store=false`, strict schemas, and
+`parallel_tool_calls=false`.
+
+Sanitized result:
+
+- harness outcome: `VERIFIED`; public result: `ANSWERED`;
+- exchanges: 2; actual model: `gpt-5.6-terra`; language: `uz`;
+- tool: `get_daily_gross_profit_brief`; classification: `VERIFIED`;
+- immutable current-interaction evidence-reference count: 8;
+- numeric, tenant-scope, currency/unit, classification, terminology,
+  unsupported-number, privacy, and no-side-effect proofs: pass;
+- safe failure enum/path: not applicable;
+- provider latency: 7,345 ms; wall latency: 10,257 ms;
+- raw provider body and hidden reasoning persisted: false.
+
+No manual retry, product-code change, push, deploy, feedback, upload, or
+submission occurred. `POSTGRES_PARITY=VERIFIED` remains independently proven.
+`LIVE_OPENAI_RETRY=VERIFIED`.

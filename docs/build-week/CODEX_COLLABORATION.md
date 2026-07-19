@@ -361,3 +361,27 @@ affected 80/80, full backend 389/389, and package completed offline. No live
 retry, provider request, production/remote database, push, deploy, account,
 traffic, upload, feedback, or submission action occurred. A single live retry
 is only a separately approval-gated next step.
+
+## B5.2D bounded live retry collaboration record
+
+The user separately approved one live credential-backed interaction and its
+bounded provider cost. Codex re-verified the exact repository, branch, required
+HEAD, clean worktree, documented PostgreSQL parity, and key presence before
+network use. The key value was used only by the committed provider for
+authentication and was never displayed, inspected, copied, hashed, logged, or
+persisted.
+
+A temporary untracked harness supplied only anonymized synthetic Gross Profit
+and tenant-filtered evidence data to the committed service. It hard-limited the
+run to two provider exchanges and the single read-only Gross Profit tool. The
+result was `ANSWERED / VERIFIED / uz`, actual model `gpt-5.6-terra`, with
+eight current-interaction immutable evidence references. All numeric,
+currency/unit, classification, terminology, privacy, and no-side-effect checks
+passed. Provider latency was 7,345 ms; bounded wall latency was 10,257 ms.
+
+No raw provider body, complete answer, hidden reasoning, credential data,
+tenant identifier, personal/contact data, or production record was recorded.
+No manual retry, product change, database operation, push, deploy, public
+traffic, feedback, upload, or submission occurred.
+`LIVE_OPENAI_RETRY=VERIFIED`; external release actions remain separately
+approval-gated.

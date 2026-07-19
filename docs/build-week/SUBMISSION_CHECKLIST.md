@@ -228,3 +228,24 @@ closed.
 - [ ] One live retry remains `BLOCKED_NEEDS_SEPARATE_APPROVAL`.
 - [ ] No live pass is claimed; push, deploy, demo migration, judge account,
   traffic, upload, and submission remain separately gated.
+
+## B5.2D bounded live OpenAI retry - 2026-07-19
+
+- [x] Exact required root, branch, HEAD, clean status, PostgreSQL parity, and
+  key-presence-only gates passed before network use.
+- [x] Exactly one anonymized synthetic Uzbek user interaction was performed.
+- [x] Exactly two provider exchanges used actual model `gpt-5.6-terra`.
+- [x] Only `get_daily_gross_profit_brief` executed.
+- [x] Public result was `ANSWERED / VERIFIED / uz`.
+- [x] Eight immutable evidence references were current-interaction and
+  synthetic-tenant scoped.
+- [x] Numeric, currency/unit, classification, terminology, and unsupported
+  narrative-number gates passed.
+- [x] `store=false`, strict schemas, serial tool calls, 1,200-token limit,
+  medium reasoning, and 30-second timeout remained enforced.
+- [x] No raw body, answer text, reasoning, secret, tenant identifier, contact,
+  personal data, or production record was persisted.
+- [x] No operational side effect occurred.
+- [x] `LIVE_OPENAI_RETRY=VERIFIED`.
+- [ ] Push, remote CI, demo deployment, public traffic, feedback, upload, and
+  submission remain separately approval-gated.

@@ -223,3 +223,19 @@ Do not narrate the H2 run as PostgreSQL parity and do not imply a live GPT call.
 `LIVE_OPENAI_SMOKE=DEFERRED` and
 `POSTGRES_PARITY=NOT_STARTED / BLOCKED_NEEDS_APPROVAL`. Video upload and final
 submission remain unperformed approval gates.
+
+## B5.2D verified live-provider proof
+
+The superseding release gates are `POSTGRES_PARITY=VERIFIED` and
+`LIVE_OPENAI_RETRY=VERIFIED`. The bounded provider proof used anonymized
+synthetic data, exactly two exchanges, actual model `gpt-5.6-terra`, and only
+the read-only `get_daily_gross_profit_brief` tool. Its sanitized result was
+Uzbek `ANSWERED / VERIFIED` with eight current-interaction immutable evidence
+references and passing numeric, currency/unit, classification, terminology,
+privacy, and no-side-effect checks.
+
+During the demo, describe this only as a verified bounded synthetic live smoke,
+not as production-data or deployment proof. Do not display a provider body,
+complete model answer, interaction identifier, key information, tenant
+identifier, or any personal/contact data. Push, CI, deployment, public traffic,
+video upload, feedback, and submission remain separate approval gates.

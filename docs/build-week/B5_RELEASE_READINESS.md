@@ -552,3 +552,29 @@ No network request was made in B5.2C. `OPENAI_API_KEY` was handled as
 presence-only and never read or used. `POSTGRES_PARITY=VERIFIED` remains
 unchanged. One further live attempt is justified only as a separately approved,
 single bounded retry that captures the new safe enum; it is not authorized here.
+
+## B5.2D bounded live OpenAI retry - 2026-07-19
+
+After explicit credential-use, network, and cost approval, exactly one
+anonymized synthetic interaction asked
+`Bugungi yalpi foyda qancha va bu raqam qaysi dalillarga asoslangan?`.
+The committed `SAVDOGRAPH_COPILOT_V1` server path used `store=false`, strict
+tools and structured output, `parallel_tool_calls=false`,
+`gpt-5.6-terra`, medium reasoning, 1,200 maximum output tokens, and a
+30-second per-exchange timeout.
+
+The bounded result was `ANSWERED / VERIFIED / uz` after exactly two provider
+exchanges. The actual returned model was `gpt-5.6-terra`; the only executed
+tool was `get_daily_gross_profit_brief`; eight immutable evidence references
+were from the current synthetic interaction. Numeric, tenant-scope,
+currency/unit, classification, Gross-vs-Net terminology, and unsupported
+narrative-number gates all passed.
+
+Provider latency was 7,345 ms and bounded wall latency was 10,257 ms. No raw
+provider body, complete answer, hidden reasoning, key information, tenant
+identifier, authorization value, personal/contact data, or production record
+was recorded. No approval, PurchaseOrder, supplier, payment, receiving,
+delivery, inventory, or price operation occurred. No safe failure enum was
+needed. `POSTGRES_PARITY=VERIFIED` remains separate and unchanged.
+`LIVE_OPENAI_RETRY=VERIFIED`; push, CI, deploy, public traffic, feedback,
+upload, and submission remain separate approval gates.
