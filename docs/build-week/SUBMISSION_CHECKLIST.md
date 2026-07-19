@@ -249,3 +249,22 @@ closed.
 - [x] `LIVE_OPENAI_RETRY=VERIFIED`.
 - [ ] Push, remote CI, demo deployment, public traffic, feedback, upload, and
   submission remain separately approval-gated.
+
+## B5.3D Railway demo gateway preparation - 2026-07-19
+
+- [x] Browser License contract has one same-origin route family:
+  `/api/license/{auth,billing,admin}`; no direct License origin/private DNS is
+  bundled.
+- [x] Explicit backend gateway allowlist, header/SSRF/redirect/body defenses,
+  backend admin authorization, and no-local-side-effect integration coverage
+  passed.
+- [x] Railway `PORT`, private License H2 volume, public/private topology, exact
+  variable names, manual deployment, and rollback contracts are documented.
+- [x] Local gates passed: backend 395/395, License 157/157, frontend 116/116,
+  production build, audit, Docker images, local health endpoints, and real
+  built-SPA staging E2E 3/3.
+- [ ] Create Railway resources/variables/volume and deploy only after a new
+  explicit approval; keep License Server and PostgreSQL private with no public
+  domain/proxy.
+- [ ] Verify a deployed demo URL, judge account, traffic decision, video, and
+  submission only under their separate approvals.

@@ -10,14 +10,11 @@
 // ALLOW_DEMO_SEED=true in the staging compose): demo_owner on account 90001.
 import { test, expect } from '@playwright/test';
 
-const LICENSE_URL = process.env.E2E_LICENSE_URL || 'http://localhost:19090';
 const DEMO_USER = process.env.E2E_DEMO_USER || 'demo_owner';
 const DEMO_PASSWORD = process.env.DEMO_SEED_PASSWORD || 'DemoStaging2026';
 
 async function login(page) {
-  // ?licenseUrl= wires the SPA to the staging license server on first visit
-  // (licenseClient.js persists it to localStorage for the whole session).
-  await page.goto(`/login?licenseUrl=${encodeURIComponent(LICENSE_URL)}`);
+  await page.goto('/login');
   await page.locator('input[autocomplete="username"]').fill(DEMO_USER);
   await page.locator('input[autocomplete="current-password"]').fill(DEMO_PASSWORD);
   await page.locator('button[type="submit"]').click();

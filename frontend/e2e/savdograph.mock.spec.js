@@ -39,7 +39,6 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
   await page.addInitScript(() => {
     localStorage.setItem('savdopro.token', 'mock-owner-token');
     localStorage.setItem('savdopro.activeShopId', '1');
-    localStorage.setItem('savdopro.licenseUrl', 'http://127.0.0.1:9090');
   });
 
   await page.route('**/api/**', async (route) => {

@@ -309,3 +309,21 @@ included in this branch.
 - Recorded sanitized provider latency of 7,345 ms and wall latency of 10,257 ms.
 - No manual retry, product change, push, deployment, feedback, upload, or
   submission occurred. `LIVE_OPENAI_RETRY=VERIFIED`.
+
+### B5.3D same-origin License gateway and Railway runtime compatibility
+
+- Added a closed, explicit backend `/api/license` facade for every frontend-used
+  License auth, session, billing, and administrator route. It uses only a
+  server-side private License URL, bounded JSON/response handling, timeouts,
+  safe errors, no redirects, bearer-only auth forwarding, and backend
+  administrator defense in depth.
+- Moved browser License requests to the same-origin facade and removed the
+  direct-origin configuration path. The client now translates the established
+  `/api/...` License endpoint vocabulary to the facade without changing the
+  underlying authentication model.
+- Made backend and License Server ports Railway `PORT` compatible; documented
+  isolated License H2 volume persistence, variables, public/private network
+  boundaries, manual demo setup, and rollback.
+- Added in-process gateway regression coverage and passed backend 395/395,
+  License 157/157, frontend 116/116, builds, audit, Docker images, and real
+  synthetic staging E2E 3/3. No Railway resource or deployment was created.

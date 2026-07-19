@@ -48,3 +48,51 @@ docker-compose deploy (backend + license + Postgres), scripted VPS provisioning,
 ## License
 
 Proprietary — production SaaS codebase, shared as an engineering work sample.
+---
+
+## SavdoGraph Build Week demo architecture
+
+SavdoGraph is the Build Week decision-support layer for the existing SavdoPRO
+POS: deterministic Gross Profit evidence, reorder simulation, grounded
+multilingual Ask Your Store, and human-approved draft-only procurement review.
+It uses synthetic demo data, an immutable evidence/action ledger, and preserves
+human approval boundaries. It does not autonomously submit orders, receive
+goods, send supplier notifications, make payments, mutate inventory, or change
+selling prices.
+
+### Same-origin License gateway
+
+For the Railway demo topology, the bundled React portal calls the fixed
+same-origin `/api/license` path. The public backend applies a closed mapping
+allowlist and calls the separate License Server over private networking. The
+browser never selects, receives, or calls the License Server origin.
+
+The gateway forwards only a bearer token when the existing contract requires
+one. It rejects arbitrary upstream hosts/paths/queries, redirects, cookies,
+hop-by-hop headers, and forwarded-host headers; it bounds JSON bodies and uses
+safe timeouts/errors. Backend authorization independently requires
+`SUPER_ADMIN` for License admin routes.
+
+### Railway demo boundary
+
+- Public: `savdograph-backend` only, serving the SPA, backend API,
+  `/api/license`, and `/actuator/health`.
+- Private: `savdograph-license` with file-backed H2 on a persistent `/data`
+  volume, plus PostgreSQL for backend demo data and Flyway V1–V46.
+- Build Week-specific configuration and manual deployment/rollback steps are in
+  [the Railway variable matrix](docs/build-week/RAILWAY_VARIABLE_MATRIX.md),
+  [deployment contract](docs/build-week/RAILWAY_DEMO_DEPLOYMENT.md), and
+  [rollback guide](docs/build-week/RAILWAY_ROLLBACK.md).
+
+No public demo URL is claimed here. Railway resources, domains, databases,
+volumes, deployments, payment providers, remote SavdoPRO/TezGo systems, and
+OpenAI are outside this repository change and require explicit approvals.
+
+### Build Week scope and verification
+
+SavdoPRO’s core POS, licensing service, payment/provider integrations, and
+production workflow pre-existed Build Week. Build Week adds the evidence-led
+SavdoGraph decision workspace and the demo-safe gateway/runtime packaging; it
+does not recast the pre-existing platform as new work. Current commands and
+recorded results are maintained in
+[Testing Instructions](docs/build-week/TESTING_INSTRUCTIONS.md).

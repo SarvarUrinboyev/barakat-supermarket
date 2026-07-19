@@ -672,3 +672,30 @@ Sanitized result:
 No manual retry, product-code change, push, deploy, feedback, upload, or
 submission occurred. `POSTGRES_PARITY=VERIFIED` remains independently proven.
 `LIVE_OPENAI_RETRY=VERIFIED`.
+
+## B5.3D same-origin License gateway and Railway runtime contract - 2026-07-19
+
+The browser License client now calls the public backend's fixed
+`/api/license` prefix. It translates the existing License Server `/api/...`
+endpoint definitions only to explicit gateway routes (for example,
+`/api/auth/login` becomes `/api/license/auth/login`); no public generic proxy
+or direct License origin remains.
+
+Verified local gates:
+
+- focused in-process gateway suite: 6/6, covering exact route mapping,
+  bearer-only forwarding, header stripping, authorization, limits, failures,
+  and no local account/API-key write;
+- full backend suite: 395/395; backend package: pass;
+- License Server suite: 157/157; License Server package: pass;
+- frontend suite: 116/116; production build: pass; `npm audit --omit=dev`:
+  zero vulnerabilities;
+- backend and License Docker images: pass; synthetic compose health endpoints
+  `/actuator/health` and `/api/health`: HTTP 200;
+- real built-SPA Playwright staging smoke: 3/3 (landing, same-origin demo login,
+  dashboard, and POS).
+
+The first browser run correctly exposed the invalid intermediate path
+`/api/license/api/auth/login`; the client-only prefix translation was fixed and
+the exact staging smoke then passed. No Railway, OpenAI, production, payment,
+inventory, supplier, deploy, or public-service action occurred.

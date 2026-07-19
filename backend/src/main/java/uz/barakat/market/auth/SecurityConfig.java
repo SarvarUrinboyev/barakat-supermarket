@@ -143,6 +143,24 @@ public class SecurityConfig {
                         // merchant key, Click via the MD5 sign_string. They
                         // carry no JWT, so they are open at the HTTP layer.
                         .requestMatchers("/api/pay/**").permitAll()
+                        // Same-origin License gateway. These are the only
+                        // public/authenticated/admin route families the SPA
+                        // calls; the controller itself has the second fixed
+                        // upstream-path allowlist. Keep these before /api/**.
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/license/auth/login", "/api/license/auth/register",
+                                "/api/license/auth/signup/request-otp", "/api/license/auth/social/google",
+                                "/api/license/auth/telegram", "/api/license/auth/social/facebook",
+                                "/api/license/auth/social/x", "/api/license/auth/forgot-password",
+                                "/api/license/auth/reset-password", "/api/license/auth/refresh",
+                                "/api/license/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/license/auth/signup/config").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/license/auth/me").authenticated()
+                        .requestMatchers("/api/license/billing/**").authenticated()
+                        .requestMatchers("/api/license/admin/**").hasRole("SUPER_ADMIN")
+                        // Unknown gateway URLs deliberately reach Spring MVC so
+                        // they are a 404/405 instead of a generic API 401.
+                        .requestMatchers("/api/license/**").permitAll()
                         // --- Per-resource RESOURCE:ACTION authorization ---
                         // The required permission is carried in the JWT (minted
                         // by the License Server). Convention: GET = READ, any

@@ -54,6 +54,12 @@ public class TenantFilter extends OncePerRequestFilter {
         this.metrics = metrics;
     }
 
+    /** The License gateway is account-scoped upstream, never shop-scoped locally. */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/license/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

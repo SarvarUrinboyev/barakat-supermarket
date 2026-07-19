@@ -89,7 +89,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 // stub exists so the shops.account_id FK and downstream
                 // joins succeed. INSERT IF NOT EXISTS via native SQL —
                 // safe to call on every request, costs one row check.
-                if (accountId != null) {
+                if (accountId != null && !isLicenseGatewayRequest(request)) {
                     String stubName = claims.get("username", String.class);
                     if (stubName == null || stubName.isBlank()) {
                         stubName = "Account #" + accountId;
@@ -117,7 +117,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 // the owner can always reach reports + the billing page.
                 boolean pastGrace = subExp >= 0
                         && subExp + graceDays < LocalDate.now().toEpochDay();
-                if (pastGrace && isMutating(request.getMethod())) {
+                if (!isLicenseGatewayRequest(request) && pastGrace && isMutating(request.getMethod())) {
                     writeForbidden(response, "SUBSCRIPTION_EXPIRED",
                             "Obuna muddati tugagan. Davom etish uchun tarifni yangilang.");
                     return;
@@ -165,6 +165,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private static boolean isMutating(String method) {
         return "POST".equals(method) || "PUT".equals(method)
                 || "PATCH".equals(method) || "DELETE".equals(method);
+    }
+
+    /** License gateway calls are owned upstream and must not create local rows. */
+    private static boolean isLicenseGatewayRequest(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/api/license/");
     }
 
     private static void writeForbidden(HttpServletResponse response, String code, String message)

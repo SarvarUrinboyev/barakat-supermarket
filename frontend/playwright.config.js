@@ -5,7 +5,7 @@
 //
 // Env knobs (defaults match docker-compose.staging.yml):
 //   E2E_BASE_URL        SPA + API origin        (default http://localhost:28086)
-//   E2E_LICENSE_URL     license server origin   (default http://localhost:19090)
+//   License calls use the same E2E_BASE_URL origin through /api/license.
 //   DEMO_SEED_PASSWORD  demo_owner's password   (default DemoStaging2026)
 import { defineConfig } from '@playwright/test';
 const savdoGraphMockMode = process.env.E2E_SAVDOGRAPH_MOCK === '1';

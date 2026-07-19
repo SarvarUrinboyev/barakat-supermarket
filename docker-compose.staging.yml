@@ -6,7 +6,7 @@
 #  deterministic tenant to log into — without touching prod or the dev DBs.
 #
 #    docker compose -f docker-compose.staging.yml up -d --build
-#    # UI:      http://localhost:28086/login?licenseUrl=http://localhost:19090
+#    # UI:      http://localhost:28086/login
 #    # login:   demo_owner / $DEMO_SEED_PASSWORD
 #    docker compose -f docker-compose.staging.yml down -v   # full reset
 #
@@ -19,9 +19,8 @@
 #      hard-disabled under prod on purpose, and staging needs it.
 #    - ports shifted (28086 / 19090) so it can run next to the dev stack.
 #
-#  The SPA reaches the license server via the ?licenseUrl= query param on
-#  first visit (persisted to localStorage by licenseClient.js) — no build
-#  args needed.
+#  The SPA calls the backend's same-origin /api/license gateway. Docker DNS
+#  keeps the License Server private to this staging network.
 # =====================================================================
 
 name: savdopro-staging
@@ -49,9 +48,8 @@ services:
       context: .
       dockerfile: backend/Dockerfile
       args:
-        # Hosted-web SPA behaviour (landing + /register), like prod. But
-        # VITE_LICENSE_URL stays EMPTY on purpose: a baked-in origin would
-        # override the ?licenseUrl= query param the E2E relies on.
+        # Hosted-web SPA behaviour (landing + /register), like prod. The
+        # license path is fixed same-origin and has no browser build argument.
         VITE_TARGET: web
         # Vite flags are build-time inputs. The guarded staging seed must be
         # paired with a permanently visible Demo Data notice in the baked SPA.
@@ -67,6 +65,7 @@ services:
       # (right for the desktop/droplet, wrong inside a container — docker-proxy
       # forwards to the bridge IP where a loopback-bound app doesn't listen).
       SERVER_ADDRESS: 0.0.0.0
+      LICENSE_SERVER_URL: http://license-server:9090
       SPRING_DATASOURCE_URL: "jdbc:h2:file:/tmp/staging-barakat;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE"
       SAVDOPRO_JWT_SECRET: ${SAVDOPRO_JWT_SECRET:-staging-only-jwt-secret-0123456789abcdef0123456789abcdef}
       SAVDOPRO_ADMIN_USER: ${SAVDOPRO_ADMIN_USER:-admin}

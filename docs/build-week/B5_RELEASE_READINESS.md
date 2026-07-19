@@ -578,3 +578,29 @@ delivery, inventory, or price operation occurred. No safe failure enum was
 needed. `POSTGRES_PARITY=VERIFIED` remains separate and unchanged.
 `LIVE_OPENAI_RETRY=VERIFIED`; push, CI, deploy, public traffic, feedback,
 upload, and submission remain separate approval gates.
+
+## B5.3D same-origin License gateway and Railway runtime preparation - 2026-07-19
+
+- The bundled SPA has one License access path: same-origin `/api/license` on the
+  public backend. The browser has no License Server hostname or Railway-private
+  DNS value.
+- The backend maps only frontend-proven routes to the private License Server.
+  It rejects arbitrary routes/hosts/queries, strips hostile and hop-by-hop
+  headers, forwards only an existing bearer token, bounds bodies, rejects
+  redirects, and returns safe errors without internal hostname disclosure.
+- Backend `PORT` defaults to 8086 and preserves its local bind default; the
+  Railway contract supplies `SERVER_ADDRESS=0.0.0.0`. License Server `PORT`
+  defaults to 9090 with its private-service bind. Health paths remain
+  `/actuator/health` and `/api/health`.
+- License H2 remains separate from backend PostgreSQL/Flyway and is documented
+  for a private `/data` Railway volume. The variable matrix, manual deployment
+  plan, and rollback plan contain no values for secrets.
+- Local validation passed: gateway 6/6; backend 395/395; License 157/157;
+  frontend 116/116; build/audit/Docker; and built-SPA synthetic staging E2E 3/3.
+  No Railway, production, OpenAI, deployment, payment, inventory, supplier, or
+  price action occurred.
+
+Remaining external gates are manual Railway resource/variable creation,
+private-network verification, demo deploy health validation, a fresh CI-backed
+commit/push approval, judge-account review, public traffic decision, video, and
+submission. No demo URL is claimed.

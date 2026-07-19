@@ -17,14 +17,12 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
-# Optional hosted-web origins. Leave empty for a single-origin deploy (the
-# backend serves the SPA + same-origin /api). For a split-origin hosted SaaS
-# set VITE_LICENSE_URL (and VITE_API_URL) so the SPA reaches the right hosts.
+# Optional hosted-web identity and API build inputs. The License API is fixed
+# at the same-origin gateway and has no browser-visible build-time origin.
 ARG VITE_TARGET=""
 ARG VITE_API_URL=""
-ARG VITE_LICENSE_URL=""
 ARG VITE_DEMO_DATA=""
-ENV VITE_TARGET=$VITE_TARGET VITE_API_URL=$VITE_API_URL VITE_LICENSE_URL=$VITE_LICENSE_URL VITE_DEMO_DATA=$VITE_DEMO_DATA
+ENV VITE_TARGET=$VITE_TARGET VITE_API_URL=$VITE_API_URL VITE_DEMO_DATA=$VITE_DEMO_DATA
 RUN npx vite build --outDir /spa --emptyOutDir
 
 # ---------- Stage 2: build the Spring Boot jar (SPA baked into static/) ----------
@@ -48,7 +46,7 @@ USER appuser
 EXPOSE 8086
 # DB-aware probe (rolls datasource health into UP/DOWN).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:8086/actuator/health || exit 1
+    CMD curl -fsS "http://127.0.0.1:${PORT:-8086}/actuator/health" || exit 1
 # Claim 75% of the container memory limit instead of guessing; die fast on OOM.
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

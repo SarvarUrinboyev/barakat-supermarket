@@ -42,7 +42,7 @@ EXPOSE 9090
 
 # Health probe — used by docker-compose's healthcheck and by orchestrators.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-    CMD wget -qO- http://127.0.0.1:9090/api/health || exit 1
+    CMD wget -qO- "http://127.0.0.1:${PORT:-9090}/api/health" || exit 1
 
 # JVM tuning for a small VPS (1 GB RAM). MaxRAMPercentage tells the JVM to
 # claim 75% of the container's memory limit instead of guessing.

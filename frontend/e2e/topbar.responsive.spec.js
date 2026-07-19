@@ -19,7 +19,6 @@ test('global topbar remains contained, accessible, and operable at release viewp
     localStorage.setItem('savdopro.token', 'mock-owner-token');
     localStorage.setItem('savdopro.activeShopId', '1');
     localStorage.setItem('savdopro.sidebar.collapsed', '1');
-    localStorage.setItem('savdopro.licenseUrl', 'http://127.0.0.1:9090');
   });
 
   await page.route('**/api/**', async (route) => {

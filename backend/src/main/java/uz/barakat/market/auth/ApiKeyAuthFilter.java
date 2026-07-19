@@ -45,6 +45,13 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // The License gateway has its own bearer-only contract and must never
+        // resolve or touch a local Open API key/account record.
+        return request.getRequestURI().startsWith("/api/license/");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         String secret = extractApiKey(request);

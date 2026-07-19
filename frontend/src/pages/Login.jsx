@@ -18,9 +18,8 @@ const LEGACY_PASSWORD_KEY = 'savdopro:saved-password';
  * the JWT and re-renders the app shell.
  *
  * Behaviour:
- *   - Server URL is baked in (licenseClient.js DEFAULT_URL → nip.io VPS),
- *     and there is intentionally no UI to edit it — ordinary users never
- *     see the server address.
+ *   - Login uses the same-origin /api/license gateway; the browser never sees
+ *     the private License Server address.
  *   - On a successful login only the USERNAME is remembered, so that field is
  *     pre-filled next time; the password is never persisted and must always be
  *     re-entered. (The desktop build previously saved the password too — a

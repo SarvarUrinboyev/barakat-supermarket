@@ -2,7 +2,7 @@
 // In dev, Vite proxies /api to :8086; in production the JAR serves both.
 
 import {
-  getLicenseUrl,
+  getLicenseGatewayUrl,
   getRefreshToken,
   setRefreshToken,
   clearAuthPair,
@@ -42,10 +42,9 @@ async function refreshLocalToken() {
   if (refreshInFlight) return refreshInFlight;
   const stored = getRefreshToken();
   if (!stored) return null;
-  const base = getLicenseUrl().replace(/\/+$/, '');
   refreshInFlight = (async () => {
     try {
-      const res = await fetch(`${base}/api/auth/refresh`, {
+      const res = await fetch(getLicenseGatewayUrl('/api/auth/refresh'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: stored }),

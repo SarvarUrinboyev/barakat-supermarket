@@ -1,14 +1,8 @@
 // HTTP client for the SavdoPRO License Server.
 //
-// The License Server owns accounts / users / subscriptions centrally
-// — it lives on a separate port (9090 in dev) and, in production,
-// on the operator's VPS. All other API traffic still goes to the
-// local backend at :8086 via the regular `api` client.
-//
-// The URL is resolved in this order:
-//   1. ?licenseUrl=... query parameter (injected by Electron main.js)
-//   2. localStorage.savdopro.licenseUrl (set via the in-app settings)
-//   3. http://localhost:9090 (dev fallback)
+// The License Server owns accounts / users / subscriptions centrally. The
+// browser reaches it only through the backend's same-origin /api/license
+// gateway; the private upstream origin is server-side configuration.
 //
 // Phase 3.2 refresh flow:
 //   - Login stores BOTH an access JWT (~1h TTL) and a refresh token (~7d).
@@ -20,66 +14,21 @@
 //     parallel requests don't trigger 20 refreshes.
 
 import { getToken, setToken } from './client.js';
-import { LICENSE_ORIGIN } from '../config.js';
+import { LICENSE_GATEWAY_PATH } from '../config.js';
 
-const LICENSE_URL_KEY = 'savdopro.licenseUrl';
 const REFRESH_KEY = 'savdopro.refreshToken';
-// Local-first: a Windows Scheduled Task launches the license server on
-// user logon (port 9090). The desktop hits localhost so login keeps
-// working when the VPS is unreachable. The remote VPS is the off-site
-// fallback when localhost is down (e.g. service didn't start yet).
-const LOCAL_URL = 'http://127.0.0.1:9090';
-const VPS_URL = 'https://167-172-164-214.nip.io';
-const DEFAULT_URL = LOCAL_URL;
-
-function urlFromQuery() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const fromQuery = params.get('licenseUrl');
-    if (fromQuery) {
-      localStorage.setItem(LICENSE_URL_KEY, fromQuery);
-      return fromQuery;
-    }
-  } catch (_) { /* SSR safety */ }
-  return null;
-}
 
 export function getLicenseUrl() {
-  // Hosted web build: the License Server origin is fixed at build time.
-  if (LICENSE_ORIGIN) return LICENSE_ORIGIN;
-
-  const fromQuery = urlFromQuery();
-  if (fromQuery) return fromQuery;
-
-  const stored = localStorage.getItem(LICENSE_URL_KEY);
-  // Migrate: any old build that pinned the URL to the VPS gets wiped so
-  // the new local-first default takes effect on next launch. Keep custom
-  // URLs (LAN IPs, alternative hosts) that the operator set intentionally.
-  if (stored && (stored.includes('nip.io') || stored.startsWith('http://localhost'))) {
-    localStorage.removeItem(LICENSE_URL_KEY);
-    return DEFAULT_URL;
-  }
-  return stored || DEFAULT_URL;
+  return LICENSE_GATEWAY_PATH;
 }
 
-/**
- * Off-site fallback URL — used by the client when {@link getLicenseUrl}
- * (typically localhost) is unreachable. Returns the remote VPS so a
- * machine without the local service still gets to log in.
- */
-export function getFallbackLicenseUrl() {
-  // Web build: the configured origin is authoritative — skip the
-  // localhost->VPS fallback dance (a desktop-only resilience hack).
-  if (LICENSE_ORIGIN) return LICENSE_ORIGIN;
-  return VPS_URL;
-}
-
-export function setLicenseUrl(url) {
-  if (url) {
-    localStorage.setItem(LICENSE_URL_KEY, url);
-  } else {
-    localStorage.removeItem(LICENSE_URL_KEY);
+// Existing endpoint definitions retain their License Server /api prefix; the
+// browser-facing gateway intentionally exposes the same route after /api/license.
+export function getLicenseGatewayUrl(path) {
+  if (typeof path !== 'string' || !path.startsWith('/api/')) {
+    throw new TypeError('License route must begin with /api/.');
   }
+  return `${LICENSE_GATEWAY_PATH}${path.slice('/api'.length)}`;
 }
 
 export function getRefreshToken() {
@@ -131,10 +80,9 @@ async function refreshOnce() {
   if (refreshInFlight) return refreshInFlight;
   const stored = getRefreshToken();
   if (!stored) return null;
-  const base = getLicenseUrl().replace(/\/+$/, '');
   refreshInFlight = (async () => {
     try {
-      const res = await fetch(`${base}/api/auth/refresh`, {
+      const res = await fetch(getLicenseGatewayUrl('/api/auth/refresh'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: stored }),
@@ -152,9 +100,8 @@ async function refreshOnce() {
   return refreshInFlight;
 }
 
-// 8-second hard timeout per fetch so the UI is never stuck on a dead
-// host — a TCP connect to an unreachable VPS would otherwise hang for
-// ~75 s on Windows before the OS gives up.
+// The backend has a matching bounded upstream timeout; this browser-side
+// timeout keeps the UI responsive if the public backend is unreachable.
 const FETCH_TIMEOUT_MS = 8_000;
 
 function buildOptions(method, body) {
@@ -176,21 +123,8 @@ function fetchWithTimeout(url, options, timeoutMs = FETCH_TIMEOUT_MS) {
 }
 
 async function rawFetch(method, path, body) {
-  const primaryBase = getLicenseUrl().replace(/\/+$/, '');
-  const fallbackBase = getFallbackLicenseUrl().replace(/\/+$/, '');
   const options = buildOptions(method, body);
-
-  // Try the configured (usually local) URL first.
-  try {
-    return await fetchWithTimeout(`${primaryBase}${path}`, options);
-  } catch (err) {
-    // If the primary IS the fallback, there is no point retrying.
-    if (primaryBase === fallbackBase) throw err;
-    // Network failure on localhost → try the off-site VPS as a backup.
-    // This is the "VPS comes back to life" path so users can log in even
-    // if the local service hasn't started yet.
-    return fetchWithTimeout(`${fallbackBase}${path}`, options);
-  }
+  return fetchWithTimeout(getLicenseGatewayUrl(path), options);
 }
 
 async function request(method, path, body) {
@@ -199,7 +133,7 @@ async function request(method, path, body) {
     response = await rawFetch(method, path, body);
   } catch {
     throw new LicenseError(
-      "License Server'ga ulanib bo'lmadi. Internet va server URL'ini tekshiring.",
+      "License xizmatiga ulanib bo'lmadi. Internet va backend holatini tekshiring.",
       0,
     );
   }
