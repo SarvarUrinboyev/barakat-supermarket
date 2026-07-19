@@ -27,6 +27,7 @@ import {
   AsyncNotice,
   BriefResult,
   DecisionDialog,
+  DemoDataBanner,
   EvidenceDrawer,
   LedgerTimeline,
   ProposalCard,
@@ -351,7 +352,7 @@ export function SavdoGraph() {
         <div><span>{t('freshness')}</span><strong>{latestTimestamp || t('notGenerated')}</strong></div>
         <div className="sg-safe-indicator"><span aria-hidden="true">\u25c8</span><strong>{t('safeEnvironment')}</strong></div>
       </section>
-      {IS_DEMO_DATA && <div className="sg-demo-banner" role="note"><strong>{t('demoData')}</strong><span>{t('demoNotice')}</span></div>}
+      <DemoDataBanner enabled={IS_DEMO_DATA} locale={locale} />
 
       <div className="sg-workspace-grid">
         <Section id="sg-brief" title={t('grossProfitBrief')} hint={t('briefHint')}>

@@ -6,6 +6,7 @@ import {
   BriefResult,
   ClassificationBadge,
   DecisionDialog,
+  DemoDataBanner,
   EvidenceDrawer,
   LedgerTimeline,
   ProposalCard,
@@ -14,6 +15,19 @@ import {
 } from './components.jsx';
 
 const render = (node) => renderToStaticMarkup(node);
+
+describe('SavdoGraph demo environment labeling', () => {
+  it('renders a stable named note when demo mode is explicitly enabled', () => {
+    const html = render(<DemoDataBanner enabled locale="EN" />);
+    expect(html).toContain('role="note"');
+    expect(html).toContain('aria-label="Demo Data"');
+    expect(html).toContain('anonymized sample data');
+  });
+
+  it('renders no demo label when demo mode is explicitly disabled', () => {
+    expect(render(<DemoDataBanner enabled={false} locale="EN" />)).toBe('');
+  });
+});
 
 describe('SavdoGraph result rendering', () => {
   it('renders VERIFIED brief values exactly as returned by the backend', () => {

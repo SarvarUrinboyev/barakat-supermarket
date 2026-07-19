@@ -53,6 +53,9 @@ services:
         # VITE_LICENSE_URL stays EMPTY on purpose: a baked-in origin would
         # override the ?licenseUrl= query param the E2E relies on.
         VITE_TARGET: web
+        # Vite flags are build-time inputs. The guarded staging seed must be
+        # paired with a permanently visible Demo Data notice in the baked SPA.
+        VITE_DEMO_DATA: "true"
     image: savdopro/backend:staging
     restart: unless-stopped
     depends_on:

@@ -27,6 +27,16 @@ export function AsyncNotice({ tone = 'info', children }) {
   return <div className={`sg-notice sg-notice-${tone}`} role={tone === 'error' ? 'alert' : 'status'}>{children}</div>;
 }
 
+export function DemoDataBanner({ enabled, locale = 'UZ' }) {
+  if (!enabled) return null;
+  const label = sgText(locale, 'demoData');
+  return (
+    <div className="sg-demo-banner" role="note" aria-label={label}>
+      <strong>{label}</strong><span>{sgText(locale, 'demoNotice')}</span>
+    </div>
+  );
+}
+
 export function ValueGrid({ items, locale = 'UZ' }) {
   return (
     <dl className="sg-value-grid">

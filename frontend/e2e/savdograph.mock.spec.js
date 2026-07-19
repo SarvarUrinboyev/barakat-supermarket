@@ -221,7 +221,7 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
   expect(consoleErrors, `console errors: ${consoleErrors.join(' | ')}`).toEqual([]);
   await expect(page.getByTestId('savdograph-workspace')).toBeVisible();
   await expect(page.locator('a[href="/savdograph"]')).toBeVisible();
-  await expect(page.getByRole('note')).toContainText(/Demo/);
+  await expect(page.getByRole('note', { name: /Demo ma\u2019lumotlar/ })).toContainText(/Demo ma\u2019lumotlar/);
 
   await page.locator('section:has(#sg-brief)').getByRole('button', { name: /Brief yaratish/ }).click();
   await expect(page.locator('[data-result="gross-profit-brief"]')).toContainText('1250000.0000 UZS');
