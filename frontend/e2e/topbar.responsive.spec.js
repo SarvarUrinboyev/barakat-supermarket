@@ -29,7 +29,7 @@ test('global topbar remains contained, accessible, and operable at release viewp
       contentType: 'application/json',
       body: JSON.stringify(body),
     });
-    if (url.pathname === '/api/auth/me') {
+    if (url.pathname === '/api/license/auth/me') {
       return json({
         userId: 1,
         username: 'demo_owner',

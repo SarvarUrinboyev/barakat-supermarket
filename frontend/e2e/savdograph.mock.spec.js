@@ -49,7 +49,7 @@ async function runDecisionJourney(page, viewport, captureScreenshots = false) {
     if (!path.startsWith('/api/')) return route.continue();
     const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
-    if (path === '/api/auth/me') {
+    if (path === '/api/license/auth/me') {
       return json({
         userId: 1,
         username: 'demo_owner',
