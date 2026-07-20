@@ -108,23 +108,24 @@ class LicenseGatewayIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"synthetic-refresh\"}"))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/license/auth/me").header("Authorization", ownerBearer(81234L)))
+        String ownerBearer = ownerBearer(81234L);
+        mvc.perform(get("/api/license/auth/me").header("Authorization", ownerBearer))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/license/billing/status").header("Authorization", ownerBearer(81234L)))
+        mvc.perform(get("/api/license/billing/status").header("Authorization", ownerBearer))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/license/billing/checkout")
-                        .header("Authorization", ownerBearer(81234L))
+                        .header("Authorization", ownerBearer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"plan\":\"DEMO\",\"months\":1}"))
                 .andExpect(status().isOk());
-        mvc.perform(get("/api/license/billing/payments").header("Authorization", ownerBearer(81234L)))
+        mvc.perform(get("/api/license/billing/payments").header("Authorization", ownerBearer))
                 .andExpect(status().isOk());
 
         assertThat(UPSTREAM.paths()).containsExactly(
                 "/api/auth/refresh", "/api/auth/me", "/api/billing/status",
                 "/api/billing/checkout", "/api/billing/payments");
         assertThat(UPSTREAM.requests().get(1).header("authorization"))
-                .isEqualTo(ownerBearer(81234L));
+                .isEqualTo(ownerBearer);
     }
 
     @Test
