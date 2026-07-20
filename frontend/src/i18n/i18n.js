@@ -3,12 +3,14 @@
 //   - 'uz'  -> the key itself
 //   - 'uzc' -> the key transliterated to the Cyrillic script
 //   - 'ru'  -> looked up in the Russian dictionary below
-// Any key missing from the Russian dictionary falls back to the Uzbek text.
+//   - 'en'  -> looked up in the English dictionary below
+// Any missing dictionary key falls back to the Uzbek text.
 
 export const LANGUAGES = [
-  { code: 'uz', label: "O'zbekcha", short: 'UZ' },
+  { code: 'uz', label: 'O‘zbekcha', short: 'UZ' },
   { code: 'uzc', label: 'Ўзбекча', short: 'ЎЗ' },
   { code: 'ru', label: 'Русский', short: 'RU' },
+  { code: 'en', label: 'English', short: 'EN' },
 ];
 
 // ---------------------------------------------------- Latin -> Cyrillic
@@ -38,7 +40,7 @@ const CYR_MAP = [
 ];
 
 // Latin acronyms that must stay as-is even in the Cyrillic script.
-const KEEP_LATIN = new Set(['USD', 'UZS', 'IMEI', 'CSV', 'XLSX', 'SKU', 'PDF', 'UZ', 'RU']);
+const KEEP_LATIN = new Set(['USD', 'UZS', 'IMEI', 'CSV', 'XLSX', 'SKU', 'PDF', 'UZ', 'RU', 'EN', 'AI', 'API', 'POS', 'COGS', 'DRAFT', 'ID']);
 
 function isUpperLatin(ch) {
   return ch >= 'A' && ch <= 'Z';
@@ -46,6 +48,7 @@ function isUpperLatin(ch) {
 
 /** Transliterates Uzbek Latin text to the Uzbek Cyrillic script. */
 export function toCyrillic(text) {
+  text = String(text).replace(/‘/g, '’');
   let out = '';
   let i = 0;
   while (i < text.length) {
@@ -1001,6 +1004,60 @@ const RU = {
   "Oxirgi backup": 'Последняя копия',
 };
 
+const EN = {
+  'Platforma': 'Platform',
+  'Til': 'Language',
+  'Menyu': 'Menu',
+  "Menyuni kengaytirish": 'Expand navigation',
+  "Menyuni yig'ish": 'Collapse navigation',
+  'Kengaytirish': 'Expand',
+  "Yig'ish": 'Collapse',
+  "Yorug' mavzu": 'Light theme',
+  "Qorong'i mavzu": 'Dark theme',
+  'Avtomatlashtirish': 'Automation',
+  'Boshqaruv': 'Dashboard',
+  'Sotuvlar tarixi': 'Sales history',
+  'Moliya': 'Finance',
+  "To'lov": 'Payments',
+  'Ombor': 'Inventory',
+  'Mijozlar': 'Customers',
+  'Yetkazib beruvchilar': 'Suppliers',
+  'Kassa (POS)': 'Point of Sale (POS)',
+  'Aksiyalar': 'Promotions',
+  "Do'kon xarajatlari": 'Store expenses',
+  'Buyurtmalar': 'Orders',
+  'Qarz': 'Debt',
+  'Kalkulyator': 'Calculator',
+  'Hisobotlar': 'Reports',
+  "Do'konlar": 'Stores',
+  "Tarif va to'lov": 'Plan and billing',
+  'Buxgalteriya': 'Accounting',
+  'Integratsiyalar': 'Integrations',
+  'IMEI baza': 'IMEI registry',
+  "Bog'lanish": 'Help',
+  'Super-admin': 'Super admin',
+  'Operator': 'Operator',
+  'Chiqish': 'Sign out',
+  'Yopish': 'Close',
+  "Faol do'kon": 'Active store',
+  "Hamma do'konlar": 'All stores',
+  "Do'kon tanlanmagan": 'No store selected',
+  'ASOSIY': 'PRIMARY',
+  "Do'konni tanlang": 'Select a store',
+  'Jami balans va sotuvlarni jamlaydi': 'Combines balances and sales',
+  "Hamma do'konlar rejimi faol": 'All-stores mode is active',
+  'Bu yerda barcha': 'Data from all',
+  "ta do'konning ma'lumotlari jamlangan. Yangi mahsulot/mijoz/to'lov qo'shish uchun aniq do'konni tanlang.": 'stores is consolidated here. Select one store before creating a product, customer, or payment.',
+  'AI CFO': 'AI CFO',
+  'Obuna muddati tugagan': 'Subscription expired',
+  "Tizim faqat o'qish rejimida — yangi sotuv, mahsulot yoki to'lov qo'shib bo'lmaydi.": 'The system is read-only; new sales, products, and payments cannot be created.',
+  'Tarifni yangilash': 'Renew plan',
+  'Obuna muddati tugashiga': 'Subscription expires in',
+  'kun qoldi': 'days',
+  "To'lov muddati": 'Due date',
+  "To'lamasangiz akkaunt o'qish rejimiga o'tadi.": 'Without renewal, the account becomes read-only.',
+  'Yangilash': 'Renew',
+};
 /** Translates an Uzbek-Latin string into the given language. */
 export function translate(lang, text) {
   if (text == null || text === '') {
@@ -1008,6 +1065,9 @@ export function translate(lang, text) {
   }
   if (lang === 'ru') {
     return RU[text] ?? text;
+  }
+  if (lang === 'en') {
+    return EN[text] ?? text;
   }
   if (lang === 'uzc') {
     return toCyrillic(text);

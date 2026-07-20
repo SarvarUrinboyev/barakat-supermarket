@@ -21,7 +21,7 @@ function readTheme() {
 function readLang() {
   try {
     const saved = localStorage.getItem(LANG_KEY);
-    if (saved === 'uz' || saved === 'uzc' || saved === 'ru') {
+    if (saved === 'uz' || saved === 'uzc' || saved === 'ru' || saved === 'en') {
       return saved;
     }
   } catch {
@@ -45,7 +45,7 @@ export function SettingsProvider({ children }) {
   }, [theme]);
 
   useEffect(() => {
-    document.documentElement.lang = lang === 'ru' ? 'ru' : 'uz';
+    document.documentElement.lang = ({ ru: 'ru', en: 'en', uzc: 'uz-Cyrl', uz: 'uz' })[lang] || 'uz';
     try {
       localStorage.setItem(LANG_KEY, lang);
     } catch {

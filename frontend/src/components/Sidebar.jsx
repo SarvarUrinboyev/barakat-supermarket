@@ -258,7 +258,7 @@ export function Sidebar({ open, onClose }) {
           <div className="name">
             SavdoPRO <span className="brand-tag">POS</span>
           </div>
-          <div className="sub">Avtomatlashtirish</div>
+          <div className="sub">{t('Avtomatlashtirish')}</div>
         </div>
         <button
           type="button"

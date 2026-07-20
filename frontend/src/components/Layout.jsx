@@ -53,6 +53,7 @@ export function Layout() {
   const { isConsolidated, shops } = useShop();
   const title = resolveTitle(pathname);
   const isPosKiosk = pathname === '/pos';
+  const isSavdoGraph = pathname === '/savdograph';
   // Mobile off-canvas nav. Closes automatically whenever the route changes.
   const [navOpen, setNavOpen] = useState(false);
   useEffect(() => { setNavOpen(false); }, [pathname]);
@@ -86,14 +87,14 @@ export function Layout() {
   }), [navigate, pathname]));
 
   return (
-    <div className={`app-shell ${isPosKiosk ? 'app-shell-pos-kiosk' : ''}${!isPosKiosk && collapsed ? ' sidebar-collapsed' : ''}`}>
+    <div className={`app-shell ${isPosKiosk ? 'app-shell-pos-kiosk' : ''}${isSavdoGraph ? ' app-shell-savdograph' : ''}${!isPosKiosk && collapsed ? ' sidebar-collapsed' : ''}`}>
       {!isPosKiosk && <QuickSearch />}
       {!isPosKiosk && <AiChatWidget />}
       {!isPosKiosk && <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />}
       {!isPosKiosk && navOpen && (
         <div className="nav-scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />
       )}
-      <div className={`main ${isPosKiosk ? 'main-pos-kiosk' : ''}`}>
+      <div className={`main ${isPosKiosk ? 'main-pos-kiosk' : ''}${isSavdoGraph ? ' main-savdograph' : ''}`}>
         {!isPosKiosk && (
         <header className="topbar">
           <button
@@ -129,7 +130,7 @@ export function Layout() {
             <span className="bc-sep">/</span>
             <span className="bc-page">
               <span className="bc-dot" />
-              {t(title)}
+              {isSavdoGraph ? title : t(title)}
             </span>
           </div>
           <ShopSwitcher />
@@ -166,7 +167,7 @@ export function Layout() {
             </span>
           </div>
         )}
-        <main className={`content ${isPosKiosk ? 'content-pos-kiosk' : ''}`}>
+        <main className={`content ${isPosKiosk ? 'content-pos-kiosk' : ''}${isSavdoGraph ? ' content-savdograph' : ''}`}>
           <ErrorBoundary key={pathname}>
             <Suspense fallback={<div className="center-screen"><Spinner /></div>}>
               <Outlet />
