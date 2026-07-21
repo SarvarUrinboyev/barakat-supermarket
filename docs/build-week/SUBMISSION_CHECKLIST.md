@@ -1,4 +1,4 @@
-# SavdoGraph Final Submission Checklist
+# ProofTwin AI Final Submission Checklist
 
 This checklist is intentionally strict. A checkbox may be marked complete only
 with direct evidence from the exact release commit and isolated demo environment.
@@ -24,7 +24,7 @@ unchecked.
 
 ## Repository and README
 
-- [ ] `DEFERRED` add a concise README section for SavdoGraph AI.
+- [x] Add a concise README section for ProofTwin AI.
 - [ ] State the problem, target merchant, and product outcome.
 - [ ] Explain deterministic evidence -> simulation -> human decision -> DRAFT -> ledger.
 - [ ] Explain how GPT-5.6 is used and bounded by tools, strict schemas, and evidence.
@@ -79,12 +79,12 @@ unchecked.
 - [ ] `BLOCKED_NEEDS_APPROVAL` create a dedicated ACCOUNT_OWNER in the isolated
   demo License Server only.
 - [ ] Bind the account to the reserved demo tenant and intended shop.
-- [ ] Grant only required SavdoGraph and ledger permissions.
+- [ ] Grant only the required internal `SAVDOGRAPH:*` and ledger permissions.
 - [ ] Set credential and expiry server-side.
 - [ ] Deliver the credential out of band; never put it in Git, video, screenshots,
   Devpost prose, logs, or chat.
 - [ ] Verify login, shop scope, route access, refresh, and logout.
-- [ ] Verify a non-owner cannot see or open SavdoGraph.
+- [ ] Verify a non-owner cannot see or open ProofTwin AI.
 - [ ] Document post-event revoke/delete ownership.
 
 ## Browser proof
@@ -169,7 +169,7 @@ unchecked.
 - [x] Minimal CSS-first topbar/shop-switcher responsive fix verified.
 - [x] Long shop name truncates without losing its accessible name.
 - [x] Shop, language, theme, and mobile menu controls remain keyboard/touch reachable.
-- [x] Full SavdoGraph journey passed independently at 1440, 1024, 768, and 390.
+- [x] Full ProofTwin AI journey passed independently at 1440, 1024, 768, and 390.
 - [x] All four viewports recorded equal client/document/body scroll widths.
 - [x] Browser console and page error counts were zero at every viewport.
 - [x] Eight anonymized Demo Data screenshots captured only after browser gates.

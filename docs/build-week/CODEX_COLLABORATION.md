@@ -1,9 +1,9 @@
-# SavdoGraph AI — Codex Collaboration Contract
+# ProofTwin AI — Codex Collaboration Contract
 
 ## Purpose
 
 This repository already contains SavdoPRO/Barakat work. Codex may help build a
-new SavdoGraph AI submission only when the provenance, scope, safety constraints
+new ProofTwin AI submission only when the provenance, scope, safety constraints
 and validation evidence remain auditable.
 
 This contract applies to every later implementation task on
@@ -137,7 +137,7 @@ new primary record carries `shop_id`, uses the existing Hibernate tenant filters
 and `TenantScopedEntity` direct-ID guard, and is reached only through the active
 request scope. The recorded server role is the existing `ACCOUNT_OWNER` role;
 `SUPER_ADMIN` and `SHOP_USER` are not treated as a substitute owner for a
-SavdoGraph decision.
+ProofTwin decision.
 
 | Endpoint | Permission | B1 behavior |
 |---|---|---|
@@ -269,7 +269,7 @@ stateful actions remained approval-gated.
 The existing mocked test initially intercepted Vite module URLs containing
 `/api/` and returned JSON, producing a blank page. Codex narrowed the test route
 to true `/api/` paths and added a loopback server/system-Chrome configuration.
-The corrected run reached the real SavdoGraph UI and exposed the supplier effect
+The corrected run reached the real ProofTwin AI UI and exposed the supplier effect
 bug. This distinction matters: the harness issue was fixed in test-only code;
 the product issue remains an explicit B5.1 blocker.
 

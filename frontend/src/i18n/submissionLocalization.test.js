@@ -120,16 +120,23 @@ describe('Dashboard submission gate', () => {
   });
 });
 
-describe('SavdoGraph submission gate', () => {
+describe('ProofTwin submission gate', () => {
   it('keeps the redesign and derives workspace and Ask language from the global selector', () => {
     const page = source('../pages/SavdoGraph.jsx');
     const layout = source('../components/Layout.jsx');
+    const sidebar = source('../components/Sidebar.jsx');
+    const experience = source('../features/savdograph/experience.jsx');
+    const model = source('../features/savdograph/model.js');
     expect(page).toContain('const { lang } = useSettings()');
     expect(page).toContain('savdoGraphLocaleFromLanguage(lang)');
     expect(page).toContain('askLocaleFromLanguage(lang)');
     expect(page).not.toMatch(/useState\([^)]*(?:UZ|RU|EN)[^)]*\).*locale/i);
     expect(layout).toContain("app-shell-savdograph");
     expect(layout).toContain("content-savdograph");
+    expect(layout).toContain('`${PROOFTWIN_BRAND} · SavdoPRO`');
+    expect([page, layout, sidebar, experience].join('\n')).not.toContain(['Savdo', 'Graph AI'].join(''));
+    expect(model).toContain("export const PROOFTWIN_BRAND = 'ProofTwin AI'");
+    expect(model).toContain("export const PROOFTWIN_SCENARIO_ENGINE = 'ProofTwin Scenario Engine'");
   });
 });
 

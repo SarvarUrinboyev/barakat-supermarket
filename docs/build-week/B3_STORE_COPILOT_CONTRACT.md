@@ -1,4 +1,4 @@
-# SavdoGraph B3 Store Copilot Contract
+# ProofTwin Copilot B3 Contract
 
 ## Scope and recovered draft
 
@@ -108,4 +108,4 @@ Focused B3 tests passed `38/38`; affected B1/B2/B3 tests passed `57/57`; the ful
 
 ## Exact B4 scope
 
-B4 is frontend-only. Implement the SavdoGraph owner experience using the committed B1/B2/B3 APIs: Daily Gross Profit Brief, multilingual Ask Your Store renderer, Evidence Card, deterministic reorder simulator, proposal human-review controls, and Action Ledger. Render evidence IDs, tool provenance, VERIFIED/ESTIMATED/INSUFFICIENT_DATA/UNSUPPORTED classification, assumptions, limitations, ambiguity clarification, provider/refusal/error/groundedness states, and permanent Demo/sample labeling. Preserve UZ/RU/EN, accessibility, responsive behavior, and owner-only explicit approval/rejection. Add focused frontend tests and run the frontend test/build gates. Do not change backend calculations, evidence semantics, provider/model configuration, tool registry, permissions, approval state machine, deployment, production data, or production infrastructure. Do not add autonomous ordering, receiving, payment, supplier messaging, inventory mutation, or price mutation.
+B4 is frontend-only. Implement the ProofTwin Decision Center using the committed B1/B2/B3 APIs: Daily Gross Profit Brief, multilingual Ask Your Store renderer, Evidence Card, deterministic reorder simulator, proposal human-review controls, and Action Ledger. Render evidence IDs, tool provenance, VERIFIED/ESTIMATED/INSUFFICIENT_DATA/UNSUPPORTED classification, assumptions, limitations, ambiguity clarification, provider/refusal/error/groundedness states, and permanent Demo/sample labeling. Preserve UZ/RU/EN, accessibility, responsive behavior, and owner-only explicit approval/rejection. Add focused frontend tests and run the frontend test/build gates. Do not change backend calculations, evidence semantics, provider/model configuration, tool registry, permissions, approval state machine, deployment, production data, or production infrastructure. Do not add autonomous ordering, receiving, payment, supplier messaging, inventory mutation, or price mutation.

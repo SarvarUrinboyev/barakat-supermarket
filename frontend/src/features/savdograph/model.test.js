@@ -28,6 +28,9 @@ import {
   normalisePermissions,
   parseEvidenceReferences,
   presentLedgerEvent,
+  PROOFTWIN_BRAND,
+  PROOFTWIN_DECISION_CENTER,
+  PROOFTWIN_SCENARIO_ENGINE,
   safeErrorKey,
   safeStructuredInputs,
   savdoGraphLocaleFromLanguage,
@@ -78,7 +81,8 @@ describe('Ask Your Store typed states and localization', () => {
     expect(['uz', 'uzc', 'ru', 'en'].map(askLocaleFromLanguage)).toEqual(['UZ', 'UZ', 'RU', 'EN']);
   });
   it('24b preserves the exact English hero contract', () => {
-    expect(sgText('EN', 'productPromise')).toBe('Evidence-first operating system for retail decisions.');
+    expect(sgText('EN', 'decisionCommand')).toBe('Evidence-backed retail decision intelligence');
+    expect(sgText('EN', 'productPromise')).toBe('Prove every number. Simulate every decision.');
     expect(sgText('EN', 'productSupport')).toBe('It does not guess. It proves, simulates, and waits for human approval.');
   });
   it('24c renders Uzbek Cyrillic while preserving technical acronyms', () => {
@@ -363,11 +367,18 @@ describe('winner UX model contracts', () => {
   it('uses native route copy while preserving approved technical terms', () => {
     expect(sgText('UZ', 'grossProfitBrief')).toBe('Kunlik yalpi foyda hisoboti');
     expect(sgText('RU', 'simulatorHint')).not.toMatch(/backend|proposal/i);
-    expect(sgText('UZC', 'decisionTwin')).toContain('SavdoGraph');
+    expect(sgText('UZC', 'decisionTwin')).toBe(PROOFTWIN_SCENARIO_ENGINE);
     expect(sgText('UZC', 'approvalCreatesOneDraft')).toContain('PurchaseOrder DRAFT');
     expect(sgText('UZC', 'proposalReview')).toContain('кўриб');
     expect(sgText('UZC', 'backendUnavailable')).toContain('ўрнатилмади');
     expect(sgText('UZC', 'proposalReview') + sgText('UZC', 'backendUnavailable')).not.toMatch(/[oOgG][‘’']/);
+  });
+
+  it('preserves the approved ProofTwin identity in all four display languages', () => {
+    expect(PROOFTWIN_BRAND).toBe('ProofTwin AI');
+    expect(PROOFTWIN_DECISION_CENTER).toBe('ProofTwin Decision Center');
+    expect(['UZ', 'UZC', 'RU', 'EN'].map((locale) => sgText(locale, 'decisionTwin')))
+      .toEqual(Array(4).fill(PROOFTWIN_SCENARIO_ENGINE));
   });
 
   it('localizes the judge duration in every supported workspace locale', () => {

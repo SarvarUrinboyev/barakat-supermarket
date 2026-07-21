@@ -1,4 +1,4 @@
-# SavdoGraph AI — Pre-existing Work Baseline
+# ProofTwin AI — Pre-existing Work Baseline
 
 Audit date: 2026-07-18
 Build Week cutoff: 2026-07-13
@@ -80,7 +80,7 @@ intent, and review status cannot be proven from Git. They are excluded from both
 the pre-existing and Build Week claims.
 
 The only Build Week work created by this audit is the documentation under
-`docs/build-week/` on branch `feat/build-week-savdograph-ai`. No SavdoGraph
+`docs/build-week/` on branch `feat/build-week-savdograph-ai`. No ProofTwin AI
 feature code, migration, endpoint, UI, provider configuration, deployment, or
 production change has been made yet.
 

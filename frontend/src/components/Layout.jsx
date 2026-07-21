@@ -8,14 +8,16 @@ import { ErrorBoundary } from './ErrorBoundary.jsx';
 import { SubscriptionBanner } from './SubscriptionBanner.jsx';
 import { Spinner } from './ui.jsx';
 import { useKeyboard } from '../hooks/useKeyboard.js';
+import { useAuth } from '../context/Auth.jsx';
 import { useSettings } from '../context/Settings.jsx';
 import { useShop } from '../context/Shop.jsx';
+import { PROOFTWIN_BRAND } from '../features/savdograph/model.js';
 import { LANGUAGES } from '../i18n/i18n.js';
 import { formatDateLocalized, todayIso } from '../lib/format.js';
 
 const PAGE_TITLES = {
   '/dashboard': 'Boshqaruv',
-  '/savdograph': 'SavdoGraph AI',
+  '/savdograph': PROOFTWIN_BRAND,
   '/pos': 'Kassa (POS)',
   '/pos/history': 'Sotuvlar tarixi',
   '/management': 'Moliya',
@@ -48,15 +50,22 @@ function resolveTitle(pathname) {
 
 /** App shell: fixed sidebar, sticky topbar and the routed page. */
 export function Layout() {
+  const { user } = useAuth();
   const { pathname } = useLocation();
   const { theme, toggleTheme, lang, setLang, t } = useSettings();
   const { isConsolidated, shops } = useShop();
   const title = resolveTitle(pathname);
   const isPosKiosk = pathname === '/pos';
   const isSavdoGraph = pathname === '/savdograph';
+  const whiteLabelName = typeof user?.brand?.name === 'string' ? user.brand.name.trim() : '';
   // Mobile off-canvas nav. Closes automatically whenever the route changes.
   const [navOpen, setNavOpen] = useState(false);
   useEffect(() => { setNavOpen(false); }, [pathname]);
+  useEffect(() => {
+    document.title = isSavdoGraph
+      ? `${PROOFTWIN_BRAND} · SavdoPRO`
+      : whiteLabelName ? `${whiteLabelName} · SavdoPRO` : 'SavdoPRO';
+  }, [isSavdoGraph, whiteLabelName]);
 
   // Desktop sidebar collapse (icon-only rail), persisted across reloads.
   const [collapsed, setCollapsed] = useState(() => {

@@ -369,7 +369,7 @@ export const SupplierApi = {
 };
 
 /**
- * SavdoGraph B1/B2/B3/B3.5 boundary. Callers pass only the committed DTO
+ * ProofTwin B1/B2/B3/B3.5 boundary. Callers pass only the committed DTO
  * fields; tenant/shop authority continues to come from the shared API client.
  */
 export const SavdoGraphApi = {

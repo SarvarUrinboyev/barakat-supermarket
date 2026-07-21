@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
 import { isModuleEnabled } from '../lib/modules.js';
-import { canReadSavdoGraph } from '../features/savdograph/model.js';
+import { canReadSavdoGraph, PROOFTWIN_BRAND } from '../features/savdograph/model.js';
 
 /**
  * Line icons (24x24 stroke), keyed by route. They use currentColor, so
@@ -357,14 +357,14 @@ export function Sidebar({ open, onClose }) {
         {canReadSavdoGraph(user) && (
           <NavLink
             to="/savdograph"
-            title="SavdoGraph AI"
-            aria-label="SavdoGraph AI"
+            title={PROOFTWIN_BRAND}
+            aria-label={PROOFTWIN_BRAND}
             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
             <span className="ico" style={{ color: iconColor('/savdograph') }}>
               {ICON['/savdograph']}
             </span>
-            <span>SavdoGraph AI</span>
+            <span>{PROOFTWIN_BRAND}</span>
           </NavLink>
         )}
         {NAV_ITEMS.filter((item) => isOn(item.key)).map((item) => (

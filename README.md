@@ -50,11 +50,17 @@ docker-compose deploy (backend + license + Postgres), scripted VPS provisioning,
 Proprietary — production SaaS codebase, shared as an engineering work sample.
 ---
 
-## SavdoGraph Build Week demo architecture
+## ProofTwin AI Build Week demo architecture
 
-SavdoGraph is the Build Week decision-support layer for the existing SavdoPRO
-POS: deterministic Gross Profit evidence, reorder simulation, grounded
-multilingual Ask Your Store, and human-approved draft-only procurement review.
+**ProofTwin AI** is evidence-backed retail decision intelligence for the
+existing SavdoPRO POS. **Prove every number. Simulate every decision.** It turns
+raw store transactions into verified decisions, compares three possible
+futures, and never spends without human approval. It does not guess. It proves,
+simulates, and waits for human approval.
+
+The product combines deterministic Gross Profit evidence, the ProofTwin
+Scenario Engine, grounded multilingual Ask Your Store, ProofTwin Copilot, and
+human-approved draft-only procurement review.
 It uses synthetic demo data, an immutable evidence/action ledger, and preserves
 human approval boundaries. It does not autonomously submit orders, receive
 goods, send supplier notifications, make payments, mutate inventory, or change
@@ -92,7 +98,7 @@ OpenAI are outside this repository change and require explicit approvals.
 
 SavdoPRO’s core POS, licensing service, payment/provider integrations, and
 production workflow pre-existed Build Week. Build Week adds the evidence-led
-SavdoGraph decision workspace and the demo-safe gateway/runtime packaging; it
+ProofTwin Decision Center and the demo-safe gateway/runtime packaging; it
 does not recast the pre-existing platform as new work. Current commands and
 recorded results are maintained in
 [Testing Instructions](docs/build-week/TESTING_INSTRUCTIONS.md).

@@ -12,7 +12,7 @@ initiate receiving/payment/delivery, or call an AI provider.
 
 `POST /api/savdograph/reorder-simulations/{analysisRunId}/proposals`
 
-The existing SavdoGraph POST security rule requires `SAVDOGRAPH:WRITE`.
+The existing `/api/savdograph` POST security rule requires `SAVDOGRAPH:WRITE`.
 Authenticated `TenantContext` is the only shop authority. The existing domain
 uses numeric `Long` identifiers, so the strict request is:
 

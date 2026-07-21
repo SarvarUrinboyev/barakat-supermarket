@@ -18,6 +18,7 @@ import {
   isSimulationEligible,
   localizeAskResponseForPresentation,
   normaliseAskResponse,
+  PROOFTWIN_BRAND,
   safeErrorKey,
   sgText,
   validatePeriod,
@@ -506,7 +507,7 @@ function ScopedSavdoGraph({ shopContext }) {
       <div className="sg-page">
         <section className="sg-access-hero" aria-labelledby="sg-access-title">
           <div className="sg-brand-mark" aria-hidden="true"><i /><i /><i /><i /></div>
-          <div><span className="sg-eyebrow">SavdoGraph AI</span><h1 id="sg-access-title">SavdoGraph AI</h1><p>{t('productPromise')}</p><small>{t('productSupport')}</small></div>
+          <div><span className="sg-eyebrow">{t('decisionCommand')}</span><h1 id="sg-access-title">{PROOFTWIN_BRAND}</h1><p>{t('productPromise')}</p><small>{t('productSupport')}</small></div>
         </section>
         <div className="sg-denied"><span className="sg-denied-icon" aria-hidden="true">!</span><h2>{t('chooseStoreTitle')}</h2><p>{t('chooseStoreBody')}</p></div>
       </div>

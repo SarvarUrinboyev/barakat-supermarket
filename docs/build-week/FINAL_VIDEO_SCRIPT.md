@@ -1,4 +1,4 @@
-# SavdoGraph Final Video Script
+# ProofTwin AI Final Video Script
 
 Target duration: 2 minutes 50 seconds maximum.
 
@@ -26,12 +26,12 @@ Screen: 3:2 title card, then owner workspace overview with Demo Data label.
 Voiceover:
 
 "Small retailers have sales and stock data, but the decision trail is often
-missing. SavdoGraph turns deterministic store data into evidence-backed owner
-decisions, while keeping every operational action behind human approval."
+missing. ProofTwin turns raw store transactions into verified decisions,
+compares three possible futures, and never spends without human approval."
 
 Proof on screen:
 
-- SavdoGraph AI title;
+- ProofTwin AI title;
 - anonymized demo store and selected period;
 - permanent Demo Data label;
 - Brief, Ask, Simulator, Review, and Ledger sections.
@@ -136,9 +136,9 @@ Screen: compact architecture card, repository and demo links without credentials
 
 Voiceover:
 
-"SavdoGraph combines deterministic retail calculations, grounded GPT-5.6 tool
-use, human approval, and an auditable DRAFT-only workflow - useful AI without
-giving up business control."
+"ProofTwin AI combines deterministic retail calculations, grounded GPT-5.6
+tool use, the ProofTwin Scenario Engine, human approval, and an auditable
+DRAFT-only workflow—useful AI without giving up business control."
 
 End card:
 

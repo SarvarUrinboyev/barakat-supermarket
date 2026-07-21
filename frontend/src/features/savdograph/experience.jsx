@@ -7,6 +7,7 @@ import {
   evidenceIdList,
   formatSavdoGraphDateTime,
   isSimulationEligible,
+  PROOFTWIN_BRAND,
   simulationNarrativeText,
   simulationRiskLabel,
   sgText,
@@ -252,7 +253,7 @@ export function DecisionCommandHeader({
           <span className="sg-product-mark" aria-hidden="true"><i /><i /><i /><i /></span>
           <div>
             <span className="sg-eyebrow">{sgText(locale, 'decisionCommand')}</span>
-            <h1 id="sg-command-title">SavdoGraph AI</h1>
+            <h1 id="sg-command-title">{PROOFTWIN_BRAND}</h1>
             <p className="sg-product-promise">{sgText(locale, 'productPromise')}</p>
             <p className="sg-product-support">{sgText(locale, 'productSupport')}</p>
           </div>

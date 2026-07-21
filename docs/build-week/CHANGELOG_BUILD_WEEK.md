@@ -1,6 +1,6 @@
-# SavdoGraph AI — Build Week Changelog
+# ProofTwin AI — Build Week Changelog
 
-This log contains only work performed for the SavdoGraph AI Build Week
+This log contains only work performed for the ProofTwin AI Build Week
 submission. It does not relabel historical SavdoPRO/Barakat work as new.
 
 ## Unreleased — 2026-07-18
@@ -70,7 +70,7 @@ submission. It does not relabel historical SavdoPRO/Barakat work as new.
 - Existing generic AI chat is not credited as Ask Your Store: it can accept a
   final answer without deterministic tool evidence, has no durable Evidence
   Card/Approval/Action Ledger, and its legacy `ORDER` action is not a permitted
-  SavdoGraph action path.
+  ProofTwin action path.
 - No feature source, migration, endpoint, provider configuration, deployment,
   production database, production infrastructure or customer data was changed.
 
@@ -222,7 +222,7 @@ included in this branch.
 
 ### B5.1 final demo blocker remediation
 
-- Added a guarded, idempotent SavdoGraph demo artifact with one real synthetic
+- Added a guarded, idempotent ProofTwin demo artifact with one real synthetic
   refund, transaction-time cost provenance, contact-free supplier, simulation,
   proposal, owner approval/replay, rejection, exactly one DRAFT, and ledger proof.
 - Replaced supplier-loading state coupling with a one-shot request coordinator;
@@ -234,7 +234,7 @@ included in this branch.
   mobile two-row grid, ellipsis, tighter gaps, and 44px targets.
 - Added executable Chrome geometry coverage for long shop names, accessibility,
   keyboard controls, sidebar behavior, bounded resize events, desktop/tablet/mobile
-  containment, and SavdoGraph route width.
+  containment, and ProofTwin route width.
 - Converted the mocked journey into four independent complete viewport gates;
   all passed at 1440, 1024, 768, and 390 with zero console/page errors.
 - Captured eight pass-only anonymized screenshots after all viewport gates.

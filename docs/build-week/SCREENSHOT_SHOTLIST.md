@@ -1,4 +1,4 @@
-# SavdoGraph Final Screenshot Shot List
+# ProofTwin AI Final Screenshot Shot List
 
 Current status: `NOT_STARTED`.
 
@@ -25,7 +25,7 @@ journey with zero console/page error.
 Status: `VERIFIED`.
 
 - Viewport: `1440x900`.
-- Show SavdoGraph navigation and all five decision sections.
+- Show ProofTwin AI navigation and all five decision sections.
 - Show account/shop scope, selected period, UZ locale, and Demo Data banner.
 - No loading, error, dialog, or horizontal overflow.
 - Recommended gallery position: first.
@@ -116,8 +116,8 @@ These are verification captures, even if only one becomes a gallery asset:
 Status: `NOT_STARTED`.
 
 - Canvas: 1500x1000 or another true 3:2 export.
-- Title: `SavdoGraph AI`.
-- Subtitle: `Evidence-backed decisions for neighborhood retail`.
+- Title: `ProofTwin AI`.
+- Subtitle: `Prove every number. Simulate every decision.`
 - Visual: one clean owner-workspace crop plus a compact evidence -> decision ->
   DRAFT -> ledger line.
 - Badge: `Demo data`.

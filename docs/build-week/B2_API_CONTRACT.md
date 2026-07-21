@@ -1,4 +1,4 @@
-# SavdoGraph B2 Deterministic API Contract
+# ProofTwin AI B2 Deterministic API Contract
 
 ## Scope and source contract
 

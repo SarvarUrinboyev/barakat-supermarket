@@ -67,10 +67,10 @@ const SCENARIO_FIXTURES = Object.freeze({
 });
 
 const LOCALE_EXPECTATIONS = Object.freeze({
-  uz: { askLocale: 'UZ', documentLanguage: 'uz', marker: 'Chakana savdo qarorlari', answerMarker: 'Bugungi yalpi foyda' },
-  uzc: { askLocale: 'UZ', documentLanguage: 'uz-Cyrl', marker: 'Чакана савдо қарорлари', answerMarker: 'Бугунги ялпи фойда' },
-  ru: { askLocale: 'RU', documentLanguage: 'ru', marker: 'Операционная система', answerMarker: 'Сегодня валовая прибыль' },
-  en: { askLocale: 'EN', documentLanguage: 'en', marker: 'Evidence-first operating system', answerMarker: "Today's Gross Profit" },
+  uz: { askLocale: 'UZ', documentLanguage: 'uz', marker: 'Chakana savdo uchun dalillarga asoslangan', answerMarker: 'Bugungi yalpi foyda' },
+  uzc: { askLocale: 'UZ', documentLanguage: 'uz-Cyrl', marker: 'Чакана савдо учун далилларга асосланган', answerMarker: 'Бугунги ялпи фойда' },
+  ru: { askLocale: 'RU', documentLanguage: 'ru', marker: 'Аналитика решений для розничной торговли', answerMarker: 'Сегодня валовая прибыль' },
+  en: { askLocale: 'EN', documentLanguage: 'en', marker: 'Evidence-backed retail decision intelligence', answerMarker: "Today's Gross Profit" },
 });
 
 function simulationEvidenceIds(evidenceBase) {
@@ -698,12 +698,13 @@ test.describe.serial('SavdoGraph deterministic mocked release gates', () => {
     assertRuntimeClean(state);
   });
 
-  test('owner follows evidence to one DRAFT through Proof Graph, Decision Twin, and Policy Shield', async ({ page }) => {
+  test('owner follows evidence to one DRAFT through Proof Graph, ProofTwin Scenario Engine, and Policy Shield', async ({ page }) => {
     const state = await installSyntheticBackend(page);
     await openWorkspace(page);
 
-    await expect(page.getByRole('heading', { name: 'SavdoGraph AI', exact: true })).toBeVisible();
-    await expect(page.getByTestId('savdograph-workspace')).toContainText('Evidence-first operating system for retail decisions.');
+    await expect(page.getByRole('heading', { name: 'ProofTwin AI', exact: true })).toBeVisible();
+    await expect(page.getByTestId('savdograph-workspace')).toContainText('Prove every number. Simulate every decision.');
+    await expect(page).toHaveTitle('ProofTwin AI · SavdoPRO');
     await expect(page.getByRole('note', { name: 'Demo Data' })).toContainText(/anonymized (?:sample|demo) data/i);
     await expect(page.locator('.sg-locale-switch')).toHaveCount(0);
 
@@ -830,7 +831,7 @@ test.describe.serial('SavdoGraph deterministic mocked release gates', () => {
 
     const workspace = page.getByTestId('savdograph-workspace');
     await expect(page.locator('.lang-select')).toHaveValue('uz');
-    await expect(workspace).toContainText('Chakana savdo qarorlari uchun dalilga asoslangan operatsion tizim.');
+    await expect(workspace).toContainText('Har bir raqamni isbotlang. Har bir qarorni simulyatsiya qiling.');
     await expect(page.locator('.sg-locale-switch')).toHaveCount(0);
 
     await generateBrief(page);

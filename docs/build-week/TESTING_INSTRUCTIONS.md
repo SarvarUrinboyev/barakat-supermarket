@@ -1,4 +1,4 @@
-# SavdoGraph AI — Testing Instructions
+# ProofTwin AI — Testing Instructions
 
 ## Safety boundary
 
@@ -62,7 +62,7 @@ Surefire explicitly includes `*Test`, `*Tests`, and `*IT` in
 no standalone Flyway Maven validation command configured. Do not substitute a
 production database for an unavailable local test dependency.
 
-Required SavdoGraph additions before a release claim:
+Required ProofTwin additions before a release claim:
 
 - golden calculations for daily P&L and reorder simulation;
 - unsupported numeric model-output rejection;
@@ -97,7 +97,7 @@ npm run build -- --outDir $validationOutput
 ```
 
 The baseline has three Vitest files covering format, customer balance and
-nakladnoy totals. New SavdoGraph tests must cover Evidence Card rendering,
+nakladnoy totals. New ProofTwin tests must cover Evidence Card rendering,
 unsupported-number behavior, approval/rejection state, and simulator edge cases.
 
 There is no repository-defined frontend lint, format, or typecheck script. The
@@ -112,7 +112,7 @@ $env:PYTHONUTF8 = '1'
 python .\imports\test_warehouse_import.py
 ```
 
-This is a local import-safety check only; it is not a substitute for SavdoGraph
+This is a local import-safety check only; it is not a substitute for ProofTwin
 workflow validation.
 
 ## Docker staging and Playwright E2E
@@ -353,7 +353,7 @@ npm test -- --reporter=dot
 ```
 
 Expected B4 record: `6` files, `104/104` tests passed. This includes `13`
-pre-existing format/customer/print regressions and `91` focused SavdoGraph
+pre-existing format/customer/print regressions and `91` focused ProofTwin
 model/component cases. No dedicated `typecheck` script exists in
 `frontend/package.json`; do not claim one.
 
@@ -541,7 +541,7 @@ Results:
 - geometry: 1440/1440, 1024/1024, 768/768, and 390/390
   (`clientWidth/document scrollWidth/body scrollWidth` all equal);
 - browser errors: console 0 and page 0 at every viewport;
-- focused SavdoGraph: 99/99; full frontend: 112/112;
+- focused ProofTwin: 99/99; full frontend: 112/112;
 - build: 525 modules, exit 0; audit: 0 vulnerabilities;
 - seed: 6/6; affected B1/B2/B3/B3.5: 68/68;
 - full backend: 377/377, zero failures/errors/skips; package: exit 0, JAR SHA-256 `2dc2bd3c395381cecb00a89f6c2244b2f348c7c94a40cbc4a1b2523193ea652d`;

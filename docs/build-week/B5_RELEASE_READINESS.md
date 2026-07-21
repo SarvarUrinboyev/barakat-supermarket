@@ -1,4 +1,4 @@
-# SavdoGraph B5.0 Release Readiness
+# ProofTwin AI B5.0 Release Readiness
 
 Evidence captured locally on 2026-07-18 and 2026-07-19 (Asia/Tashkent).
 This document is a readiness map, not a deployment record. No push, deploy,
@@ -297,7 +297,7 @@ production data.
 
 1. Create a dedicated ACCOUNT_OWNER only in the isolated demo License Server.
 2. Bind it to reserved demo account 90001 and the intended demo shop.
-3. Grant only the committed SavdoGraph read/write/decide and ledger-read model.
+3. Grant only the committed `SAVDOGRAPH:*` and ledger-read permission model.
 4. Generate a strong password server-side; deliver it out of band, never in Git,
    logs, screenshots, video, or this document.
 5. Disable self-service mutation outside the planned demo and set an expiry.
@@ -313,7 +313,7 @@ production data.
 | Build Week history | `VERIFIED` | Baseline through B4 is linear and complete |
 | Tags | `VERIFIED` | Existing release tags are present; no Build Week release tag was created |
 | Public/private submission repo | `NOT_STARTED` | No plan is recorded in the repository |
-| README | `DEFERRED` | No SavdoGraph or Build Week section; README update is needed in B5.1 |
+| README | `VERIFIED` | The ProofTwin AI Build Week section is present. |
 | Judge access | `BLOCKED_NEEDS_APPROVAL` | Decide public repo or private judge invitation before push/submission |
 | Push/PR | `NOT_STARTED` | No push or PR was performed |
 
@@ -387,7 +387,7 @@ removal, new shell, or client-side tenant authority was added.
 
 The focused long-shop-name geometry test also proved keyboard operation,
 accessible names, sidebar open/Escape close, UZ/RU language control, theme
-toggle, bounded resize events, and SavdoGraph content containment.
+toggle, bounded resize events, and ProofTwin content containment.
 
 ### Fresh validation
 
@@ -395,7 +395,7 @@ toggle, bounded resize events, and SavdoGraph content containment.
 |---|---|
 | Focused responsive Chrome | 1/1 passed at all four viewports |
 | Complete mocked Chrome journey | 5/5 passed: four independent full journeys plus gated capture |
-| Focused SavdoGraph Vitest | 99/99 passed |
+| Focused ProofTwin Vitest | 99/99 passed |
 | Full frontend Vitest | 112/112 passed |
 | Frontend build | 525 modules, exit 0 |
 | Frontend production audit | 0 vulnerabilities |

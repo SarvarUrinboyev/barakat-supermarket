@@ -1,4 +1,4 @@
-# SavdoGraph B2 Financial Semantics Contract
+# ProofTwin AI B2 Financial Semantics Contract
 
 **Status:** B2 deterministic implementation, 2026-07-18. This is the binding source-of-truth for the implemented Daily Gross Profit Brief and read-only reorder simulator.
 

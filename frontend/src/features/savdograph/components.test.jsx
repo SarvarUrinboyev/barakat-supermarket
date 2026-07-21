@@ -609,7 +609,9 @@ describe('SavdoGraph decision operating system interactions', () => {
     };
     const html = render(<DecisionCommandHeader {...props} />);
     expect((html.match(/sg-command-card/g) || [])).toHaveLength(4);
-    expect(html).toContain('Evidence-first operating system for retail decisions.');
+    expect(html).toContain('ProofTwin AI');
+    expect(html).toContain('Evidence-backed retail decision intelligence');
+    expect(html).toContain('Prove every number. Simulate every decision.');
     expect(html).toContain('Enforced by human approval and DRAFT-only execution.');
 
     const tree = DecisionCommandHeader(props);

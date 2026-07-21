@@ -1,8 +1,8 @@
-# SavdoGraph AI — Five-Minute Demo Script
+# ProofTwin AI — Five-Minute Demo Script
 
 ## Demo safety setup
 
-This script is a planned acceptance/demo runbook, not evidence that SavdoGraph
+This script is a planned acceptance/demo runbook, not evidence that ProofTwin AI
 features already exist. Run it only after the Build Week acceptance criteria pass.
 
 - Use the local/staging guarded seed only. It is hard-disabled under the `prod`
@@ -20,8 +20,8 @@ features already exist. Run it only after the Build Week acceptance criteria pas
 
 > “A shop owner does not need another chatbot. They need to know what changed,
 > why it matters, what a safe action would do, and retain control of the action.
-> SavdoGraph turns existing retail data into evidence-backed decisions, then lets
-> the owner approve a draft—not a purchase or payment.”
+> ProofTwin turns raw store transactions into verified decisions, compares three
+> possible futures, and never spends without human approval.”
 
 ## Before recording or presenting
 
@@ -80,7 +80,7 @@ names, supplier contacts, IP addresses, or internal deployment instructions.
 
 ## Reviewer takeaway
 
-SavdoGraph is differentiated by the chain of custody around a recommendation:
+ProofTwin AI is differentiated by the chain of custody around a recommendation:
 deterministic data → evidence → simulation → human decision → non-financial
 draft → immutable ledger. The AI is useful only inside that chain of custody.
 
@@ -100,7 +100,8 @@ Use only an approved local/staging environment with anonymized seed data and
 `VITE_DEMO_DATA=true`. Confirm the permanent localized Demo Data banner before
 showing any figure.
 
-1. Open `/savdograph` as an ACCOUNT_OWNER with SavdoGraph read/write/decide and
+1. Open the ProofTwin Decision Center at `/savdograph` as an ACCOUNT_OWNER with
+   the existing `SAVDOGRAPH:READ`, `SAVDOGRAPH:WRITE`, `SAVDOGRAPH:DECIDE`, and
    ledger-read permissions; point out that an unauthorized user has no nav item.
 2. Set the end-exclusive period and generate `Daily Gross Profit Brief`; call
    it Gross Profit, never Net Profit.
@@ -204,7 +205,7 @@ verified. Before presenting, use the exact committed B5.1 descendant and rerun
 the two Chrome specs. The required path passed independently at 1440x900,
 1024x768, 768x1024, and 390x844:
 
-1. open SavdoGraph and keep the permanent Demo Data note visible;
+1. open ProofTwin AI and keep the permanent Demo Data note visible;
 2. create the Daily Gross Profit Brief;
 3. ask in Uzbek and open/close evidence with focus return;
 4. search and select the demo product;

@@ -1,12 +1,12 @@
-# SavdoGraph AI — Build Week Scope Lock
+# ProofTwin AI — Build Week Scope Lock
 
 ## Product promise
 
-**SavdoGraph AI is an evidence-backed, human-governed profit agent for a
-neighborhood retailer.** It turns existing shop data into a dated profit brief,
-answers store questions only through deterministic retail tools, explains each
-recommendation, simulates a narrow reorder decision, and records a human decision
-before it creates a non-financial draft.
+**ProofTwin AI is evidence-backed retail decision intelligence.** It turns raw
+store transactions into verified decisions, compares three possible futures,
+and never spends without human approval. It answers store questions only
+through deterministic retail tools, explains each recommendation, and records
+a human decision before it creates a non-financial draft.
 
 It is not a generic chatbot and it never autonomously spends money.
 

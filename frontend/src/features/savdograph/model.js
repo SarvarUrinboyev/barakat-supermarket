@@ -9,6 +9,9 @@ export const SAVDOGRAPH_PERMISSIONS = Object.freeze({
 
 export const WORKSPACE_LOCALES = Object.freeze(['UZ', 'UZC', 'RU', 'EN']);
 export const ASK_LOCALES = Object.freeze(['AUTO', 'UZ', 'RU', 'EN']);
+export const PROOFTWIN_BRAND = 'ProofTwin AI';
+export const PROOFTWIN_SCENARIO_ENGINE = 'ProofTwin Scenario Engine';
+export const PROOFTWIN_DECISION_CENTER = 'ProofTwin Decision Center';
 
 const WORKSPACE_LOCALE_BY_GLOBAL_LANGUAGE = Object.freeze({ uz: 'UZ', uzc: 'UZC', ru: 'RU', en: 'EN' });
 const ASK_LOCALE_BY_GLOBAL_LANGUAGE = Object.freeze({ uz: 'UZ', uzc: 'UZ', ru: 'RU', en: 'EN' });
@@ -80,8 +83,8 @@ const TEXT = {
     actionLedger: 'Action Ledger', recordedHistory: 'Qayd etilgan qarorlar tarixi', ledgerHint: 'O\u2018zgarmas, faqat o\u2018qiladigan hodisalar.',
     timestamp: 'Vaqt', eventType: 'Hodisa', outcome: 'Natija', actor: 'Bajargan', proposalReference: 'Proposal',
     draftReference: 'PurchaseOrder DRAFT', noLedger: 'Hali qaror hodisasi qayd etilmagan.',
-    deniedTitle: 'SavdoGraph uchun ruxsat yo\u2018q', deniedBody: 'Bu ish maydonini ko\u2018rish uchun SAVDOGRAPH:READ ruxsati kerak.',
-    chooseStoreTitle: 'Bitta do\u2018konni tanlang', chooseStoreBody: 'SavdoGraph yozuvlari uchun yuqoridagi do\u2018kon almashtirgichida aniq do\u2018kon tanlanishi kerak.',
+    deniedTitle: `${PROOFTWIN_BRAND} uchun ruxsat yo\u2018q`, deniedBody: `${PROOFTWIN_DECISION_CENTER} markazini ko\u2018rish uchun SAVDOGRAPH:READ ruxsati kerak.`,
+    chooseStoreTitle: 'Bitta do\u2018konni tanlang', chooseStoreBody: `${PROOFTWIN_DECISION_CENTER} amallari uchun yuqoridagi do\u2018kon almashtirgichida aniq do\u2018kon tanlanishi kerak.`,
     validationPeriod: 'Davr 1 kundan 31 kungacha bo\u2018lishi va tugash sanasi boshlanishdan keyin kelishi kerak.',
     validationQuestion: 'Savol kiriting (ko\u2018pi bilan 1200 belgi).', validationProduct: 'Avval mahsulotni aniq tanlang.',
     validationSupplier: 'Yetkazib beruvchini tanlang.', validationBounds: 'Ssenariy qiymatlari backend chegaralariga mos emas.',
@@ -124,7 +127,7 @@ const TEXT = {
     decisionWarning: '\u042d\u0442\u043e \u0440\u0435\u0448\u0435\u043d\u0438\u0435 \u0447\u0435\u043b\u043e\u0432\u0435\u043a\u0430. \u0423\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u0441\u043e\u0437\u0434\u0430\u0451\u0442 \u043d\u0435 \u0431\u043e\u043b\u0435\u0435 \u043e\u0434\u043d\u043e\u0433\u043e PurchaseOrder DRAFT. \u041e\u043d\u043e \u043d\u0435 \u0437\u0430\u043a\u0430\u0437\u044b\u0432\u0430\u0435\u0442, \u043d\u0435 \u043e\u043f\u043b\u0430\u0447\u0438\u0432\u0430\u0435\u0442, \u043d\u0435 \u043f\u0440\u0438\u043d\u0438\u043c\u0430\u0435\u0442, \u043d\u0435 \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u044f\u0435\u0442 \u0438 \u043d\u0435 \u0443\u0432\u0435\u0434\u043e\u043c\u043b\u044f\u0435\u0442 \u043f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a\u0430.', submitting: '\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430\u2026', decisionConfirmed: '\u0420\u0435\u0448\u0435\u043d\u0438\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u043e backend.',
     evidenceViewer: '\u041f\u0440\u043e\u0441\u043c\u043e\u0442\u0440 \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432', evidenceId: 'ID \u0434\u043e\u043a\u0430\u0437\u0430\u0442\u0435\u043b\u044c\u0441\u0442\u0432\u0430', evidenceType: '\u0422\u0438\u043f \u0440\u0430\u0441\u0447\u0451\u0442\u0430', sourcePeriod: '\u041f\u0435\u0440\u0438\u043e\u0434 \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430', result: '\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442', unitCurrency: '\u0415\u0434\u0438\u043d\u0438\u0446\u0430 / \u0432\u0430\u043b\u044e\u0442\u0430', integrityRecorded: '\u041d\u0435\u0438\u0437\u043c\u0435\u043d\u044f\u0435\u043c\u044b\u0439 hash \u0437\u0430\u043f\u0438\u0441\u0430\u043d', structuredInputs: '\u0421\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0435 \u0432\u0445\u043e\u0434\u044b',
     actionLedger: 'Action Ledger', recordedHistory: '\u0417\u0430\u043f\u0438\u0441\u0430\u043d\u043d\u0430\u044f \u0438\u0441\u0442\u043e\u0440\u0438\u044f \u0440\u0435\u0448\u0435\u043d\u0438\u0439', ledgerHint: '\u041d\u0435\u0438\u0437\u043c\u0435\u043d\u044f\u0435\u043c\u044b\u0435 \u0441\u043e\u0431\u044b\u0442\u0438\u044f \u0442\u043e\u043b\u044c\u043a\u043e \u0434\u043b\u044f \u0447\u0442\u0435\u043d\u0438\u044f.', timestamp: '\u0412\u0440\u0435\u043c\u044f', eventType: '\u0421\u043e\u0431\u044b\u0442\u0438\u0435', outcome: '\u0418\u0441\u0445\u043e\u0434', actor: '\u0410\u043a\u0442\u043e\u0440', proposalReference: 'Proposal', draftReference: 'PurchaseOrder DRAFT', noLedger: '\u0421\u043e\u0431\u044b\u0442\u0438\u044f \u0440\u0435\u0448\u0435\u043d\u0438\u0439 \u0435\u0449\u0451 \u043d\u0435 \u0437\u0430\u043f\u0438\u0441\u0430\u043d\u044b.',
-    deniedTitle: '\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u0430 \u043a SavdoGraph', deniedBody: '\u0414\u043b\u044f \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430 \u043d\u0443\u0436\u043d\u043e \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u0435 SAVDOGRAPH:READ.', chooseStoreTitle: '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043e\u0434\u0438\u043d \u043c\u0430\u0433\u0430\u0437\u0438\u043d', chooseStoreBody: '\u0414\u043b\u044f SavdoGraph \u043d\u0443\u0436\u043d\u043e \u0432\u044b\u0431\u0440\u0430\u0442\u044c \u043a\u043e\u043d\u043a\u0440\u0435\u0442\u043d\u044b\u0439 \u043c\u0430\u0433\u0430\u0437\u0438\u043d.',
+    deniedTitle: `\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u0430 \u043a ${PROOFTWIN_BRAND}`, deniedBody: `\u0414\u043b\u044f \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430 ${PROOFTWIN_DECISION_CENTER} \u043d\u0443\u0436\u043d\u043e \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u0435 SAVDOGRAPH:READ.`, chooseStoreTitle: '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043e\u0434\u0438\u043d \u043c\u0430\u0433\u0430\u0437\u0438\u043d', chooseStoreBody: `\u0414\u043b\u044f \u0434\u0435\u0439\u0441\u0442\u0432\u0438\u0439 \u0432 ${PROOFTWIN_DECISION_CENTER} \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043a\u043e\u043d\u043a\u0440\u0435\u0442\u043d\u044b\u0439 \u043c\u0430\u0433\u0430\u0437\u0438\u043d.`,
     validationPeriod: '\u041f\u0435\u0440\u0438\u043e\u0434 \u0434\u043e\u043b\u0436\u0435\u043d \u0431\u044b\u0442\u044c \u043e\u0442 1 \u0434\u043e 31 \u0434\u043d\u044f.', validationQuestion: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0432\u043e\u043f\u0440\u043e\u0441 (\u0434\u043e 1200 \u0437\u043d\u0430\u043a\u043e\u0432).', validationProduct: '\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u044f\u0432\u043d\u043e \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0442\u043e\u0432\u0430\u0440.', validationSupplier: '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a\u0430.', validationBounds: '\u0417\u043d\u0430\u0447\u0435\u043d\u0438\u044f \u0432\u043d\u0435 \u0433\u0440\u0430\u043d\u0438\u0446 backend.',
     malformedResponse: '\u0421\u0435\u0440\u0432\u0435\u0440 \u0432\u0435\u0440\u043d\u0443\u043b \u043d\u0435\u043e\u0436\u0438\u0434\u0430\u043d\u043d\u044b\u0439 \u043e\u0442\u0432\u0435\u0442.', backendUnavailable: '\u041d\u0435\u0442 \u0441\u0432\u044f\u0437\u0438 \u0441 backend.', permissionDenied: '\u041d\u0435\u0442 \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043d\u0438\u044f.', notFound: '\u0417\u0430\u043f\u0438\u0441\u044c \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u0430 \u0438\u043b\u0438 \u043e\u0442\u043d\u043e\u0441\u0438\u0442\u0441\u044f \u043a \u0434\u0440\u0443\u0433\u043e\u043c\u0443 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0443.', conflict: '\u0421\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u0435 \u0438\u0437\u043c\u0435\u043d\u0438\u043b\u043e\u0441\u044c \u0438\u043b\u0438 \u043f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a \u043a\u043e\u043d\u0444\u043b\u0438\u043a\u0442\u0443\u0435\u0442.', rateLimited: '\u041b\u0438\u043c\u0438\u0442 \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432 \u043f\u0440\u0435\u0432\u044b\u0448\u0435\u043d.', providerUnavailable: 'AI-\u043f\u0440\u043e\u0432\u0430\u0439\u0434\u0435\u0440 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d. \u041e\u0442\u0432\u0435\u0442 \u043d\u0435 \u0432\u044b\u0434\u0443\u043c\u0430\u043d.', refused: '\u0417\u0430\u043f\u0440\u043e\u0441 \u043e\u0442\u043a\u043b\u043e\u043d\u0451\u043d \u043f\u043e \u0433\u0440\u0430\u043d\u0438\u0446\u0430\u043c \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438 \u0438\u043b\u0438 \u0434\u043e\u043c\u0435\u043d\u0430.', groundednessFailure: '\u041e\u0442\u0432\u0435\u0442 \u043d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u0434\u0430\u043d\u043d\u044b\u043c\u0438.', needsClarification: '\u041d\u0443\u0436\u043d\u043e \u0443\u0442\u043e\u0447\u043d\u0435\u043d\u0438\u0435.', answered: '\u041e\u0442\u0432\u0435\u0442 \u0433\u043e\u0442\u043e\u0432', error: '\u041e\u0448\u0438\u0431\u043a\u0430',
     estimatedDescription: '\u041e\u0446\u0435\u043d\u043e\u0447\u043d\u044b\u0439 \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442 \u043d\u0430 \u0434\u043e\u043f\u0443\u0449\u0435\u043d\u0438\u044f\u0445 backend.', verifiedDescription: '\u041f\u0440\u043e\u0432\u0435\u0440\u0435\u043d\u043e \u043f\u043e \u043d\u0435\u0438\u0437\u043c\u0435\u043d\u044f\u0435\u043c\u044b\u043c \u0438\u0441\u0442\u043e\u0447\u043d\u0438\u043a\u0430\u043c.', insufficientDescription: '\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0434\u0430\u043d\u043d\u044b\u0445 \u0438\u043b\u0438 \u0432\u0445\u043e\u0434\u043e\u0432.', unsupportedDescription: '\u0417\u0430\u043f\u0440\u043e\u0441 \u0432\u043d\u0435 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u043c\u043e\u0433\u043e \u0442\u043e\u0440\u0433\u043e\u0432\u043e\u0433\u043e \u0434\u043e\u043c\u0435\u043d\u0430.', verified: '\u041f\u0440\u043e\u0432\u0435\u0440\u0435\u043d\u043e', estimated: '\u041e\u0446\u0435\u043d\u043a\u0430', insufficientData: '\u041d\u0435\u0434\u043e\u0441\u0442\u0430\u0442\u043e\u0447\u043d\u043e \u0434\u0430\u043d\u043d\u044b\u0445', unsupported: '\u041d\u0435 \u043f\u043e\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044f', pending: '\u041e\u0436\u0438\u0434\u0430\u0435\u0442', approved: '\u0423\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u043e', rejected: '\u041e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u043e',
@@ -150,7 +153,7 @@ const TEXT = {
     decisionWarning: 'This is a human decision. Approval creates at most one PurchaseOrder DRAFT. It does not order, pay, receive, deliver, or notify the supplier.', submitting: 'Submitting\u2026', decisionConfirmed: 'The backend confirmed the decision.',
     evidenceViewer: 'Evidence Viewer', evidenceId: 'Evidence ID', evidenceType: 'Calculation type', sourcePeriod: 'Source period', result: 'Result', unitCurrency: 'Unit / currency', integrityRecorded: 'Immutable hash recorded', structuredInputs: 'Structured inputs',
     actionLedger: 'Action Ledger', recordedHistory: 'Recorded decision history', ledgerHint: 'Immutable, read-only events.', timestamp: 'Timestamp', eventType: 'Event type', outcome: 'Outcome', actor: 'Actor', proposalReference: 'Proposal', draftReference: 'PurchaseOrder DRAFT', noLedger: 'No decision event has been recorded yet.',
-    deniedTitle: 'SavdoGraph access denied', deniedBody: 'SAVDOGRAPH:READ is required to view this workspace.', chooseStoreTitle: 'Select one store', chooseStoreBody: 'Select a specific store in the top switcher before using SavdoGraph writes.',
+    deniedTitle: `${PROOFTWIN_BRAND} access denied`, deniedBody: `SAVDOGRAPH:READ is required to view ${PROOFTWIN_DECISION_CENTER}.`, chooseStoreTitle: 'Select one store', chooseStoreBody: `Select a specific store in the top switcher before using ${PROOFTWIN_DECISION_CENTER} actions.`,
     validationPeriod: 'The period must be 1 to 31 days, with the exclusive end after the start.', validationQuestion: 'Enter a question of at most 1200 characters.', validationProduct: 'Explicitly select a product first.', validationSupplier: 'Select a supplier.', validationBounds: 'Scenario values are outside backend bounds.',
     malformedResponse: 'The server returned an unexpected structured response.', backendUnavailable: 'The backend could not be reached.', permissionDenied: 'You do not have permission for this action.', notFound: 'The record was not found or belongs to another store.', conflict: 'The state changed or this supplier conflicts with the existing proposal.', rateLimited: 'The request limit was reached. Try again shortly.',
     providerUnavailable: 'The AI provider is unavailable. No fallback answer was fabricated.', refused: 'The request was refused by a safety or domain boundary.', groundednessFailure: 'The answer was not sufficiently grounded and is not shown.', needsClarification: 'Clarification is required before answering.', answered: 'Answered', error: 'Error',
@@ -161,14 +164,14 @@ const TEXT = {
 
 const EXPERIENCE_TEXT = {
   UZ: {
-    productPromise: 'Chakana savdo qarorlari uchun dalilga asoslangan operatsion tizim.',
+    productPromise: 'Har bir raqamni isbotlang. Har bir qarorni simulyatsiya qiling.',
     productSupport: 'U taxmin qilmaydi. Isbotlaydi, simulyatsiya qiladi va inson tasdig‘ini kutadi.',
     judgeStart: '90 soniyalik yo‘naltirilgan demoni boshlash', judgeExit: 'Yo‘naltirilgan demodan chiqish', judgeMode: 'Hakam rejimi',
     judgeModeHint: 'Uch bosqichli hikoya bo‘ylab yuring. Har bir amal faqat siz bosganingizda bajariladi.',
     understand: 'Tushunish', understandHint: 'Tasdiqlangan foyda va dalillangan javobdan boshlang.',
     simulate: 'Simulyatsiya', simulateHint: 'Backend qaytargan ssenariyni zaxira ta’siri bilan ko‘ring.',
     approveStage: 'Tasdiqlash', approveStageHint: 'Proposal inson qarorini kutadi; tizim mustaqil xarajat qilmaydi.',
-    decisionCommand: 'Qaror boshqaruvi', verifiedGrossProfit: 'Tasdiqlangan yalpi foyda', immutableEvidenceCount: 'O‘zgarmas dalillar',
+    decisionCommand: 'Chakana savdo uchun dalillarga asoslangan qaror intellekti', verifiedGrossProfit: 'Tasdiqlangan yalpi foyda', immutableEvidenceCount: 'O‘zgarmas dalillar',
     currentDecision: 'Joriy qaror', autonomousSpend: 'Mustaqil xarajat', humanApproval: 'Inson tasdig‘i', required: 'Majburiy',
     demoPlaceholder: 'Demo joytutgichi', awaitingVerifiedBrief: 'Tasdiqlangan brief kutilmoqda', noEvidenceLoaded: 'Dalil hali yuklanmagan', noProposalYet: 'Proposal hali yaratilmagan',
     trustImmutable: 'O‘zgarmas dalillar', trustDeterministic: 'Deterministik hisob-kitoblar', trustHumanApproval: 'Inson tasdig‘i majburiy', trustZeroSpend: 'Mustaqil xarajat nol',
@@ -182,14 +185,14 @@ const EXPERIENCE_TEXT = {
     noPaymentInitiated: 'To‘lov boshlanmadi', noInventoryChanged: 'Zaxira o‘zgarmadi',
   },
   RU: {
-    productPromise: 'Операционная система доказательных решений для розничной торговли.',
+    productPromise: 'Докажите каждую цифру. Смоделируйте каждое решение.',
     productSupport: 'Она не угадывает. Она доказывает, моделирует и ждёт одобрения человека.',
     judgeStart: 'Запустить 90-секундную демонстрацию', judgeExit: 'Выйти из демонстрации', judgeMode: 'Режим жюри',
     judgeModeHint: 'Пройдите три этапа истории. Каждое действие выполняется только после вашего нажатия.',
     understand: 'Понять', understandHint: 'Начните с подтверждённой валовой прибыли и доказательного ответа.',
     simulate: 'Смоделировать', simulateHint: 'Посмотрите влияние сценария, рассчитанного backend, на запас.',
     approveStage: 'Одобрить', approveStageHint: 'Proposal ждёт решения человека; система не расходует средства самостоятельно.',
-    decisionCommand: 'Командная панель решения', verifiedGrossProfit: 'Подтверждённая валовая прибыль', immutableEvidenceCount: 'Неизменяемые доказательства',
+    decisionCommand: 'Аналитика решений для розничной торговли, основанная на доказательствах', verifiedGrossProfit: 'Подтверждённая валовая прибыль', immutableEvidenceCount: 'Неизменяемые доказательства',
     currentDecision: 'Текущее решение', autonomousSpend: 'Автономные расходы', humanApproval: 'Одобрение человека', required: 'Обязательно',
     demoPlaceholder: 'Демо-заполнитель', awaitingVerifiedBrief: 'Ожидается подтверждённый brief', noEvidenceLoaded: 'Доказательства ещё не загружены', noProposalYet: 'Proposal ещё не создан',
     trustImmutable: 'Неизменяемые доказательства', trustDeterministic: 'Детерминированные расчёты', trustHumanApproval: 'Требуется одобрение человека', trustZeroSpend: 'Нулевые автономные расходы',
@@ -203,14 +206,14 @@ const EXPERIENCE_TEXT = {
     noPaymentInitiated: 'Платёж не инициирован', noInventoryChanged: 'Запасы не изменены',
   },
   EN: {
-    productPromise: 'Evidence-first operating system for retail decisions.',
+    productPromise: 'Prove every number. Simulate every decision.',
     productSupport: 'It does not guess. It proves, simulates, and waits for human approval.',
     judgeStart: 'Start 90-second guided demo', judgeExit: 'Exit guided demo', judgeMode: 'Judge mode',
     judgeModeHint: 'Follow the three-stage story. Every action runs only when you choose it.',
     understand: 'Understand', understandHint: 'Start with verified gross profit and an evidence-backed answer.',
     simulate: 'Simulate', simulateHint: 'See the inventory impact of the backend-returned scenario.',
     approveStage: 'Approve', approveStageHint: 'The proposal waits for a human decision; the system never spends autonomously.',
-    decisionCommand: 'Decision command', verifiedGrossProfit: 'Verified Gross Profit', immutableEvidenceCount: 'Immutable evidence',
+    decisionCommand: 'Evidence-backed retail decision intelligence', verifiedGrossProfit: 'Verified Gross Profit', immutableEvidenceCount: 'Immutable evidence',
     currentDecision: 'Current decision', autonomousSpend: 'Autonomous spend', humanApproval: 'Human approval', required: 'Required',
     demoPlaceholder: 'Demo placeholder', awaitingVerifiedBrief: 'Awaiting verified brief', noEvidenceLoaded: 'No evidence loaded yet', noProposalYet: 'No proposal yet',
     trustImmutable: 'Immutable evidence', trustDeterministic: 'Deterministic calculations', trustHumanApproval: 'Human approval required', trustZeroSpend: 'Zero autonomous spend',
@@ -328,7 +331,7 @@ const REDESIGN_TEXT = Object.freeze({
     simulationLimitationLotCost: 'Joriy zaxirada o‘zgarmas partiya tannarxi kelib chiqishi yo‘qligi sabab bog‘langan kapital mavjud emas.',
     traceCurrent: 'Joriy',
     traceNotStarted: 'Boshlanmagan',
-    decisionTwin: 'SavdoGraph qaror egizagi',
+    decisionTwin: PROOFTWIN_SCENARIO_ENGINE,
     decisionTwinHint: 'Bir kelajakni taxmin qilmaydi: bir nechta server hisoblagan holatni dalillari bilan ko‘rsatadi.',
     runDecisionTwin: 'Uch ssenariyni hisoblash',
     twinNoAction: 'Hech narsa qilmaslik',
@@ -337,7 +340,7 @@ const REDESIGN_TEXT = Object.freeze({
     twinPresetsHint: 'Bir mahsulot va davr; yetkazish 2 kun, prognoz 7 kun, xavfsizlik zaxirasi 0 / 3 / 14 kun.',
     selectScenarioForReview: 'Ko‘rib chiqish uchun tanlash',
     selectedForReview: 'Ko‘rib chiqish uchun tanlandi',
-    twinUnsupported: 'Qaror egizagini ushbu natijalar bilan xavfsiz ko‘rsatib bo‘lmaydi.',
+    twinUnsupported: `Ushbu natijalar bilan ${PROOFTWIN_SCENARIO_ENGINE}ni xavfsiz ko‘rsatib bo‘lmaydi.`,
     twinIncoherent: 'Server natijalari bitta izchil taqqoslashni tasdiqlamadi.',
     scenarioNoAction: 'Hech narsa qilmaslik',
     scenarioBalanced: 'Muvozanatli qamrov',
@@ -506,7 +509,7 @@ const REDESIGN_TEXT = Object.freeze({
     simulationLimitationLotCost: 'Связанный капитал недоступен: у текущего запаса нет неизменяемого происхождения себестоимости партии.',
     traceCurrent: 'Текущий',
     traceNotStarted: 'Не начато',
-    decisionTwin: 'Двойник решения SavdoGraph',
+    decisionTwin: PROOFTWIN_SCENARIO_ENGINE,
     decisionTwinHint: 'Он не предсказывает одно будущее, а показывает несколько рассчитанных сервером сценариев с доказательствами.',
     runDecisionTwin: 'Рассчитать три сценария',
     twinNoAction: 'Без действия',
@@ -515,7 +518,7 @@ const REDESIGN_TEXT = Object.freeze({
     twinPresetsHint: 'Один товар и период; поставка 2 дня, прогноз 7 дней, страховой запас 0 / 3 / 14 дней.',
     selectScenarioForReview: 'Выбрать для рассмотрения',
     selectedForReview: 'Выбрано для рассмотрения',
-    twinUnsupported: 'Двойник решения нельзя безопасно показать по этим результатам.',
+    twinUnsupported: `${PROOFTWIN_SCENARIO_ENGINE} нельзя безопасно показать по этим результатам.`,
     twinIncoherent: 'Серверные результаты не подтверждают единое согласованное сравнение.',
     scenarioNoAction: 'Без действия',
     scenarioBalanced: 'Сбалансированное покрытие',
@@ -684,7 +687,7 @@ const REDESIGN_TEXT = Object.freeze({
     simulationLimitationLotCost: 'Tied-up capital is unavailable because current on-hand inventory has no immutable lot-cost provenance.',
     traceCurrent: 'Current',
     traceNotStarted: 'Not started',
-    decisionTwin: 'SavdoGraph Decision Twin',
+    decisionTwin: PROOFTWIN_SCENARIO_ENGINE,
     decisionTwinHint: 'It does not predict one future. It shows multiple server-calculated futures with evidence.',
     runDecisionTwin: 'Run three scenarios',
     twinNoAction: 'No action',
@@ -693,7 +696,7 @@ const REDESIGN_TEXT = Object.freeze({
     twinPresetsHint: 'Same product and window; 2-day lead, 7-day horizon, and 0 / 3 / 14 safety-stock days.',
     selectScenarioForReview: 'Select for review',
     selectedForReview: 'Selected for review',
-    twinUnsupported: 'Decision Twin cannot be shown safely from these results.',
+    twinUnsupported: `${PROOFTWIN_SCENARIO_ENGINE} cannot be shown safely from these results.`,
     twinIncoherent: 'The server results do not prove one coherent comparison.',
     scenarioNoAction: 'No action',
     scenarioBalanced: 'Balanced coverage',
@@ -774,7 +777,8 @@ const SAVDOGRAPH_TEXT_KEYS = Object.freeze({
 });
 
 const CYRILLIC_PRESERVED_TOKENS = Object.freeze([
-  'SavdoGraph', 'GPT-5.6', 'PurchaseOrder', 'DRAFT', 'Asia/Tashkent', 'UZS', 'COGS',
+  PROOFTWIN_SCENARIO_ENGINE, PROOFTWIN_DECISION_CENTER, PROOFTWIN_BRAND, 'ProofTwin Copilot', 'ProofTwin',
+  'GPT-5.6', 'PurchaseOrder', 'DRAFT', 'Asia/Tashkent', 'UZS', 'COGS',
   'totalUzs', 'refundedTotalUzs', 'costAtSaleUzs', 'Sale', 'LEGACY_OR_UNKNOWN',
   'max(0, ceil(netUnitsSold/lookbackDays * (leadTimeDays + safetyStockDays + forecastHorizonDays) - currentOnHand))',
 ]);

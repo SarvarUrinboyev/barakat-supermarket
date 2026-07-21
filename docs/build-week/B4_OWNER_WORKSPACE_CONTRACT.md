@@ -1,4 +1,4 @@
-# B4 Owner Decision Workspace Contract
+# B4 ProofTwin Decision Center Contract
 
 ## Scope and route
 
@@ -7,7 +7,7 @@ contracts. The authenticated application exposes `/savdograph` inside the
 existing `Layout` and sidebar. The navigation item is visible only when the
 server-issued `/me.permissions` contains `SAVDOGRAPH:READ` (or `*:*`). Direct
 access by another user renders a safe denial state and does not start a
-SavdoGraph API request.
+ProofTwin feature API request.
 
 The page never accepts shop/account/tenant authority as a form field. All API
 calls reuse the authenticated client and its active `X-Shop-Id`. Consolidated
@@ -114,8 +114,8 @@ The viewer shows hash presence as an integrity status, not the raw hash value.
 
 ## Localization, accessibility, and responsiveness
 
-SavdoGraph has a route-local UZ/RU/EN presentation selector and a separate
-AUTO/UZ/RU/EN Ask locale. It does not add a fourth global application locale.
+ProofTwin AI derives its UZ/UZC/RU/EN presentation and Ask locale from the
+global application language selector, which remains the single source of truth.
 The route includes localized section labels, fields, classifications, statuses,
 errors, empty/loading states, confirmation copy, and demo messaging.
 
@@ -136,7 +136,7 @@ the hostname.
 ## Verification record
 
 - Frontend: `npm test -- --reporter=dot` -> `99/99` passed (`13` existing plus
-  `86` SavdoGraph focused cases).
+  `86` ProofTwin focused cases).
 - Production bundle: `npm run build` -> passed, separate SavdoGraph JS/CSS
   chunks, ignored configured static output, no source map.
 - Backend focused regression:
