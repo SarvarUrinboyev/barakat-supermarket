@@ -25,6 +25,42 @@ export function usd(value) {
   return '$' + money(value);
 }
 
+export const LOCALE_BY_LANGUAGE = Object.freeze({
+  uz: 'uz-UZ',
+  uzc: 'uz-Cyrl-UZ',
+  ru: 'ru-RU',
+  en: 'en-GB',
+});
+
+export function localeForLanguage(language) {
+  return LOCALE_BY_LANGUAGE[language] || LOCALE_BY_LANGUAGE.uz;
+}
+
+/** Locale-aware number formatting for application UI. */
+export function formatNumberLocalized(value, language = 'uz', options = {}) {
+  const number = Number(value || 0);
+  return new Intl.NumberFormat(localeForLanguage(language), options).format(
+    Number.isFinite(number) ? number : 0,
+  );
+}
+
+/**
+ * Locale-aware money formatting without currency conversion. UZS is labelled
+ * explicitly in English/Russian and as so'm in Uzbek UI; USD remains explicit.
+ */
+export function formatMoneyLocalized(amount, currency = 'UZS', language = 'uz') {
+  const code = currency === 'USD' ? 'USD' : 'UZS';
+  const number = Number(amount || 0);
+  const formatted = formatNumberLocalized(Number.isFinite(number) ? number : 0, language, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: code === 'UZS' ? 0 : 2,
+  });
+  if (code === 'USD') return `$${formatted}`;
+  return language === 'uz' || language === 'uzc'
+    ? `${formatted} so'm`
+    : `${formatted} UZS`;
+}
+
 /**
  * Currency-aware money — the app's single money formatter.
  *  • USD  -> "$1 350"      (2 decimals only when fractional, via money())
@@ -66,6 +102,20 @@ export function formatDate(iso) {
   return `${d}.${m}.${y}`;
 }
 
+/** Formats an ISO date in the selected UI locale and Asia/Tashkent timezone. */
+export function formatDateLocalized(iso, language = 'uz') {
+  if (!iso) return '';
+  const dateOnly = String(iso).slice(0, 10);
+  const date = new Date(`${dateOnly}T12:00:00+05:00`);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(localeForLanguage(language), {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'Asia/Tashkent',
+  }).format(date);
+}
+
 /** "2026-05-21T16:43:59" -> "21.05.2026 16:43" */
 export function formatDateTime(iso) {
   if (!iso) return '';
@@ -77,6 +127,23 @@ export function formatDateTime(iso) {
 /** "2026-05-21T16:43:59" -> "16:43" */
 export function formatTime(iso) {
   return iso ? iso.slice(11, 16) : '';
+}
+
+/** Formats an ISO instant/time in the selected locale and business timezone. */
+export function formatTimeLocalized(iso, language = 'uz') {
+  if (!iso) return '';
+  const text = String(iso);
+  const localDateTime = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?)(?:\.(\d+))?$/.exec(text);
+  const normalized = localDateTime
+    ? `${localDateTime[1]}${localDateTime[2] ? `.${localDateTime[2].slice(0, 3).padEnd(3, '0')}` : ''}+05:00`
+    : text;
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(localeForLanguage(language), {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Tashkent',
+  }).format(date);
 }
 
 /** Today's date as an ISO string "YYYY-MM-DD" (local time). */
@@ -109,4 +176,6 @@ export const PAYMENT_LABELS = {
   KARTA: 'Karta',
   ARALASH: 'Aralash',
   QARZGA: 'Qarzga',
+  P2P: 'P2P',
+  TRANSFER: "Bank o'tkazmasi",
 };

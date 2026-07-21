@@ -11,6 +11,7 @@ import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useShop } from '../context/Shop.jsx';
 import { useApi } from '../hooks/useApi.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Shops management — account owner can add new shops, rename, mark the
@@ -40,7 +41,7 @@ export function Shops() {
       toast.success(t("Asosiy do'kon o'zgartirildi"));
       await refresh();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -51,7 +52,7 @@ export function Shops() {
       setModal(null);
       await refresh();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -68,7 +69,11 @@ export function Shops() {
         )}
       </PageHeader>
 
-      <Loader loading={loading} error={error} onRetry={reload}>
+      <Loader
+        loading={loading}
+        error={error ? t("Do'konlarni yuklab bo'lmadi. Qayta urinib ko'ring.") : null}
+        onRetry={reload}
+      >
         {shops.length === 0 ? (
           <EmptyState icon="🏪" text={t("Do'kon yo'q")} />
         ) : (
@@ -96,12 +101,14 @@ export function Shops() {
                     )}
                     <button
                       className="btn-debt icon"
-                      title={t('Tahrirlash')}
+                      title={t("Do'konni tahrirlash")}
+                      aria-label={`${t("Do'konni tahrirlash")}: ${s.name}`}
                       onClick={() => setModal({ type: 'edit', item: s })}
                     >✏️</button>
                     <button
                       className="btn-debt icon danger"
-                      title={t("O'chirish")}
+                      title={s.main ? t("Asosiy do'konni o'chirib bo'lmaydi") : t("Do'konni o'chirish")}
+                      aria-label={`${t("Do'konni o'chirish")}: ${s.name}`}
                       disabled={s.main}
                       onClick={() => setModal({ type: 'delete', item: s })}
                     >🗑</button>
@@ -186,7 +193,7 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
       setPrinters(list || []);
     } catch (err) {
       setPrinters([]);
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -196,7 +203,7 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
       const res = await PrintApi.test();
       toast.success(`${t('Sinov chop etildi')}: ${res.printer}`);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setTesting(false);
     }
@@ -219,7 +226,7 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -243,12 +250,13 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
         <label>{t("Do'kon nomi *")}</label>
         <input className="input" autoFocus value={name}
                onChange={(e) => setName(e.target.value)}
-               placeholder="Chilonzor filiali" />
+               placeholder={t("Do'kon nomini kiriting")} />
       </div>
       <div className="field">
         <label>{t('Manzil')}</label>
         <input className="input" value={address}
-               onChange={(e) => setAddress(e.target.value)} />
+               onChange={(e) => setAddress(e.target.value)}
+               placeholder={t("Shahar, ko'cha, bino")} />
       </div>
       <div className="field">
         <label>{t('Telefon')}</label>
@@ -310,7 +318,7 @@ function ShopFormModal({ title, initial, onSubmit, onClose }) {
           <label>{t('Chek pastki yozuvi')}</label>
           <input className="input" value={receiptFooter}
                  onChange={(e) => setReceiptFooter(e.target.value)}
-                 placeholder="@savdo_pro · qaytarish 14 kun ichida" />
+                 placeholder={t('Xaridingiz uchun rahmat!')} />
         </div>
       </details>
       {error && <div style={{ color: 'var(--red)', fontSize: 12 }}>{error}</div>}

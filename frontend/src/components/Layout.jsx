@@ -11,7 +11,7 @@ import { useKeyboard } from '../hooks/useKeyboard.js';
 import { useSettings } from '../context/Settings.jsx';
 import { useShop } from '../context/Shop.jsx';
 import { LANGUAGES } from '../i18n/i18n.js';
-import { formatDate, todayIso } from '../lib/format.js';
+import { formatDateLocalized, todayIso } from '../lib/format.js';
 
 const PAGE_TITLES = {
   '/dashboard': 'Boshqaruv',
@@ -152,7 +152,7 @@ export function Layout() {
             >
               {theme === 'dark' ? '☀️' : '🌙'}
             </button>
-            <span className="date">📅 {formatDate(todayIso())}</span>
+            <span className="date">📅 {formatDateLocalized(todayIso(), lang)}</span>
           </div>
         </header>
         )}

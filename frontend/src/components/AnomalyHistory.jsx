@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { AiApi } from '../api/endpoints.js';
 import { useToast } from './Toast.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatDate } from '../lib/format.js';
+import { localizedAnomalyMessage } from '../lib/anomaly.js';
+import { formatDateLocalized } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Persisted anomaly history with an inline acknowledge action. Renders nothing
@@ -12,7 +14,7 @@ import { formatDate } from '../lib/format.js';
  * AnomalyBanner on the next reload.
  */
 export function AnomalyHistory() {
-  const t = useT();
+  const { lang, t } = useSettings();
   const toast = useToast();
   const { data, reload } = useApi(() => AiApi.anomalyHistory({ limit: 50 }), []);
   const [busy, setBusy] = useState(null);
@@ -26,7 +28,7 @@ export function AnomalyHistory() {
       toast.success(t('Belgilandi'));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setBusy(null);
     }
@@ -47,9 +49,9 @@ export function AnomalyHistory() {
             >
               <span className="anomaly-ico">{iconFor(a.severity)}</span>
               <div className="anomaly-text">
-                <div className="anomaly-msg">{a.message}</div>
+                <div className="anomaly-msg">{localizedAnomalyMessage(a, lang, t)}</div>
                 <div className="anomaly-time">
-                  {formatDate(a.occurredOn)}
+                  {formatDateLocalized(a.occurredOn, lang)}
                   {a.acknowledged && a.acknowledgedBy
                     ? ` · ${t('belgiladi')}: ${a.acknowledgedBy}`
                     : ''}

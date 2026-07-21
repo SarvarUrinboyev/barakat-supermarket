@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { money, usd, formatMoney } from './format.js';
+import {
+  formatDateLocalized,
+  formatMoney,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatTimeLocalized,
+  localeForLanguage,
+  money,
+  usd,
+} from './format.js';
 
 describe('money', () => {
   it('space-groups thousands and shows cents only when fractional', () => {
@@ -41,5 +50,20 @@ describe('formatMoney — single dispatch point', () => {
 describe('usd — dollar-only helper', () => {
   it('always prefixes a dollar sign', () => {
     expect(usd(1350)).toBe('$1 350');
+  });
+});
+
+describe('selected-language formatting', () => {
+  it('formats UZS without conversion or a dollar symbol', () => {
+    expect(formatMoneyLocalized(1234.5, 'UZS', 'en')).toBe('1,235 UZS');
+    expect(formatMoneyLocalized(1234.5, 'UZS', 'en')).not.toContain('$');
+    expect(formatMoneyLocalized(1234.5, 'USD', 'en')).toBe('$1,234.5');
+  });
+
+  it('uses the documented locales and Asia/Tashkent timezone', () => {
+    expect(localeForLanguage('en')).toBe('en-GB');
+    expect(formatNumberLocalized(1234.5, 'en')).toBe('1,234.5');
+    expect(formatDateLocalized('2026-07-22', 'en')).toBe('22/07/2026');
+    expect(formatTimeLocalized('2026-07-22T10:15:00Z', 'en')).toBe('15:15');
   });
 });

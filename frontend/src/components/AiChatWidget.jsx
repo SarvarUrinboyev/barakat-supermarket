@@ -5,6 +5,7 @@ import { ConfirmDialog } from './Modal.jsx';
 import { useToast } from './Toast.jsx';
 import { useT } from '../context/Settings.jsx';
 import { shiftIso, todayIso } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Floating AI CFO — ask "Bugun foyda nega kamaydi?", "Qaysi tovar narxini
@@ -28,7 +29,7 @@ export function AiChatWidget() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState([
-    { role: 'ai', text: "Salom! Men AI CFO yordamchingizman. \"Bugun foyda nega kamaydi?\" yoki \"Kim qarzni kechiktiryapti?\" deb so'rang.", actions: [] },
+    { role: 'ai', translationKey: "Salom! Men AI CFO yordamchingizman. \"Bugun foyda nega kamaydi?\" yoki \"Kim qarzni kechiktiryapti?\" deb so'rang.", actions: [] },
   ]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -61,7 +62,7 @@ export function AiChatWidget() {
       const resp = await AiApi.ask(q, history);
       setMsgs((m) => [...m, { role: 'ai', text: resp.answer, actions: resp.actions || [] }]);
     } catch (err) {
-      setMsgs((m) => [...m, { role: 'ai', text: '⚠️ ' + (err.message || 'Xatolik'), actions: [] }]);
+      setMsgs((m) => [...m, { role: 'ai', text: `⚠️ ${localizedErrorMessage(t, err)}`, actions: [] }]);
     } finally {
       setBusy(false);
     }
@@ -107,7 +108,7 @@ export function AiChatWidget() {
       }
       setConfirm(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setActing(false);
   };
@@ -116,16 +117,26 @@ export function AiChatWidget() {
     const a = confirm?.action;
     if (!a) return '';
     if (a.type === 'ORDER') {
-      return `"${a.params.productName}" uchun qayta buyurtma yaratilsinmi? (${a.detail})`;
+      return t('“{name}” mahsuloti uchun qayta buyurtma yaratilsinmi?')
+        .replace('{name}', a.params.productName);
     }
     if (a.type === 'NOTIFY') {
-      return `"${a.params.customerName}" mijozga qarz eslatmasi yuborilsinmi? (${a.detail})`;
+      return t('“{name}” mijoziga qarz eslatmasi yuborilsinmi?')
+        .replace('{name}', a.params.customerName);
     }
     if (a.type === 'NOTIFY_ALL') {
       return t('BARCHA qarzdor mijozlarga qarz eslatmasi yuborilsinmi? Har biriga o\'z kanalida (Telegram/SMS) ketadi.');
     }
     return t('Davom etamizmi?');
   };
+
+  const actionLabel = (action) => ({
+    ORDER: t('Buyurtma yaratish'),
+    NOTIFY: t('Eslatma yuborish'),
+    NOTIFY_ALL: t('Eslatma yuborish'),
+    PRICE: t('Narxni ko‘rib chiqish'),
+    DISCOUNT: t('Aksiyani ko‘rib chiqish'),
+  })[action?.type] || t('Davom etish');
 
   return (
     <>
@@ -139,19 +150,23 @@ export function AiChatWidget() {
             <button
               style={{ background: 'transparent', border: 0, color: '#fff', cursor: 'pointer', fontSize: 20 }}
               onClick={() => setOpen(false)}
+              title={t('Yopish')}
+              aria-label={t('Yopish')}
             >×</button>
           </div>
           <div className="ai-chat-body" ref={scrollRef}>
             {msgs.map((m, i) => (
               <div key={i}>
-                <div className={`ai-msg ${m.role}`} style={{ whiteSpace: 'pre-wrap' }}>{m.text}</div>
+                <div className={`ai-msg ${m.role}`} style={{ whiteSpace: 'pre-wrap' }}>
+                  {m.translationKey ? t(m.translationKey) : m.text}
+                </div>
                 {m.actions && m.actions.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '2px 0 10px' }}>
                     {m.actions.map((a, j) => (
                       <button
                         key={j}
                         type="button"
-                        title={a.detail}
+                        title={actionLabel(a)}
                         onClick={() => onAction(a)}
                         style={{
                           fontSize: 12, fontWeight: 600, padding: '5px 11px', borderRadius: 14,
@@ -159,7 +174,7 @@ export function AiChatWidget() {
                           background: 'var(--brand-primary, #3b82f6)', color: '#fff', cursor: 'pointer',
                         }}
                       >
-                        {a.label}
+                        {actionLabel(a)}
                       </button>
                     ))}
                   </div>
@@ -172,7 +187,7 @@ export function AiChatWidget() {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => send(s)}
+                    onClick={() => send(t(s))}
                     style={{
                       fontSize: 12, padding: '4px 10px', borderRadius: 14,
                       border: '1px solid var(--brand-primary, #3b82f6)',

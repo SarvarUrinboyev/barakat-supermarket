@@ -96,12 +96,12 @@ export function QuickSearch() {
 
   // Flat list of selectable items so ↑/↓ + Enter work without per-section logic.
   const items = useMemo(() => {
-    const filter = (label) => label.toLowerCase().includes(query.trim().toLowerCase());
+    const filter = (label) => t(label).toLowerCase().includes(query.trim().toLowerCase());
     const pageHits = query.trim()
       ? PAGES.filter((p) => filter(p.label))
       : PAGES.slice(0, 6);
     return [
-      ...pageHits.map((p) => ({ kind: 'page', label: p.label, sub: p.path, action: () => navigate(p.path) })),
+      ...pageHits.map((p) => ({ kind: 'page', label: t(p.label), sub: p.path, action: () => navigate(p.path) })),
       ...products.map((p) => ({ kind: 'product', label: p.name, sub: `${t('Qoldiq')}: ${p.quantity}`, action: () => navigate(`/warehouse/${p.id}`) })),
       ...customers.map((c) => ({ kind: 'customer', label: c.name || c.fullName || '(?)', sub: c.phone || '', action: () => navigate(`/customers/${c.id}`) })),
     ];

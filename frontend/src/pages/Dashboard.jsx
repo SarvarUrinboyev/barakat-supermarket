@@ -13,11 +13,22 @@ import { useToast } from '../components/Toast.jsx';
 import {
   EmptyState, Loader, MetricCard, ProgressBar, Spinner,
 } from '../components/ui.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatDate, formatTime, money, shiftIso, todayIso, usd } from '../lib/format.js';
+import {
+  formatDateLocalized,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatTimeLocalized,
+  localeForLanguage,
+  PAYMENT_LABELS,
+  shiftIso,
+  todayIso,
+} from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 export function Dashboard() {
+  const t = useT();
   const { data, loading, error, reload } = useApi(
     () => Promise.all([DashboardApi.today(), ExchangeRateApi.get()]),
     [],
@@ -28,7 +39,11 @@ export function Dashboard() {
 
   return (
     <>
-      <Loader loading={loading} error={error} onRetry={reload}>
+      <Loader
+        loading={loading}
+        error={error ? t("Boshqaruv ma'lumotlarini yuklab bo'lmadi. Qayta urinib ko'ring.") : null}
+        onRetry={reload}
+      >
         {data && (
           <Content data={dashboard} rate={rate} onEditBalance={() => setEditing(true)} />
         )}
@@ -53,7 +68,7 @@ export function Dashboard() {
  * finance report. No business logic — just a leaner header band.
  */
 function DashInfoBar({ rate, startingCash, onEditBalance }) {
-  const t = useT();
+  const { lang, t } = useSettings();
   return (
     <div className="dash-infobar section">
       <div className="dib-chip">
@@ -62,7 +77,7 @@ function DashInfoBar({ rate, startingCash, onEditBalance }) {
           <div className="dib-k">{t('Dollar kursi')} · {t('Markaziy bank')}</div>
           <div className="dib-v">
             {rate && rate.available ? (
-              <>1 USD = {money(Math.round(Number(rate.rate)))} {t("so'm")}</>
+              <>1 USD = {formatMoneyLocalized(Math.round(Number(rate.rate)), 'UZS', lang)}</>
             ) : (
               <span className="faint">{t("Internetga ulanib bo'lmadi")}</span>
             )}
@@ -73,7 +88,7 @@ function DashInfoBar({ rate, startingCash, onEditBalance }) {
         <span className="dib-ico">🌅</span>
         <div className="dib-body">
           <div className="dib-k">{t('Ertalabgi balans')}</div>
-          <div className="dib-v">{usd(startingCash)}</div>
+          <div className="dib-v">{formatMoneyLocalized(startingCash, 'UZS', lang)}</div>
         </div>
         <button className="dib-edit" onClick={onEditBalance} title={t('Tahrirlash')} aria-label={t('Tahrirlash')}>
           ✏️
@@ -150,7 +165,7 @@ function Content({ data, rate, onEditBalance }) {
  * only the two sales cards — debt & cash still render.
  */
 function KpiGrid({ data }) {
-  const t = useT();
+  const { lang, t } = useSettings();
   const today = todayIso();
   const { data: report, loading, error } = useApi(
     () => ManagementApi.soldGoods({ from: today, to: today }),
@@ -165,12 +180,17 @@ function KpiGrid({ data }) {
   return (
     <div className="metrics section">
       <MetricCard tone="blue" icon="💳" label={t('Bugungi savdo')}
-                  value={revenue} tag="SAVDO" sub={pending} />
+                  value={revenue} displayText={formatMoneyLocalized(revenue, 'UZS', lang)}
+                  tag={t('SAVDO')} sub={pending} />
       <MetricCard tone={netProfit >= 0 ? 'green' : 'red'} icon="💰" label={t('Sof foyda')}
-                  value={ok ? netProfit : 0} tag="FOYDA"
+                  value={ok ? netProfit : 0}
+                  displayText={formatMoneyLocalized(ok ? netProfit : 0, 'UZS', lang)}
+                  tag={t('FOYDA')}
                   sub={pending || t('Sotuv − tannarx − xarajat')} />
-      <MetricCard tone="red" icon="📒" label={t('Mijoz qarzlari')} value={data.totalDebt} tag="QARZ" />
-      <MetricCard tone="amber" icon="🏦" label={t('Kassa qoldiq')} value={data.estimatedCash} tag="KASSA" />
+      <MetricCard tone="red" icon="📒" label={t('Mijoz qarzlari')} value={data.totalDebt}
+                  displayText={formatMoneyLocalized(data.totalDebt, 'UZS', lang)} tag={t('QARZ')} />
+      <MetricCard tone="amber" icon="🏦" label={t('Kassa qoldiq')} value={data.estimatedCash}
+                  displayText={formatMoneyLocalized(data.estimatedCash, 'UZS', lang)} tag={t('KASSA')} />
     </div>
   );
 }
@@ -221,7 +241,7 @@ function LowStockCard() {
 
 /** Today's biggest expenses, as a card for the 3-up section. */
 function TopExpensesCard({ data }) {
-  const t = useT();
+  const { lang, t } = useSettings();
   return (
     <div className="card feed-card">
       <div className="feed-head">
@@ -237,7 +257,7 @@ function TopExpensesCard({ data }) {
               <div key={i}>
                 <div className="flex-between" style={{ marginBottom: 5 }}>
                   <span style={{ fontWeight: 600 }}>{e.name}</span>
-                  <span className="mono">{usd(e.amount)}</span>
+                  <span className="mono">{formatMoneyLocalized(e.amount, 'UZS', lang)}</span>
                 </div>
                 <ProgressBar percent={e.percent} />
               </div>
@@ -250,7 +270,7 @@ function TopExpensesCard({ data }) {
 }
 
 function OrderGroup({ tag, title, orders, last }) {
-  const t = useT();
+  const { lang, t } = useSettings();
   return (
     <div style={{ marginBottom: last ? 0 : 18 }}>
       <div className="section-label">
@@ -265,7 +285,7 @@ function OrderGroup({ tag, title, orders, last }) {
           {orders.map((o) => (
             <div key={o.id} className="flex-between" style={{ fontSize: 13 }}>
               <span style={{ fontWeight: 600 }}>{o.name}</span>
-              <span className="faint">{formatDate(o.deliveryDate)}</span>
+              <span className="faint">{formatDateLocalized(o.deliveryDate, lang)}</span>
             </div>
           ))}
         </div>
@@ -276,7 +296,7 @@ function OrderGroup({ tag, title, orders, last }) {
 
 /** 7-day sales-flow line chart, built from the sold-goods report. */
 function SalesChart() {
-  const t = useT();
+  const { lang, t } = useSettings();
   const { data: report, loading } = useApi(
     () => ManagementApi.soldGoods({ from: shiftIso(-6), to: todayIso() }),
     [],
@@ -316,20 +336,21 @@ function SalesChart() {
   const first = points[0];
   const fillPath = `${linePath} L ${last.x.toFixed(1)} ${baseY} L ${first.x.toFixed(1)} ${baseY} Z`;
   const isEmpty = days.every((d) => d.total === 0);
-  // Uzbek day-of-week short labels: Yak, Du, Se, Ch, Pa, Ju, Sha
-  const DAYS = ['Yak', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sha'];
-  const dayLabel = (iso) => DAYS[new Date(`${iso}T00:00:00`).getDay()];
+  const dayLabel = (iso) => new Intl.DateTimeFormat(localeForLanguage(lang), {
+    weekday: 'short',
+    timeZone: 'Asia/Tashkent',
+  }).format(new Date(`${iso}T12:00:00+05:00`));
   const yMid = baseY - plotH / 2;
-  const fmtAxis = (n) => {
-    if (n >= 1000) return `$${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
-    return `$${Math.round(n)}`;
-  };
+  const fmtAxis = (n) => formatNumberLocalized(n, lang, {
+    notation: 'compact',
+    maximumFractionDigits: n >= 10000 ? 0 : 1,
+  });
 
   return (
     <div className="card chart-card">
       <div className="chart-head">
         <div>
-          <span className="chart-eyebrow">{t('Tijorat tranzaksiyalari')}</span>
+          <span className="chart-eyebrow">{t('Tijorat tranzaksiyalari')} · UZS</span>
           <h3>{t('Savdo dinamikasi (7 kun)')}</h3>
         </div>
       </div>
@@ -361,7 +382,7 @@ function SalesChart() {
             <text x={PX - 6} y={yMid + 4} className="chart-axis"
                   textAnchor="end">{fmtAxis(maxVal / 2)}</text>
             <text x={PX - 6} y={baseY + 4} className="chart-axis"
-                  textAnchor="end">$0</text>
+                  textAnchor="end">{fmtAxis(0)}</text>
             {/* fill + line */}
             <path d={fillPath} fill="url(#dashChartFill)" />
             <path
@@ -397,7 +418,7 @@ function SalesChart() {
  * out yet.
  */
 function ExpenseBreakdown({ data }) {
-  const t = useT();
+  const { lang, t } = useSettings();
   const segs = [
     { key: 'naqd',  label: t('Naqd'),  value: Number(data.todayNaqd) || 0,  color: 'var(--green)' },
     { key: 'karta', label: t('Karta'), value: Number(data.todayKarta) || 0, color: 'var(--blue)' },
@@ -436,7 +457,7 @@ function ExpenseBreakdown({ data }) {
                 acc += frac;
                 return el;
               })}
-              <text x="70" y="66" textAnchor="middle" className="pshare-total-v">{usd(total)}</text>
+              <text x="70" y="66" textAnchor="middle" className="pshare-total-v">{formatMoneyLocalized(total, 'UZS', lang)}</text>
               <text x="70" y="86" textAnchor="middle" className="pshare-total-l">{t('Jami')}</text>
             </svg>
             <div className="pshare-legend">
@@ -445,7 +466,7 @@ function ExpenseBreakdown({ data }) {
                   <span className="pshare-dot" style={{ background: s.color }} />
                   <span className="pshare-leg-label">{s.label}</span>
                   <span className="pshare-leg-val mono">
-                    {usd(s.value)} · {Math.round((s.value / total) * 100)}%
+                    {formatMoneyLocalized(s.value, 'UZS', lang)} · {Math.round((s.value / total) * 100)}%
                   </span>
                 </div>
               ))}
@@ -459,7 +480,7 @@ function ExpenseBreakdown({ data }) {
 
 /** Today's combined activity feed: sales + payments, newest first. */
 function ActivityFeed() {
-  const t = useT();
+  const { lang, t } = useSettings();
   const today = todayIso();
   const { data, loading } = useApi(
     () => Promise.all([
@@ -494,7 +515,7 @@ function ActivityFeed() {
         time: p.createdAt || `${p.date}T00:00:00`,
         desc: p.party || (p.direction === 'INCOMING' ? t('Kirim') : t('Chiqim')),
         amount: Number(p.amount) || 0,
-        meta: p.method || '',
+        meta: PAYMENT_LABELS[p.method] ? t(PAYMENT_LABELS[p.method]) : (p.method || ''),
       });
     });
     items.sort((a, b) => String(b.time).localeCompare(String(a.time)));
@@ -505,7 +526,7 @@ function ActivityFeed() {
     <div className="card feed-card">
       <div className="feed-head">
         <h3>{t('So‘nggi faoliyat')}</h3>
-        <span className="feed-live"><span className="dot" /> Live</span>
+        <span className="feed-live"><span className="dot" /> {t('Jonli')}</span>
       </div>
       <div className="feed-body">
         {loading ? (
@@ -519,12 +540,12 @@ function ActivityFeed() {
               <div className="feed-text">
                 <div className="feed-desc">{it.desc}</div>
                 <div className="feed-meta">
-                  {formatTime(it.time)}
+                  {formatTimeLocalized(it.time, lang)}
                   {it.meta ? ` · ${it.meta}` : ''}
                 </div>
               </div>
               <div className={`feed-amount ${it.kind === 'out' ? 'neg' : ''}`}>
-                {it.kind === 'out' ? '−' : '+'}{usd(it.amount)}
+                {it.kind === 'out' ? '−' : '+'}{formatMoneyLocalized(it.amount, 'UZS', lang)}
               </div>
             </div>
           ))
@@ -552,7 +573,7 @@ function BalanceModal({ current, onClose, onSaved }) {
       toast.success(t('Ertalabgi balans yangilandi'));
       onSaved();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -573,7 +594,7 @@ function BalanceModal({ current, onClose, onSaved }) {
       }
     >
       <div className="field">
-        <label>{t('Ertalabgi balans (USD)')}</label>
+        <label>{t('Ertalabgi balans (UZS)')}</label>
         <input
           className="input"
           type="number"
