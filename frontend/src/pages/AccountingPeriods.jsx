@@ -7,6 +7,7 @@ import { EmptyState, Loader, PageHeader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatDateTime } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /** Accounting periods ("Hisobot davrlari") — close a finished month to lock it. */
 export function AccountingPeriods() {
@@ -101,7 +102,7 @@ export function AccountingPeriods() {
               await AccountingApi.reopenPeriod(modal.item.id);
               toast.success(t('Davr ochildi'));
               setModal(null); reload();
-            } catch (err) { toast.error(err.message); }
+            } catch (err) { toast.error(localizedErrorMessage(t, err)); }
           }}
           onCancel={() => setModal(null)}
         />
@@ -117,7 +118,7 @@ export function AccountingPeriods() {
               await AccountingApi.removePeriod(modal.item.id);
               toast.success(t("Davr o'chirildi"));
               setModal(null); reload();
-            } catch (err) { toast.error(err.message); }
+            } catch (err) { toast.error(localizedErrorMessage(t, err)); }
           }}
           onCancel={() => setModal(null)}
         />
@@ -145,7 +146,7 @@ function ClosePeriodModal({ onSubmit, onClose }) {
     try {
       await onSubmit({ periodStart: start, periodEnd: end, note: note.trim() || null });
       onClose();
-    } catch (err) { setError(err.message); setBusy(false); }
+    } catch (err) { setError(localizedErrorMessage(t, err)); setBusy(false); }
   };
 
   return (

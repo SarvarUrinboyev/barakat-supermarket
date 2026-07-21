@@ -12,6 +12,7 @@ import {
 import { useApi } from '../hooks/useApi.js';
 import { useExchangeRate } from '../hooks/useExchangeRate.js';
 import { useStickyState } from '../hooks/useStickyState.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 import { convertMoney, formatDate, formatMoney } from '../lib/format.js';
 
 /**
@@ -47,7 +48,7 @@ export function HomeExpenses() {
       setModal(null);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 

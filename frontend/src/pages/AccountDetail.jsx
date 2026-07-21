@@ -7,6 +7,7 @@ import { Loader, PageHeader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { ALL_MODULES, modulesFromCsv } from '../lib/modules.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 // Per-user permission editor: each toggle grants a module's RESOURCE:ACTION set.
 // Checking a module gives the user read+write for it; an empty override means
@@ -94,7 +95,7 @@ export function AccountDetail() {
       toast.success(t('Saqlandi — foydalanuvchilar keyingi kirishda yangi sozlamani ko\'radi'));
       reload();
     } catch (err) {
-      toast.error(err.message || t('Saqlab bo\'lmadi'));
+      toast.error(localizedErrorMessage(t, err, 'Saqlab bo\'lmadi'));
     } finally {
       setSaving(false);
     }
@@ -158,7 +159,7 @@ export function AccountDetail() {
                 await AdminApi.grant(account.id, grantPlan, grantMonths);
                 reload();
               } catch (e) {
-                alert(e.message || 'Xatolik');
+                alert(localizedErrorMessage(t, e, 'Xatolik'));
               } finally {
                 setGranting(false);
               }
@@ -290,7 +291,7 @@ function PermModal({ user, onClose, onSaved, toast, t }) {
       toast.success(t('Ruxsatlar saqlandi — foydalanuvchi keyingi kirishda yangilanadi'));
       onSaved();
     } catch (e) {
-      toast.error(e.message);
+      toast.error(localizedErrorMessage(t, e));
       setBusy(false);
     }
   };

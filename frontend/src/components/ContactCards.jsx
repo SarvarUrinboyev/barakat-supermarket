@@ -62,7 +62,7 @@ export function ContactCards() {
         </p>
         <div className="cc-hub-chips">
           <span className="cc-hub-chip"><i>⚡</i> {t('Odatda ~5 daqiqada javob')}</span>
-          <span className="cc-hub-chip"><i>🕘</i> Du–Sha, 9:00–18:00</span>
+          <span className="cc-hub-chip"><i>🕘</i> {t('Du–Sha, 9:00–18:00')}</span>
           <span className="cc-hub-chip"><i>🇺🇿</i> {t("O'zbek tilida yordam")}</span>
         </div>
       </div>

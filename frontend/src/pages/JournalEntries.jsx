@@ -10,6 +10,7 @@ import { useApi } from '../hooks/useApi.js';
 import { useExchangeRate } from '../hooks/useExchangeRate.js';
 import { useStickyState } from '../hooks/useStickyState.js';
 import { convertMoney, formatDate, formatMoney, todayIso } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const SOURCE_LABEL = {
   MANUAL: "Qo'lda", SALE: 'Sotuv', SALE_REFUND: 'Qaytarish', STOCK_IN: 'Tovar kirim',
@@ -112,7 +113,7 @@ export function JournalEntries() {
               await AccountingApi.reverseJournal(modal.item.id);
               toast.success(t('Storno yozuvi yaratildi'));
               setModal(null); reload();
-            } catch (err) { toast.error(err.message); }
+            } catch (err) { toast.error(localizedErrorMessage(t, err)); }
           }}
           onCancel={() => setModal(null)}
         />
@@ -128,7 +129,7 @@ export function JournalEntries() {
               await AccountingApi.removeJournal(modal.item.id);
               toast.success(t("Yozuv o'chirildi"));
               setModal(null); reload();
-            } catch (err) { toast.error(err.message); }
+            } catch (err) { toast.error(localizedErrorMessage(t, err)); }
           }}
           onCancel={() => setModal(null)}
         />
@@ -213,7 +214,7 @@ function ManualEntryModal({ accounts, onSubmit, onClose }) {
         })),
       });
       onClose();
-    } catch (err) { setError(err.message); setBusy(false); }
+    } catch (err) { setError(localizedErrorMessage(t, err)); setBusy(false); }
   };
 
   return (

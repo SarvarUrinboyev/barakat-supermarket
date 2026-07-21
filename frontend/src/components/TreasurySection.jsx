@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { PaymentApi } from '../api/endpoints.js';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatMoney, money } from '../lib/format.js';
+import { formatMoneyLocalized } from '../lib/format.js';
 
 /**
  * "Mavjud pul mablag'lari" — net per-method totals (incoming − outgoing)
@@ -13,6 +13,7 @@ import { formatMoney, money } from '../lib/format.js';
  */
 export function TreasurySection({ from, to, title, eyebrow }) {
   const t = useT();
+  const { lang } = useSettings();
   const params = from && to ? { from, to } : {};
   const { data } = useApi(() => PaymentApi.list(params), [from, to]);
   const rows = data ? data.payments : [];
@@ -29,22 +30,22 @@ export function TreasurySection({ from, to, title, eyebrow }) {
         {title && <h3 style={{ fontSize: 14, fontWeight: 800 }}>{t(title)}</h3>}
         <div className="t-net mono">
           {t('Jami:')}{' '}
-          <DualNet uzs={netUZS} usd={netUSD} />
+          <DualNet uzs={netUZS} usd={netUSD} lang={lang} />
         </div>
       </div>
       <div className="treasury-grid">
         <TreasuryCard tone="green" icon="💴" label={t("UZS (so'm)")}
                       sub={t('Naqd pul')}
-                      uzs={buckets.UZS_CASH.UZS} usd={0} />
+                      uzs={buckets.UZS_CASH.UZS} usd={0} lang={lang} />
         <TreasuryCard tone="emerald" icon="💵" label={t('USD (dollar)')}
                       sub={t("Valyuta g'aznasi")}
-                      uzs={0} usd={buckets.USD_CASH.USD} />
+                      uzs={0} usd={buckets.USD_CASH.USD} lang={lang} />
         <TreasuryCard tone="blue" icon="💳" label={t('Karta (P2P)')}
                       sub={t("Plastik o'tkazmalar")}
-                      uzs={buckets.P2P.UZS} usd={buckets.P2P.USD} />
+                      uzs={buckets.P2P.UZS} usd={buckets.P2P.USD} lang={lang} />
         <TreasuryCard tone="purple" icon="🏦" label={t('Transfer')}
                       sub={t('Bank hisobi (yuridik)')}
-                      uzs={buckets.TRANSFER.UZS} usd={buckets.TRANSFER.USD} />
+                      uzs={buckets.TRANSFER.UZS} usd={buckets.TRANSFER.USD} lang={lang} />
       </div>
     </div>
   );
@@ -71,7 +72,7 @@ export function computeTreasury(rows) {
   return buckets;
 }
 
-function TreasuryCard({ tone, icon, label, sub, uzs, usd: usdAmt }) {
+function TreasuryCard({ tone, icon, label, sub, uzs, usd: usdAmt, lang }) {
   const hasUZS = Math.abs(uzs) > 0.0001;
   const hasUSD = Math.abs(usdAmt) > 0.0001;
   return (
@@ -85,12 +86,12 @@ function TreasuryCard({ tone, icon, label, sub, uzs, usd: usdAmt }) {
         {!hasUZS && !hasUSD && <span className="tc-line muted mono">0</span>}
         {hasUZS && (
           <span className={`tc-line mono ${uzs < 0 ? 'amount-neg' : ''}`}>
-            {money(uzs)} <span className="tc-cur">so'm</span>
+            {formatMoneyLocalized(uzs, 'UZS', lang)}
           </span>
         )}
         {hasUSD && (
           <span className={`tc-line mono ${usdAmt < 0 ? 'amount-neg' : ''}`}>
-            {formatMoney(usdAmt, 'USD')} <span className="tc-cur">USD</span>
+            {formatMoneyLocalized(usdAmt, 'USD', lang)}
           </span>
         )}
       </div>
@@ -99,7 +100,7 @@ function TreasuryCard({ tone, icon, label, sub, uzs, usd: usdAmt }) {
   );
 }
 
-function DualNet({ uzs, usd: usdAmt }) {
+function DualNet({ uzs, usd: usdAmt, lang }) {
   const hasUZS = Math.abs(uzs) > 0.0001;
   const hasUSD = Math.abs(usdAmt) > 0.0001;
   if (!hasUZS && !hasUSD) return <b>0</b>;
@@ -107,13 +108,13 @@ function DualNet({ uzs, usd: usdAmt }) {
     <>
       {hasUZS && (
         <b className={uzs < 0 ? 'amount-neg' : 'amount-pos'}>
-          {uzs > 0 ? '+' : ''}{money(uzs)} so'm
+          {uzs > 0 ? '+' : ''}{formatMoneyLocalized(uzs, 'UZS', lang)}
         </b>
       )}
       {hasUZS && hasUSD && <span className="t-net-sep"> · </span>}
       {hasUSD && (
         <b className={usdAmt < 0 ? 'amount-neg' : 'amount-pos'}>
-          {usdAmt > 0 ? '+' : ''}{formatMoney(usdAmt, 'USD')}
+          {usdAmt > 0 ? '+' : ''}{formatMoneyLocalized(usdAmt, 'USD', lang)}
         </b>
       )}
     </>

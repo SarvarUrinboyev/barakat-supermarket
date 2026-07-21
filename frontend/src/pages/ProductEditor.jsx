@@ -8,6 +8,7 @@ import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useStickyState } from '../hooks/useStickyState.js';
 import { formatDateTime, formatMoney, money } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const REASONS = [
   { value: 'DELIVERY', label: 'Yangi yetkazib berish' },
@@ -160,7 +161,7 @@ function Editor({ isNew, product, categories, movements, rate, reloadAll }) {
       setCategoryId(String(created.id));
       toast.success(`${t('Toifa qo‘shildi')}: ${created.name}`);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -239,7 +240,7 @@ function Editor({ isNew, product, categories, movements, rate, reloadAll }) {
         setBusy(false);
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -257,7 +258,7 @@ function Editor({ isNew, product, categories, movements, rate, reloadAll }) {
       setAdjustDelta('');
       reloadAll();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setStockBusy(false);
   };
@@ -268,7 +269,7 @@ function Editor({ isNew, product, categories, movements, rate, reloadAll }) {
       toast.success(t("Mahsulot o'chirildi"));
       navigate('/warehouse');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 

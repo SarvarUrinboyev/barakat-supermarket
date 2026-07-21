@@ -3,9 +3,10 @@ import { PromoApi } from '../api/endpoints.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, PageHeader } from '../components/ui.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { money, todayIso } from '../lib/format.js';
+import { formatMoneyLocalized, todayIso } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const KIND_LABELS = {
   PERCENT_OFF: '% chegirma',
@@ -30,6 +31,7 @@ function weekdaysLabel(mask) {
  */
 export function Promos() {
   const t = useT();
+  const { lang } = useSettings();
   const toast = useToast();
   const { data, loading, error, reload } = useApi(() => PromoApi.list(), []);
   const [modal, setModal] = useState(null);
@@ -43,7 +45,7 @@ export function Promos() {
       reload();
       setModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -54,7 +56,7 @@ export function Promos() {
       reload();
       setModal(null);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -92,7 +94,7 @@ export function Promos() {
                       <td><span className="badge">{t(KIND_LABELS[p.kind] || p.kind)}</span></td>
                       <td className="num mono">
                         {p.kind === 'PERCENT_OFF' && `${p.valuePercent}%`}
-                        {p.kind === 'AMOUNT_OFF' && `${money(p.valueAmount)} so'm`}
+                        {p.kind === 'AMOUNT_OFF' && formatMoneyLocalized(p.valueAmount, 'UZS', lang)}
                         {p.kind === 'BOGO' && `${p.buyQty}+${p.getQty}`}
                       </td>
                       <td className="faint mono" style={{ fontSize: 12 }}>

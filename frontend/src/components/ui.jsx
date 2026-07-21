@@ -1,5 +1,6 @@
-import { formatMoney, money, PAYMENT_LABELS, usd } from '../lib/format.js';
-import { useT } from '../context/Settings.jsx';
+import { formatMoneyLocalized, money, PAYMENT_LABELS, usd } from '../lib/format.js';
+import { useSettings, useT } from '../context/Settings.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /** Spinning loader. */
 export function Spinner() {
@@ -16,7 +17,7 @@ export function Loader({ loading, error, onRetry, children }) {
     return (
       <div className="empty">
         <div className="e-ico">⚠️</div>
-        <div className="e-text">{error}</div>
+        <div className="e-text">{localizedErrorMessage(t, { message: error })}</div>
         {onRetry && (
           <button className="btn btn-ghost btn-sm mt-16" onClick={onRetry}>
             {t('Qayta urinish')}
@@ -94,13 +95,14 @@ export function ProgressBar({ percent }) {
 export function MetricCard({
   tone, icon, label, value, sub, currency = true, currencyCode, displayText, tag, filled,
 }) {
+  const { lang } = useSettings();
   let display;
   if (displayText != null) {
     // Caller supplies a pre-formatted value (e.g. a per-currency split
     // "500 000 so'm + $200" that no single currencyCode can express).
     display = displayText;
   } else if (currencyCode) {
-    display = formatMoney(value, currencyCode);
+    display = formatMoneyLocalized(value, currencyCode, lang);
   } else if (currency) {
     display = usd(value);
   } else {
@@ -122,14 +124,15 @@ export function MetricCard({
 
 /** A small USD / so'm segmented toggle for a page's display currency. */
 export function CurrencyToggle({ value, onChange }) {
+  const t = useT();
   return (
-    <div className="chip-row" title="Ko'rinish valyutasi">
+    <div className="chip-row" title={t("Ko'rinish valyutasi")}>
       <button
         type="button"
         className={`chip ${value === 'UZS' ? 'active' : ''}`}
         onClick={() => onChange('UZS')}
       >
-        so'm
+        {t("so'm")}
       </button>
       <button
         type="button"

@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi.js';
 import { ConfirmDialog, Modal } from './Modal.jsx';
 import { useToast } from './Toast.jsx';
 import { EmptyState, Loader } from './ui.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /** Modal to view, add and delete product categories ("Toifalar"). */
 export function CategoryManager({ onClose }) {
@@ -28,7 +29,7 @@ export function CategoryManager({ onClose }) {
       toast.success(t("Toifa qo'shildi"));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setBusy(false);
   };
@@ -39,7 +40,7 @@ export function CategoryManager({ onClose }) {
       toast.success(t("Toifa o'chirildi"));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setConfirmRemove(null);
     }

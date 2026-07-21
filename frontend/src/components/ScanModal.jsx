@@ -8,6 +8,7 @@ import { useToast } from './Toast.jsx';
 import { CurrencyToggle } from './ui.jsx';
 import { useStickyState } from '../hooks/useStickyState.js';
 import { formatMoney, money } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 // Sentinel category value: "create the catalogue's suggested category on save".
 const NEW_CATEGORY = '__suggested__';
@@ -160,7 +161,7 @@ export function ScanModal({ categories, onClose, onChanged }) {
       }
     } catch (err) {
       setSearching(false);
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
       refocus();
     }
     setBusy(false);
@@ -249,7 +250,7 @@ export function ScanModal({ categories, onClose, onChanged }) {
       onChanged();
       backToScan();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setBusy(false);
   };
@@ -285,7 +286,7 @@ export function ScanModal({ categories, onClose, onChanged }) {
       onChanged();
       backToScan();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setBusy(false);
   };

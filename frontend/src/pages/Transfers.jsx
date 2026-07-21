@@ -6,6 +6,7 @@ import { useAuth } from '../context/Auth.jsx';
 import { useT } from '../context/Settings.jsx';
 import { EmptyState, Loader, PageHeader } from '../components/ui.jsx';
 import { formatDate, formatMoney } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * "Tovar transferi" — move stock between two shops of the same
@@ -36,7 +37,7 @@ export function Transfers() {
       setShops(s);
       setList(l);
     } catch (err) {
-      setError(err.message || t('Yuklab bo\'lmadi'));
+      setError(localizedErrorMessage(t, err, "Yuklab bo'lmadi"));
     } finally {
       setLoading(false);
     }
@@ -196,7 +197,7 @@ function TransferModal({ shops, onClose, onDone }) {
       });
       onDone();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

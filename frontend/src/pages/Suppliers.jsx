@@ -8,6 +8,7 @@ import { EmptyState, Loader, MetricCard, PageHeader } from '../components/ui.jsx
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { usd } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Yetkazib beruvchilar (Suppliers): contact directory + how much we've
@@ -42,7 +43,7 @@ export function Suppliers() {
       setModal(null);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -191,7 +192,7 @@ export function SupplierFormModal({ initial, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

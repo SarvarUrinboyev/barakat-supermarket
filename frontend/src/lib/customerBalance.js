@@ -2,7 +2,7 @@
 // directly. A customer's debt lives in independent currency buckets that are
 // never merged; a USD-only debtor must stay visible even when balanceUzs is 0.
 
-import { formatMoney } from './format.js';
+import { formatMoney, formatMoneyLocalized } from './format.js';
 
 const EPS = 0.009;
 
@@ -12,13 +12,16 @@ export function customerOwes(c) {
 }
 
 /** Renders every non-zero bucket of a signed balance, e.g. "500 000 so'm + $200". */
-export function balanceDisplay(balanceUzs, balanceUsd) {
+export function balanceDisplay(balanceUzs, balanceUsd, language = 'uz') {
   const u = Number(balanceUzs || 0);
   const d = Number(balanceUsd || 0);
   const parts = [];
-  if (Math.abs(u) > EPS) parts.push(formatMoney(Math.abs(u), 'UZS'));
-  if (Math.abs(d) > EPS) parts.push(formatMoney(Math.abs(d), 'USD'));
-  return parts.length ? parts.join(' + ') : formatMoney(0, 'UZS');
+  const formatter = language === 'uz'
+    ? formatMoney
+    : (amount, currency) => formatMoneyLocalized(amount, currency, language);
+  if (Math.abs(u) > EPS) parts.push(formatter(Math.abs(u), 'UZS'));
+  if (Math.abs(d) > EPS) parts.push(formatter(Math.abs(d), 'USD'));
+  return parts.length ? parts.join(' + ') : formatter(0, 'UZS');
 }
 
 /**

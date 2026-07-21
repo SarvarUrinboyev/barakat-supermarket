@@ -6,6 +6,7 @@ import { EmptyState, Loader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Owner page to manage external integrations: API keys for the Open API
@@ -132,7 +133,7 @@ function ApiKeysCard({ keys, onNew, onReload }) {
       await IntegrationsApi.revokeKey(id);
       toast.success(t('Kalit bekor qilindi'));
       onReload();
-    } catch (e) { toast.error(e.message); }
+    } catch (e) { toast.error(localizedErrorMessage(t, e)); }
   };
   return (
     <div className="card section">
@@ -174,11 +175,11 @@ function WebhooksCard({ webhooks, onNew, onReload }) {
   const del = async (id) => {
     if (!window.confirm(t('Webhookni o\'chirasizmi?'))) return;
     try { await IntegrationsApi.deleteWebhook(id); toast.success(t('O\'chirildi')); onReload(); }
-    catch (e) { toast.error(e.message); }
+    catch (e) { toast.error(localizedErrorMessage(t, e)); }
   };
   const test = async (id) => {
     try { await IntegrationsApi.testWebhook(id); toast.success(t('Test yuborildi — yetkazib berishni kuting')); }
-    catch (e) { toast.error(e.message); }
+    catch (e) { toast.error(localizedErrorMessage(t, e)); }
   };
   return (
     <div className="card section">
@@ -255,7 +256,7 @@ function KeyModal({ scopes, onClose, onCreated }) {
     try {
       const issued = await IntegrationsApi.createKey({ name: name.trim(), scopes: picked });
       onCreated(issued);
-    } catch (e) { toast.error(e.message); setBusy(false); }
+    } catch (e) { toast.error(localizedErrorMessage(t, e)); setBusy(false); }
   };
   return (
     <Modal title={t('Yangi API kalit')} onClose={onClose} footer={
@@ -291,7 +292,7 @@ function WebhookModal({ eventTypes, onClose, onCreated }) {
     try {
       const created = await IntegrationsApi.createWebhook({ url: url.trim(), events: picked });
       onCreated(created);
-    } catch (e) { toast.error(e.message); setBusy(false); }
+    } catch (e) { toast.error(localizedErrorMessage(t, e)); setBusy(false); }
   };
   return (
     <Modal title={t('Yangi webhook')} onClose={onClose} footer={

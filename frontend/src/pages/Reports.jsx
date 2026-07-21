@@ -8,6 +8,7 @@ import { useApi } from '../hooks/useApi.js';
 import { shiftIso, todayIso, usd } from '../lib/format.js';
 import { generatePriceTagsPdf } from '../lib/priceTagsPdf.js';
 import { downloadAuthed } from '../lib/download.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 import { PosHistory } from './PosHistory.jsx';
 
 export function Reports() {
@@ -374,7 +375,7 @@ function PriceTagsSection({ t }) {
       generatePriceTagsPdf(list, { currency });
       toast.success(t('PDF yuklab olindi'));
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -448,7 +449,7 @@ function DailyReportSection({ t }) {
       await ReportApi.sendTelegram(date);
       toast.success(t("Hisobot Telegramga yuborildi"));
     } catch (err) {
-      toast.error(err.message || t("Xatolik yuz berdi"));
+      toast.error(localizedErrorMessage(t, err, 'Xatolik yuz berdi'));
     } finally {
       setTgBusy(false);
     }
@@ -573,7 +574,7 @@ function PdfReportSection({ t }) {
     try {
       await downloadAuthed(ReportApi.salesPdfUrl({ from, to }), `savdo-${from}_${to}.pdf`);
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -581,7 +582,7 @@ function PdfReportSection({ t }) {
     try {
       await downloadAuthed(ReportApi.inventoryPdfUrl(), 'ombor-hisoboti.pdf');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 

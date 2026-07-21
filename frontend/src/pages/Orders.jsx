@@ -6,6 +6,7 @@ import { useT } from '../context/Settings.jsx';
 import { CurrencyToggle, EmptyState, Loader, PageHeader } from '../components/ui.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { PAYMENT_LABELS, formatDate, formatMoney, money, todayIso } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 export function Orders() {
   const { data, loading, error, reload } = useApi(() => OrderApi.grouped(), []);
@@ -22,7 +23,7 @@ export function Orders() {
       close();
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -202,7 +203,7 @@ function OrderFormModal({ title, initial, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -297,7 +298,7 @@ function OrderCompleteModal({ order, onSubmit, onClose }) {
       await onSubmit(body);
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

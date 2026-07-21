@@ -9,6 +9,7 @@ import { useApi } from '../hooks/useApi.js';
 import { useExchangeRate } from '../hooks/useExchangeRate.js';
 import { useStickyState } from '../hooks/useStickyState.js';
 import { convertMoney, formatDate, formatMoney, money } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const ONLINE_BADGE = {
   MATCHED: 'badge-naqd', PENDING: 'badge-aralash',
@@ -48,7 +49,7 @@ export function Reconciliation() {
       else toast.info(r.message || t('O‘zgarish bo‘lmadi'));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setCrediting(null);
   };

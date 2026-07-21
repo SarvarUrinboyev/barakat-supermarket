@@ -10,6 +10,7 @@ import {
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const PROVIDER_META = {
   GOOGLE: { label: 'Google', bg: '#ffffff', border: true },
@@ -93,7 +94,7 @@ export function Admin() {
       toast.success(acc.blocked ? t('Akkaunt ochildi') : t('Akkaunt bloklandi'));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -104,7 +105,7 @@ export function Admin() {
       setModal(null);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -336,7 +337,7 @@ function CreateAccountModal({ onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -455,7 +456,7 @@ function EditAccountModal({ account, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -529,7 +530,7 @@ function UsersModal({ account, onClose }) {
       toast.success(t("Foydalanuvchi o'chirildi"));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setConfirmRemoveUser(null);
     }
@@ -650,7 +651,7 @@ function AddUserModal({ accountId, onClose, onCreated }) {
       toast.success(t("Foydalanuvchi qo'shildi"));
       onCreated();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -716,7 +717,7 @@ function ResetPasswordModal({ user, onClose, onDone }) {
       toast.success(t('Parol yangilandi'));
       onDone();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

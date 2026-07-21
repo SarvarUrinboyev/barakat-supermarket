@@ -5,10 +5,11 @@ import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { PhoneInput } from '../components/PhoneInput.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, MetricCard, PageHeader } from '../components/ui.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatMoney } from '../lib/format.js';
+import { formatMoneyLocalized } from '../lib/format.js';
 import { balanceDisplay, customerOwes } from '../lib/customerBalance.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 export { customerOwes };
 
@@ -19,24 +20,25 @@ export { customerOwes };
  * `display` renders every non-zero bucket, e.g. "500 000 so'm + $200".
  * Shared with the customer-detail page.
  */
-export function balanceInfo(balanceUzs, balanceUsd) {
+export function balanceInfo(balanceUzs, balanceUsd, language = 'uz') {
   const u = Number(balanceUzs || 0);
   const d = Number(balanceUsd || 0);
   const owes = u > 0.009 || d > 0.009;
   const holdsCredit = !owes && (u < -0.009 || d < -0.009);
-  const display = balanceDisplay(u, d);
+  const display = balanceDisplay(u, d, language);
   if (owes) {
     return { label: 'Mijoz qarzi', tone: 'red', display, badge: 'badge-qarzga', owes: true };
   }
   if (holdsCredit) {
     return { label: 'Bizda qolgan balans', tone: 'green', display, badge: 'badge-naqd', owes: false };
   }
-  return { label: 'Hisob teng', tone: 'muted', display: formatMoney(0, 'UZS'), badge: 'badge-muted', owes: false };
+  return { label: 'Hisob teng', tone: 'muted', display: formatMoneyLocalized(0, 'UZS', language), badge: 'badge-muted', owes: false };
 }
 
 export function Customers() {
   const navigate = useNavigate();
   const t = useT();
+  const { lang } = useSettings();
   const { data, loading, error, reload } = useApi(() => CustomerApi.list(), []);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState(null);
@@ -66,7 +68,7 @@ export function Customers() {
         toast.success(t('Qarzdor mijoz yo‘q 👍'));
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setReminding(false);
     }
@@ -106,7 +108,7 @@ export function Customers() {
       setModal(null);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -185,7 +187,7 @@ export function Customers() {
                 </thead>
                 <tbody>
                   {filtered.map((c) => {
-                    const info = balanceInfo(c.balanceUzs, c.balanceUsd);
+                    const info = balanceInfo(c.balanceUzs, c.balanceUsd, lang);
                     return (
                       <tr
                         key={c.id}
@@ -307,7 +309,7 @@ export function CustomerFormModal({ initial, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

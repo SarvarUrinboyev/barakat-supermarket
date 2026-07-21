@@ -8,6 +8,7 @@ import { useApi } from '../hooks/useApi.js';
 import { useExchangeRate } from '../hooks/useExchangeRate.js';
 import { useStickyState } from '../hooks/useStickyState.js';
 import { convertMoney, formatDate, formatMoney, todayIso } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const STATUS_LABEL = {
   DRAFT: 'Qoralama', ORDERED: 'Buyurtma berilgan', PARTIAL: 'Qisman kelgan',
@@ -34,7 +35,7 @@ export function PurchaseOrders() {
 
   const act = async (fn, ok) => {
     try { await fn(); toast.success(t(ok)); setModal(null); reload(); }
-    catch (err) { toast.error(err.message); }
+    catch (err) { toast.error(localizedErrorMessage(t, err)); }
   };
 
   return (
@@ -209,7 +210,7 @@ function PoFormModal({ initial, products, suppliers, onSubmit, onClose }) {
         })),
       });
       onClose();
-    } catch (err) { setError(err.message); setBusy(false); }
+    } catch (err) { setError(localizedErrorMessage(t, err)); setBusy(false); }
   };
 
   return (
@@ -298,7 +299,7 @@ function ReceiveModal({ po, onSubmit, onClose }) {
     try {
       await onSubmit({ receiptDate, invoiceNumber: invoiceNumber.trim() || null, lines });
       onClose();
-    } catch (err) { setError(err.message); setBusy(false); }
+    } catch (err) { setError(localizedErrorMessage(t, err)); setBusy(false); }
   };
 
   return (

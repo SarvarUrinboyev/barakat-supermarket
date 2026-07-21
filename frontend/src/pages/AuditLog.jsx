@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AdminApi } from '../api/endpoints.js';
 import { EmptyState, Loader, PageHeader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Super-admin audit log viewer.
@@ -30,7 +31,7 @@ export function AuditLog() {
       setPage(p);
       if (!batch || batch.length < 50) setDoneAll(true);
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
     } finally {
       setLoading(false);
     }

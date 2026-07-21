@@ -4,6 +4,7 @@ import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { Spinner } from '../components/ui.jsx';
 import { IS_WEB } from '../config.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const PLAN_LABEL = {
   TRIAL: 'Sinov (Trial)',
@@ -42,6 +43,7 @@ function money(n) {
 export function Billing() {
   const t = useT();
   const { data, loading, error, reload } = useApi(() => BillingApi.status(), []);
+  const safeError = error ? localizedErrorMessage(t, { message: error }) : null;
   const { data: payments, reload: reloadPayments } =
     useApi(() => BillingApi.payments().catch(() => []), []);
   const [pendingPlan, setPendingPlan] = useState(null);
@@ -49,8 +51,8 @@ export function Billing() {
   const [notice, setNotice] = useState('');
 
   if (loading) return <Spinner />;
-  if (error) {
-    return <div className="card" style={{ margin: 16 }}>⚠️ {error}</div>;
+  if (safeError) {
+    return <div className="card" style={{ margin: 16 }}>⚠️ {safeError}</div>;
   }
 
   const s = data || {};
@@ -83,7 +85,7 @@ export function Billing() {
       reloadPayments();
       reload();
     } catch (err) {
-      setNotice('⚠️ ' + (err.message || 'Xatolik'));
+      setNotice('⚠️ ' + localizedErrorMessage(t, err));
     } finally {
       setBusyProvider(null);
     }

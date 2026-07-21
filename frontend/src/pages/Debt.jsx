@@ -4,10 +4,11 @@ import { CustomerApi, DebtApi } from '../api/endpoints.js';
 import { customerDebtRows } from '../lib/customerBalance.js';
 import { ConfirmDialog, Modal } from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { EmptyState, Loader } from '../components/ui.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatDate, money, todayIso, usd } from '../lib/format.js';
+import { formatDate, formatMoneyLocalized, money, todayIso, usd } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const SIDES = {
   MY: {
@@ -73,7 +74,7 @@ export function Debt() {
       close();
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -84,7 +85,7 @@ export function Debt() {
       toast.success(t("To'lov qabul qilindi"));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -110,12 +111,12 @@ export function Debt() {
           const customerDebtsTotal = customerDebts
             .reduce((acc, d) => acc + Number(d.balanceUzs), 0);
           const allReceivables = [...customerDebts, ...summary.customerDebts];
-          const totalReceivable = Number(summary.customerDebtTotal) + customerDebtsTotal;
           return (
             <>
               <DebtHero
-                receivable={totalReceivable}
-                liability={summary.myDebtTotal}
+                receivableUzs={customerDebtsTotal}
+                receivableUsd={summary.customerDebtTotal}
+                liabilityUsd={summary.myDebtTotal}
                 onAdd={(side) => setModal({ type: 'add', side })}
               />
               <div className="debt-lists">
@@ -196,21 +197,26 @@ export function Debt() {
 
 /* ----------------------------------------------------------- hero / stats */
 
-function DebtHero({ receivable, liability, onAdd }) {
+function DebtHero({ receivableUzs, receivableUsd, liabilityUsd, onAdd }) {
   const t = useT();
-  const recv = Number(receivable) || 0;
-  const liab = Number(liability) || 0;
+  const { lang } = useSettings();
+  const recvUzs = Number(receivableUzs) || 0;
+  const recvUsd = Number(receivableUsd) || 0;
+  const liabUsd = Number(liabilityUsd) || 0;
   let healthPct = 100;
   let rating;
-  if (liab === 0 && recv === 0) {
+  // Standalone debt records are explicitly USD in the existing contract. The
+  // customer ledger exposes a separate `balanceUzs` bucket, so it must remain
+  // separate rather than be summed into a dollar amount without a rate.
+  if (liabUsd === 0 && recvUsd === 0) {
     healthPct = 100;
-    rating = t("Bo'sh");
-  } else if (liab === 0) {
+    rating = recvUzs === 0 ? t("Bo'sh") : t("A'LO (Xavfsiz)");
+  } else if (liabUsd === 0) {
     healthPct = 100;
     rating = t("A'LO (Xavfsiz)");
   } else {
-    const sum = recv + liab;
-    healthPct = sum > 0 ? Math.round((recv / sum) * 100) : 0;
+    const sum = recvUsd + liabUsd;
+    healthPct = sum > 0 ? Math.round((recvUsd / sum) * 100) : 0;
     if (healthPct >= 75) rating = t("A'LO (Xavfsiz)");
     else if (healthPct >= 45) rating = t("O'rtacha");
     else rating = t("Xavfli");
@@ -245,7 +251,8 @@ function DebtHero({ receivable, liability, onAdd }) {
             <span className="ds-emoji" aria-hidden>📈</span>
           </div>
           <div className="ds-label">{t('JAMI KUTILAYOTGAN TUSHUM')}</div>
-          <div className="ds-value mono">{usd(recv)}</div>
+          <div className="ds-value mono">{formatMoneyLocalized(recvUzs, 'UZS', lang)}</div>
+          {recvUsd !== 0 && <div className="ds-value-sub mono">{formatMoneyLocalized(recvUsd, 'USD', lang)}</div>}
           <div className="ds-glow" />
         </div>
 
@@ -255,7 +262,7 @@ function DebtHero({ receivable, liability, onAdd }) {
             <span className="ds-emoji" aria-hidden>📉</span>
           </div>
           <div className="ds-label">{t('JAMI MAJBURIYATLAR')}</div>
-          <div className="ds-value mono">{usd(liab)}</div>
+          <div className="ds-value mono">{formatMoneyLocalized(liabUsd, 'USD', lang)}</div>
           <div className="ds-glow" />
         </div>
 
@@ -491,7 +498,7 @@ function DebtFormModal({ side, initial, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -562,7 +569,7 @@ function PaymentModal({ mode, item, onSubmit, onClose }) {
       await onSubmit({ amount: value, date, note: null });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

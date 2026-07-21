@@ -8,6 +8,7 @@ import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatMoney } from '../lib/format.js';
 import { SupplierFormModal } from './Suppliers.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /** Supplier detail: contact + payment history + CSV export. */
 export function SupplierDetail() {
@@ -36,7 +37,7 @@ function Detail({ data, reload }) {
       toast.success(t("Yetkazib beruvchi o'chirildi"));
       navigate('/suppliers');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 

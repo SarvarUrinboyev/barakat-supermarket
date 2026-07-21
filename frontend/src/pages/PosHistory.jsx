@@ -6,6 +6,7 @@ import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, PageHeader, Spinner } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { formatMoney } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * POS sales history + refund flow.
@@ -40,7 +41,7 @@ export function PosHistory({ embedded = false }) {
         toast.error(t("Kanal yo'q: mijoz Telegram botga ulanmagan va SMS sozlanmagan"));
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setSendingId(null);
     }
@@ -56,7 +57,7 @@ export function PosHistory({ embedded = false }) {
       setHasMore(Boolean(res?.hasMore));
       setPage(p);
     } catch (err) {
-      setError(err.message || t('Xatolik yuz berdi'));
+      setError(localizedErrorMessage(t, err, 'Xatolik yuz berdi'));
     } finally {
       if (append) setLoadingMore(false); else setLoading(false);
     }
@@ -232,7 +233,7 @@ function SaleDetailModal({ sale, onClose, onChanged }) {
       toast.success(t('Qaytarish bajarildi'));
       onChanged();
     } catch (err) {
-      toast.error(err.message || t("Qaytarib bo'lmadi"));
+      toast.error(localizedErrorMessage(t, err, "Qaytarib bo'lmadi"));
     } finally {
       setBusy(false);
     }

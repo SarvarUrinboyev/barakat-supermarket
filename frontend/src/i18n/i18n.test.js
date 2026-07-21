@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LANGUAGES, toCyrillic, translate } from './i18n.js';
+import { LANGUAGES, MISSING_EN_TRANSLATION, toCyrillic, translate } from './i18n.js';
 
 describe('global application languages', () => {
   it('exposes Uzbek Latin, Uzbek Cyrillic, Russian, and English in order', () => {
@@ -83,7 +83,7 @@ describe('global application languages', () => {
     expect(translate('en', 'API COGS DRAFT ID')).toBe('API COGS DRAFT ID');
   });
 
-  it('does not speculate about untranslated user data', () => {
-    expect(translate('en', 'Barakat Demo — Markaziy')).toBe('Barakat Demo — Markaziy');
+  it('uses an explicit marker instead of silently falling back to Uzbek in English', () => {
+    expect(translate('en', 'Uncatalogued application-owned UI')).toBe(MISSING_EN_TRANSLATION);
   });
 });

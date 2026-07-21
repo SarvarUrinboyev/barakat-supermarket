@@ -7,9 +7,10 @@ import { TreasurySection } from '../components/TreasurySection.jsx';
 import {
   EmptyState, Loader, PageHeader,
 } from '../components/ui.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { formatDate, formatMoney, todayIso } from '../lib/format.js';
+import { formatDate, formatMoneyLocalized, todayIso } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const CATEGORIES = [
   ['CUSTOMER', "Mijoz to'lovi"],
@@ -62,6 +63,7 @@ function methodLabel(method, currency) {
 /** "To'lov" - the payment journal: every money movement in and out. */
 export function Payments() {
   const t = useT();
+  const { lang } = useSettings();
   const [range, setRange] = useState({ preset: 'month', ...rangeForPreset('month') });
   const [modal, setModal] = useState(null);
   const toast = useToast();
@@ -80,7 +82,7 @@ export function Payments() {
       setModal(null);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -161,7 +163,7 @@ export function Payments() {
                         <td className="name-cell">{p.party || '—'}</td>
                         <td className="faint">{t(methodLabel(p.method, p.currency))}</td>
                         <td className={`num ${incoming ? 'amount-pos' : 'amount-neg'}`}>
-                          {incoming ? '+' : '−'}{formatMoney(p.amount, p.currency)}
+                          {incoming ? '+' : '−'}{formatMoneyLocalized(p.amount, p.currency, lang)}
                         </td>
                         <td>
                           <div className="row-actions">
@@ -265,6 +267,7 @@ function DirectionCard({ tone, icon, label, onClick }) {
  */
 function PartyPicker({ value, onChange, category }) {
   const t = useT();
+  const { lang } = useSettings();
   const [open, setOpen] = useState(false);
   const { data: customers } = useApi(() => CustomerApi.list(), []);
   const { data: suppliers } = useApi(() => SupplierApi.list(), []);
@@ -366,7 +369,7 @@ function PartyPicker({ value, onChange, category }) {
               {m.meta && <span className="ps-meta mono">{m.meta}</span>}
               {m.debt > 0 && (
                 <span className="ps-debt">
-                  {t('Qarz')}: ${m.debt.toFixed(2)}
+                  {t('Qarz')}: {formatMoneyLocalized(m.debt, 'UZS', lang)}
                 </span>
               )}
             </button>
@@ -379,6 +382,7 @@ function PartyPicker({ value, onChange, category }) {
 
 function PaymentFormModal({ initial, presetDirection, onSubmit, onClose }) {
   const t = useT();
+  const { lang } = useSettings();
   const [direction, setDirection] = useState(
     initial?.direction ?? presetDirection ?? 'INCOMING',
   );
@@ -400,7 +404,7 @@ function PaymentFormModal({ initial, presetDirection, onSubmit, onClose }) {
   const method = picked.method;
   const currency = picked.currency ?? altCurrency;
   const showCurrencyToggle = picked.currency == null;
-  const curLabel = currency === 'UZS' ? "so'm" : 'USD';
+  const curLabel = currency === 'UZS' ? t("so'm") : 'USD';
   const isIncoming = direction === 'INCOMING';
 
   const submit = async () => {
@@ -422,7 +426,7 @@ function PaymentFormModal({ initial, presetDirection, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

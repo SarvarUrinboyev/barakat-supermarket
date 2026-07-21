@@ -4,6 +4,7 @@ import { money } from '../lib/format.js';
 import { Modal } from './Modal.jsx';
 import { PaymentBadge } from './ui.jsx';
 import { useToast } from './Toast.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const PLACEHOLDER = `21.05.2026
 1)Telefon g'ilofi 5 berildi
@@ -30,7 +31,7 @@ export function BulkImportModal({ api, onClose, onDone }) {
     try {
       setPreview(await api.bulkPreview({ text }));
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setBusy(false);
   };
@@ -46,7 +47,7 @@ export function BulkImportModal({ api, onClose, onDone }) {
       onDone();
       onClose();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

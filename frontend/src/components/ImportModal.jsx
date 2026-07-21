@@ -4,6 +4,7 @@ import { downloadAuthed } from '../lib/download.js';
 import { useT } from '../context/Settings.jsx';
 import { Modal } from './Modal.jsx';
 import { useToast } from './Toast.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /** CSV / XLSX bulk-import dialog for warehouse products. */
 export function ImportModal({ onClose, onDone }) {
@@ -30,7 +31,7 @@ export function ImportModal({ onClose, onDone }) {
         toast.error(t('Hech qanday mahsulot import qilinmadi'));
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setBusy(false);
   };
@@ -64,7 +65,7 @@ export function ImportModal({ onClose, onDone }) {
           try {
             await downloadAuthed(ProductApi.templateUrl, 'namuna-shablon.xlsx');
           } catch (err) {
-            toast.error(err.message);
+            toast.error(localizedErrorMessage(t, err));
           }
           setTplBusy(false);
         }}

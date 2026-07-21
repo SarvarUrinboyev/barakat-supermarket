@@ -6,6 +6,7 @@ import { useToast } from '../components/Toast.jsx';
 import { EmptyState, Loader, PageHeader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const TYPES = [
   ['ASSET', 'Aktiv'],
@@ -37,7 +38,7 @@ export function ChartOfAccounts() {
       toast.success(`${t('Bosh kitob to‘ldirildi')}: ${res.created} ${t('ta yozuv')}`);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setBusy(false);
   };
@@ -135,7 +136,7 @@ export function ChartOfAccounts() {
               toast.success(t("Hisob o'chirildi"));
               setModal(null);
               reload();
-            } catch (err) { toast.error(err.message); }
+            } catch (err) { toast.error(localizedErrorMessage(t, err)); }
           }}
           onCancel={() => setModal(null)}
         />
@@ -161,7 +162,7 @@ function AccountModal({ initial, onSubmit, onClose }) {
     try {
       await onSubmit({ code: code.trim(), name: name.trim(), type, active });
       onClose();
-    } catch (err) { setError(err.message); setBusy(false); }
+    } catch (err) { setError(localizedErrorMessage(t, err)); setBusy(false); }
   };
 
   return (

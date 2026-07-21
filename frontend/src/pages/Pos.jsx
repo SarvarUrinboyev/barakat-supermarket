@@ -11,6 +11,7 @@ import { useShop } from '../context/Shop.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useOnline } from '../hooks/useOnline.js';
 import { useVoiceInput } from '../hooks/useVoiceInput.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 import {
   cacheCustomers, cacheProducts, cancelQueued, clearOldSynced, enqueueCheckout, failedCount, flushQueue, getCachedCustomers,
   getCachedProducts, listQueue, pendingCount, pendingProductQuantities, retryQueued,
@@ -524,7 +525,7 @@ export function Pos() {
       if (err.name === 'CheckoutTimeout') {
         // Don't auto-queue: the sale may have landed server-side; let the
         // cashier verify in history instead of risking a double charge.
-        toast.error(err.message);
+        toast.error(localizedErrorMessage(t, err));
         return;
       }
       // Offline fallback — enqueue, show pending count, recover later.
@@ -558,7 +559,7 @@ export function Pos() {
         finishCheck(paidId);
         setPayOpen(false);
       } else {
-        toast.error(err.message || t("Sotib bo'lmadi"));
+        toast.error(localizedErrorMessage(t, err, "Sotib bo'lmadi"));
       }
     } finally {
       setBusy(false);

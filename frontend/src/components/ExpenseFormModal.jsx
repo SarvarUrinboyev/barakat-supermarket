@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { money, PAYMENT_LABELS, todayIso } from '../lib/format.js';
 import { useT } from '../context/Settings.jsx';
 import { Modal } from './Modal.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Add / edit dialog for a market or shop expense.
@@ -62,7 +63,7 @@ export function ExpenseFormModal({ title, initial, allowCredit, onSubmit, onClos
       await onSubmit(body);
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast.jsx';
 import { Loader, PageHeader } from '../components/ui.jsx';
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * Inventarizatsiya — bulk stock count. The operator enters the physically
@@ -39,7 +40,7 @@ export function Stocktake() {
       setCounts({});
       reload();
     } catch (e) {
-      toast.error(e.message);
+      toast.error(localizedErrorMessage(t, e));
     } finally {
       setBusy(false);
     }

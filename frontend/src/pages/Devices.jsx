@@ -5,6 +5,7 @@ import { EmptyState, Loader, MetricCard, PageHeader } from '../components/ui.jsx
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { money } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const STATUS_BADGE = {
   IN_STOCK: { badge: 'badge-karta', label: 'Omborda' },
@@ -87,7 +88,7 @@ export function Devices() {
       setKirimLog((prev) => [{ id: Date.now(), ok: true, text: `${code} → ${d.productName}` }, ...prev]);
       refresh();
     } catch (err) {
-      setKirimLog((prev) => [{ id: Date.now(), ok: false, text: `${code} — ${err.message}` }, ...prev]);
+      setKirimLog((prev) => [{ id: Date.now(), ok: false, text: `${code} — ${localizedErrorMessage(t, err)}` }, ...prev]);
     } finally {
       setScanBusy(false);
       setTimeout(() => kirimRef.current?.focus(), 30);
@@ -105,7 +106,7 @@ export function Devices() {
       setChiqimLog((prev) => [{ id: Date.now(), ok: true, text: `${code} ${t('chiqdi')} → ${d.productName}` }, ...prev]);
       refresh();
     } catch (err) {
-      setChiqimLog((prev) => [{ id: Date.now(), ok: false, text: `${code} — ${err.message}` }, ...prev]);
+      setChiqimLog((prev) => [{ id: Date.now(), ok: false, text: `${code} — ${localizedErrorMessage(t, err)}` }, ...prev]);
     } finally {
       setScanBusy(false);
       setTimeout(() => chiqimRef.current?.focus(), 30);
@@ -122,7 +123,7 @@ export function Devices() {
       toast.success(t('Saqlandi'));
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     } finally {
       setBusyId(null);
     }

@@ -12,6 +12,7 @@ import {
 import { useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
 import { useExchangeRate } from '../hooks/useExchangeRate.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 import { useStickyState } from '../hooks/useStickyState.js';
 import { convertMoney, formatDate, formatMoney, todayIso } from '../lib/format.js';
 import { printSoldGoods } from '../lib/printSoldGoods.js';
@@ -51,7 +52,7 @@ export function Management() {
       setModal(null);
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -75,7 +76,7 @@ export function Management() {
                 ReportApi.salesPdfUrl({ from: range.from, to: range.to }),
                 `savdo-${range.from}-${range.to}.pdf`,
               );
-            } catch (err) { toast.error(err.message); }
+            } catch (err) { toast.error(localizedErrorMessage(t, err)); }
           }}
         >
           📄 {t('PDF eksport')}
@@ -175,7 +176,7 @@ function SoldGoodsExportCard({ range }) {
         `sotilgan-tovarlar-${range.from}_${range.to}.${format}`,
       );
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setExpBusy(null);
   };
@@ -190,7 +191,7 @@ function SoldGoodsExportCard({ range }) {
         printSoldGoods(report, t);
       }
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
     setPdfBusy(false);
   };
@@ -361,7 +362,7 @@ function CostFormModal({ initial, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };

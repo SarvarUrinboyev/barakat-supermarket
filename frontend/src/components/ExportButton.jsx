@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useToast } from './Toast.jsx';
 import { useT } from '../context/Settings.jsx';
 import { exportXlsx } from '../lib/xlsxExport.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /**
  * "Excel'ga eksport" button — drops a multi-sheet xlsx alongside any
@@ -33,7 +34,7 @@ export function ExportButton({ filename, rows, sheets, getRows, getSheets, label
       await exportXlsx(filename, payload);
       toast.success(t('Eksport tayyor'));
     } catch (err) {
-      toast.error(err.message || t("Eksport qilib bo'lmadi"));
+      toast.error(localizedErrorMessage(t, err, "Eksport qilib bo'lmadi"));
     } finally {
       setBusy(false);
     }

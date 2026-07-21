@@ -11,6 +11,7 @@ import { useApi } from '../hooks/useApi.js';
 import { formatDate, formatMoney, todayIso, usd } from '../lib/format.js';
 import { balanceDisplay } from '../lib/customerBalance.js';
 import { balanceInfo, CustomerFormModal } from './Customers.jsx';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 /** Sums ledger lines into { uzs, usd } buckets by each line's currency. */
 function sumByCurrency(lines) {
@@ -52,7 +53,7 @@ function Detail({ data, reload }) {
       toast.success(tr("Mijoz o'chirildi"));
       navigate('/customers');
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -63,7 +64,7 @@ function Detail({ data, reload }) {
       close();
       reload();
     } catch (err) {
-      toast.error(err.message);
+      toast.error(localizedErrorMessage(t, err));
     }
   };
 
@@ -101,7 +102,7 @@ function Detail({ data, reload }) {
                   ReportApi.customerLedgerPdfUrl(customer.id),
                   `${customer.name.replace(/\s+/g, '_')}-tarix.pdf`,
                 );
-              } catch (err) { window.alert(err.message); }
+              } catch (err) { window.alert(localizedErrorMessage(t, err)); }
             }}
           >
             📄 {tr('PDF eksport')}
@@ -269,7 +270,7 @@ function Detail({ data, reload }) {
               close();
               reload();
             } catch (err) {
-              toast.error(err.message);
+              toast.error(localizedErrorMessage(t, err));
             }
           }}
         />
@@ -662,7 +663,7 @@ function GiveGoodsModal({ customer, onSubmit, onPreview, onClose }) {
       }
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -796,7 +797,7 @@ function ReceivePaymentModal({ onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -873,7 +874,7 @@ function EditTxModal({ tx, onSubmit, onClose }) {
       });
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(localizedErrorMessage(t, err));
       setBusy(false);
     }
   };
@@ -948,7 +949,7 @@ function RedeemPointsModal({ customer, onClose, onDone }) {
     try {
       await onDone(num);
     } catch (e) {
-      setError(e.message);
+      setError(localizedErrorMessage(t, e));
       setBusy(false);
     }
   };
@@ -1036,7 +1037,7 @@ function NotifyModal({ customer, onClose, onSent }) {
       });
       onSent(res.channel);
     } catch (e) {
-      setError(e.message);
+      setError(localizedErrorMessage(t, e));
       setBusy(false);
     }
   };
@@ -1115,7 +1116,7 @@ function PayModal({ customer, onClose, toast }) {
         setAmount(d.suggestedSom ? String(d.suggestedSom) : '');
         setProvider(d.paymeEnabled ? 'payme' : d.clickEnabled ? 'click' : '');
       })
-      .catch((e) => alive && setLoadErr(e.message));
+      .catch((e) => alive && setLoadErr(localizedErrorMessage(t, e)));
     return () => { alive = false; };
   }, [customer.id]);
 
@@ -1129,7 +1130,7 @@ function PayModal({ customer, onClose, toast }) {
       const r = await CustomerApi.payLink(customer.id, { provider, amountSom: Math.round(som) });
       setUrl(r.url);
     } catch (e) {
-      toast.error(e.message);
+      toast.error(localizedErrorMessage(t, e));
     } finally {
       setBusy(false);
     }
@@ -1149,7 +1150,7 @@ function PayModal({ customer, onClose, toast }) {
       if (label) toast.success(`${t('Havola yuborildi')} (${label})`);
       else toast.error(t("Kanal yo'q: mijoz Telegram botga ulanmagan va SMS sozlanmagan"));
     } catch (e) {
-      toast.error(e.message);
+      toast.error(localizedErrorMessage(t, e));
     } finally {
       setBusy(false);
     }

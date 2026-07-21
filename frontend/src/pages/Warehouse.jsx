@@ -8,27 +8,29 @@ import { ImportModal } from '../components/ImportModal.jsx';
 import { ScanModal } from '../components/ScanModal.jsx';
 import { EmptyState, Loader, MetricCard } from '../components/ui.jsx';
 import { useAuth } from '../context/Auth.jsx';
-import { useT } from '../context/Settings.jsx';
+import { useSettings, useT } from '../context/Settings.jsx';
 import { useApi } from '../hooks/useApi.js';
-import { money, formatMoney } from '../lib/format.js';
+import { formatMoneyLocalized } from '../lib/format.js';
+import { localizedErrorMessage } from '../lib/localizedError.js';
 
 const STATUS_LABEL = { IN_STOCK: 'Mavjud', LOW: 'Kam qoldi', OUT: 'Tugagan' };
 const STATUS_BADGE = { IN_STOCK: 'badge-naqd', LOW: 'badge-karta', OUT: 'badge-qarzga' };
 
 // Expiry helper: red if already expired, amber within 30 days, otherwise none.
-function expiryInfo(dateStr) {
+function expiryInfo(dateStr, t) {
   if (!dateStr) return null;
   const d = new Date(String(dateStr).slice(0, 10) + 'T00:00:00');
   if (Number.isNaN(d.getTime())) return null;
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const days = Math.round((d - today) / 86400000);
-  if (days < 0) return { label: "Muddati o'tgan", color: '#ef4444' };
-  if (days <= 30) return { label: days + ' kun qoldi', color: '#f59e0b' };
+  if (days < 0) return { label: t("Muddati o'tgan"), color: '#ef4444' };
+  if (days <= 30) return { label: `${days} ${t('days remaining')}`, color: '#f59e0b' };
   return null;
 }
 
 function ExpiryBadge({ date }) {
-  const info = expiryInfo(date);
+  const t = useT();
+  const info = expiryInfo(date, t);
   if (!info) return null;
   return (
     <span style={{
@@ -42,6 +44,7 @@ function ExpiryBadge({ date }) {
 
 export function Warehouse() {
   const t = useT();
+  const { lang } = useSettings();
   const navigate = useNavigate();
   const { user } = useAuth();
   // Goods transfer is owner/admin-only (same gate as the old sidebar link + the
@@ -117,7 +120,7 @@ export function Warehouse() {
                   ReportApi.inventoryPdfUrl(null),
                   `ombor-${new Date().toISOString().slice(0, 10)}.pdf`,
                 );
-              } catch (err) { window.alert(err.message); }
+              } catch (err) { window.alert(localizedErrorMessage(t, err)); }
             }}
           >
             📄 {t('PDF eksport')}
@@ -161,8 +164,8 @@ export function Warehouse() {
       >
         <MetricCard tone="blue" icon="📦" label={t('Mahsulot turlari')} value={summary.count}
                     currency={false} />
-        <MetricCard tone="amber" icon="🏬" label={t('Ombor qiymati (kelish)')} value={summary.value} />
-        <MetricCard tone="green" icon="📈" label={t('Potensial foyda')} value={summary.profit} />
+        <MetricCard tone="amber" icon="🏬" label={t('Ombor qiymati (kelish)')} value={summary.value} currencyCode="UZS" />
+        <MetricCard tone="green" icon="📈" label={t('Potensial foyda')} value={summary.profit} currencyCode="UZS" />
       </div>
 
       <div className="card card-pad section">
@@ -247,7 +250,7 @@ export function Warehouse() {
                     >
                       <td className="name-cell">{p.name}<ExpiryBadge date={p.expiryDate} /></td>
                       <td className="faint mono">{p.imei1 || '—'}</td>
-                      <td className="num">{formatMoney(p.salePrice, p.currency)}</td>
+                      <td className="num">{formatMoneyLocalized(p.salePrice, p.currency, lang)}</td>
                       <td
                         className="num"
                         style={{
